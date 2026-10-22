@@ -45,6 +45,7 @@ func TestChannelMarketplaceFromDevBranch(t *testing.T) {
 // literal. When the production sequence uninstalls the channel that it just
 // selected, a derived expectation also passes.
 func TestClaudeChannelInstallArgvSequence(t *testing.T) {
+	withNoExtensions(t)
 	cases := []struct {
 		channel         string
 		devBranch       string
@@ -92,6 +93,7 @@ func TestClaudeChannelInstallArgvSequence(t *testing.T) {
 // remove`) keeps Codex's global `spacedock:*` skill namespace authoritative for
 // the selected install.
 func TestCodexChannelInstallArgvSequence(t *testing.T) {
+	withNoExtensions(t)
 	cases := []struct {
 		channel         string
 		devBranch       string
@@ -327,4 +329,11 @@ func codexSequenceAddsID(steps []installStep, id string) bool {
 		}
 	}
 	return false
+}
+
+func withNoExtensions(t *testing.T) {
+	t.Helper()
+	saved := extensions
+	extensions = nil
+	t.Cleanup(func() { extensions = saved })
 }

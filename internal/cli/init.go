@@ -26,6 +26,17 @@ const defaultMarketplaceSource = "spacedock-dev/marketplace"
 // operator's chosen source); unset, it is the production default the channel branches.
 var marketplaceSource = defaultMarketplaceSource
 
+// extensionMarketplaceSourceOverride is set by SPACEDOCK_EXTENSION_MARKETPLACE_SOURCE,
+// so a newer extension release can be staged without publishing one.
+var extensionMarketplaceSourceOverride string
+
+func extensionMarketplaceSource() string {
+	if extensionMarketplaceSourceOverride != "" {
+		return extensionMarketplaceSourceOverride
+	}
+	return defaultMarketplaceSource
+}
+
 // runInit installs/updates the per-host plugin (claude or codex) then runs doctor.
 // `--check` runs the report without installing. Both hosts install programmatically
 // through the host plugin mechanism (claude `install` / codex `add`) — no skill-file

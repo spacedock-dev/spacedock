@@ -414,6 +414,7 @@ func (execHost) Launch(argv []string, env []string) (int, error) {
 type installStep struct {
 	argv         []string
 	tolerateExit bool
+	reportExit   bool
 }
 
 // retiredRouteAID is the retired route-A plugin id from round 1's collapse (the
@@ -440,7 +441,7 @@ const retiredRouteAID = "spacedock-edge@spacedock"
 // steps stay fail-fast, because they report a broken install.
 func installArgvSequence(source, devBranch string) []installStep {
 	id := channelPluginID(devBranch)
-	return []installStep{
+	steps := []installStep{
 		{argv: []string{"plugin", "uninstall", id}, tolerateExit: true},
 		{argv: []string{"plugin", "uninstall", "spacedock@" + otherChannelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "uninstall", retiredRouteAID}, tolerateExit: true},
@@ -448,6 +449,22 @@ func installArgvSequence(source, devBranch string) []installStep {
 		{argv: []string{"plugin", "marketplace", "update", channelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "install", id}},
 	}
+	if addsExtensionMarketplace(devBranch) {
+		steps = append(steps,
+			installStep{argv: []string{"plugin", "marketplace", "add", extensionMarketplaceSource()}, tolerateExit: true, reportExit: true},
+			installStep{argv: []string{"plugin", "marketplace", "update", extensionMarketplace}, tolerateExit: true},
+		)
+	}
+	for _, ext := range extensions {
+		extID := extensionPluginID(ext.name)
+		// Claude's `plugin install` does nothing for an installed plugin, hence the update.
+		steps = append(steps,
+			installStep{argv: []string{"plugin", "uninstall", edgeCopyID(ext.name)}, tolerateExit: true},
+			installStep{argv: []string{"plugin", "install", extID}, tolerateExit: true},
+			installStep{argv: []string{"plugin", "update", extID}, tolerateExit: true, reportExit: true},
+		)
+	}
+	return steps
 }
 
 // codexInstallArgvSequence is the codex analog of installArgvSequence: no step
@@ -477,7 +494,7 @@ func installArgvSequence(source, devBranch string) []installStep {
 // unconditionally re-clones content (probe 8) and stays fail-fast.
 func codexInstallArgvSequence(source, devBranch string) []installStep {
 	id := channelPluginID(devBranch)
-	return []installStep{
+	steps := []installStep{
 		{argv: []string{"plugin", "remove", "spacedock@" + otherChannelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "remove", id}, tolerateExit: true},
 		{argv: []string{"plugin", "remove", codexLocalPluginID}, tolerateExit: true},
@@ -485,6 +502,43 @@ func codexInstallArgvSequence(source, devBranch string) []installStep {
 		{argv: []string{"plugin", "marketplace", "upgrade", channelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "add", id}},
 	}
+	if addsExtensionMarketplace(devBranch) {
+		steps = append(steps,
+			installStep{argv: []string{"plugin", "marketplace", "add", extensionMarketplaceSource()}, tolerateExit: true, reportExit: true},
+			installStep{argv: []string{"plugin", "marketplace", "upgrade", extensionMarketplace}, tolerateExit: true},
+		)
+	}
+	// Codex's `plugin add` on an installed plugin moves it to the listing's version,
+	// so the same step installs and updates.
+	for _, ext := range extensions {
+		steps = append(steps,
+			installStep{argv: []string{"plugin", "remove", edgeCopyID(ext.name)}, tolerateExit: true},
+			installStep{argv: []string{"plugin", "add", extensionPluginID(ext.name)}, tolerateExit: true, reportExit: true},
+		)
+	}
+	return steps
+}
+
+// extensionMarketplace is the marketplace every extension plugin installs from, on
+// every channel: each extension's own release keeps its listing there current.
+const extensionMarketplace = "spacedock"
+
+// addsExtensionMarketplace is false on stable, where the channel marketplace is the
+// extension marketplace: adding it again from another source would re-point it, and
+// Codex refuses.
+func addsExtensionMarketplace(devBranch string) bool {
+	return len(extensions) > 0 && channelMarketplace(devBranch) != extensionMarketplace
+}
+
+func extensionPluginID(name string) string {
+	return name + "@" + extensionMarketplace
+}
+
+// edgeCopyID is the id an extension plugin had when the edge marketplace listed it.
+// A machine that installed that copy keeps it beside the spacedock one unless
+// removed first; the removal is tolerated because a clean machine has none.
+func edgeCopyID(name string) string {
+	return name + "@spacedock-edge"
 }
 
 // codexPluginDirInstallArgvSequence is the `--plugin-dir` dev-install analog of
@@ -553,6 +607,9 @@ func runInstallSteps(host string, steps []installStep) (string, error) {
 		sb.Write(out)
 		if err != nil {
 			if step.tolerateExit {
+				if step.reportExit {
+					fmt.Fprintf(&sb, "spacedock install: %s %s failed: %v\n", host, strings.Join(step.argv, " "), err)
+				}
 				continue
 			}
 			return sb.String(), fmt.Errorf("%s %s: %w", host, strings.Join(step.argv, " "), err)

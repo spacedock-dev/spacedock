@@ -33,7 +33,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.22"
+          go-version: "1.26"
 
       # Pull journey-metrics from EVERY successful Runtime Live E2E run (PR or
       # main) since the immediately-prior release tag of any kind (stable or
@@ -136,7 +136,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.22"
+          go-version: "1.26"
 
       - name: Gate the cut on a green live e2e for the release commit
         env:
@@ -184,7 +184,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.22"
+          go-version: "1.26"
 
       # The release notes are authored LOCALLY (via `spacedock-release notes`)
       # and carried in the annotated tag's message body, so CI never runs
@@ -319,7 +319,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.22"
+          go-version: "1.26"
 
       # Decide whether THIS stable tag is the latest known release line, gating
       # the auto-pre0 cut below (the only remaining consumer — nothing reconciles

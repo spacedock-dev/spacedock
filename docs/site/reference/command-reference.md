@@ -85,9 +85,10 @@ An unsandboxed bootstrap launch carries no safehouse isolation, so per-action pe
 | Command | What it does |
 |---------|--------------|
 | `spacedock install` | Install the per-host plugin, then run the compatibility check |
-| `spacedock doctor` | Run the compatibility check alone |
+| `spacedock doctor` | Run the compatibility check alone, and list the version of each installed piece |
+| `spacedock update` | Update Spacedock, its extensions and their plugins to the newest release on the channel of this binary |
 
-Both take `--host claude|codex|pi` (default `claude`). When `doctor` reports the plugin is out of date, refresh it with `spacedock install`. When the plugin is still contract-compatible but a newer one is available, `doctor` and the front-door launch print an opt-in upgrade hint (`run spacedock install --host <host> to refresh`); the hint never blocks the launch. See [Install Spacedock](../get-started/install.md) for the full setup path.
+`install` and `doctor` take `--host claude|codex|pi` (default `claude`). The version list and `update` are edge only until a stable release carries them, and `update` refreshes the plugins of Claude Code and Codex, whichever is on PATH and has the Spacedock plugin; the version list shows the extension plugin rows of each of Claude Code and Codex that is on PATH and has the Spacedock plugin. When `doctor` reports the plugin is out of date, refresh it with `spacedock install`. When the plugin is still contract-compatible but a newer one is available, `doctor` and the front-door launch print an opt-in upgrade hint (`run spacedock install --host <host> to refresh`); the hint never blocks the launch. See [Install Spacedock](../get-started/install.md) for the full setup path.
 
 The launcher and plugin are a version-gated bundle. During a gate lifecycle, the real `gate prepare` invocation is the capability check: a nonzero result halts before presentation or later state effects. Refresh the installed bundle or build the current checkout and select that executable with `SPACEDOCK_BIN`; do not scrape help output or hand-edit gate frontmatter as a fallback. Selected-source inputs may be absolute, launch-working-directory-relative, or state-checkout-relative. A relative spelling that names different existing paths under the launch directory and state checkout is refused; use an absolute path. Relative room inputs continue to resolve from the launch working directory.
 
