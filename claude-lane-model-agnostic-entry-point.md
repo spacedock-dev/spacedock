@@ -1090,3 +1090,25 @@ One test function now holds the three captain-approved standing assertions. Each
 ### Summary
 
 PASSED recommendation. The cycle-1 evidence defect is closed: each of the three captain-approved assertions fails only under its own mutation and passes on a9f7e8143. Surface is 6 files at +150 net. Both Go suites pass, and product behavior is unchanged from 29525bea0. Adjacent survivors (resolver precedence, `always()` guard, Opus environment expression, Opus-ID alias key) fall outside the captain's three-check scope. They are recorded as deferred risks with promote conditions, not as blockers. Haiku model compliance stays a separate finding.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: The break-glass selected-bare XFAIL binds only on the claude-sonnet target via the same target match liveJourney uses, and a focused check shows claude-haiku inherits no binding (red without the guard, green with it).
+  Commit 03123dd4f. The commit adds `selectLiveGap(gaps, target)` (exact `gap.target == target`) to `shared_live_runner_test.go`, and `liveJourney` now calls it. `TestLiveBreakGlassShimRecovery` resolves its target with `claudeLiveRole(runner.model())`, and selected-bare takes `breakGlassSelectedBareGap(target)`, which is `selectLiveGap` over the single Sonnet entry `060xp69y61yhrww23g3wvwqy`. `TestBreakGlassSelectedBareGapBindsOnlySonnet` asserts that claude-sonnet still gets that xfail and that claude-haiku gets a zero gap. Command: `go test -tags live -count=1 -run '^TestBreakGlassSelectedBareGapBindsOnlySonnet$' ./internal/ensigncycle`. Each mutation was applied alone and then restored:
+
+  | State | Exit | Duration |
+  |---|---:|---:|
+  | Guard in place | 0 | 2.8s |
+  | Helper reverted to unconditional `liveXFail("claude-sonnet", …)` (the pre-fix line) | 1 | 1.2s |
+  | `gap.target == target` removed from `selectLiveGap` | 1 | 1.2s |
+  | Restored | 0 | 0.4s |
+
+  Both red runs fail at `dispatch_recovery_live_test.go:83`, showing claude-haiku={kind:xfail target:claude-sonnet owner:060xp69y61yhrww23g3wvwqy}. `TestClaudeLiveRole` (-tags live): exit 0, 0.4s.
+- DONE: The record corrects the false "No inherited XFAIL" claim and routes Haiku's break-glass selected-bare failure to the Haiku follow-up; no other bindings, workflow, registry, or CI change.
+  Correction: the claim under `### Authorized harness-role correction and final surface` ("**No inherited XFAIL:** gap selection is exact equality on role strings …") was false for break-glass selected-bare until 03123dd4f. The same applies to validation cycle 1's DONE item "a new key inherits no known-failure binding". `dispatch_recovery_live_test.go:108` assigned the Sonnet xfail without checking the target, so Haiku run 37703335512 (job 113072132719, artifact 11517939481) graded its selected-bare failure as a `claude-sonnet` XFAIL owned by 060xp69y61yhrww23g3wvwqy. Haiku fails five journeys, not four. Haiku's break-glass selected-bare failure is now unowned. It is routed to the separate Haiku model-compliance follow-up (`### Finding: Haiku model compliance — owned outside this dispatch task`). No claude-haiku binding was added. No other gap binding, workflow, registry, resolver, lane, job, or CI step changed. The commit touches only the two `internal/ensigncycle` test files.
+- DONE: Measured diff vs origin/main is within +170 net; gofmt, go test ./..., go test ./... -race, and the live-tagged focused checks pass.
+  Surface was measured with the merge-base diff `git diff --numstat origin/main...HEAD`: merge-base 7558f2e09, HEAD 03123dd4f, +204/-34 = +170 net across 7 files, which is exactly the captain's raised ceiling. origin/main has advanced to 230c77e43, so a two-dot diff would also count unrelated upstream changes. The seventh file, `internal/ensigncycle/dispatch_recovery_live_test.go` (+16/-1), is the file the captain's ask names. `shared_live_runner_test.go` moved from +27/-6 to +40/-14. `gofmt -w ./cmd ./internal`: exit 0. Its pre-existing rewrite of `internal/release/runtime_live_evidence_workflow_test.go` (also on origin/main) was reverted and kept out of the surface. `go test ./... -count=1`: exit 0, 182.7s, 21 packages ok. `go test ./... -race -count=1 -p 2`: exit 0, 218.8s, 21 packages ok, no DATA RACE. `-p 2` lowered peak temp-disk use on a host with about 2.4Gi free. An earlier `go test ./...` attempt at 553Mi free failed only on disk exhaustion (608 "no space left on device"/"os error 28" lines in 5 packages). It was rerun, not counted. No live run.
+
+### Summary
+
+Commit 03123dd4f binds the break-glass selected-bare known failure only on the claude-sonnet target through `selectLiveGap`, the exact target match `liveJourney` now shares. A focused check fails under either guard removal and passes with the guard. The record now says the earlier "No inherited XFAIL" claim was false for this journey until this fix. Haiku's selected-bare failure goes, unowned, to the Haiku compliance follow-up. The surface is +170 net against the merge-base, at the ceiling, and both Go suites pass.
