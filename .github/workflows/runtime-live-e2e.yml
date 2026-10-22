@@ -81,7 +81,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.22"
+          go-version: "1.26"
 
       - name: Build
         run: go build ./...
@@ -215,7 +215,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.22"
+          go-version: "1.26"
 
       - uses: actions/setup-node@v6
         with:
@@ -412,7 +412,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.22"
+          go-version: "1.26"
 
       - uses: actions/setup-node@v6
         with:
@@ -687,7 +687,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.22"
+          go-version: "1.26"
 
       - uses: actions/setup-node@v6
         with:
@@ -833,7 +833,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.22"
+          go-version: "1.26"
 
       - name: Recover this run's journey metrics
         id: recover_current_metrics
