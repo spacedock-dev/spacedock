@@ -68,12 +68,12 @@ func testInstallSequencesEndWithSubspaceAndCompass(t *testing.T, source, branch 
 	}
 }
 
-func TestDoctorOnHomebrewSaysCompassIsNotYetAvailableWhenItsProgramIsMissing(t *testing.T) {
+func TestDoctorOnHomebrewNamesTheCompassFormulaWhenItsProgramIsMissing(t *testing.T) {
 	s := stageInstallWith(t, extensions)
 	os.Remove(filepath.Join(s.first, "spacedock-compass"))
 	report := collectVersions(versionInputs{env: s.env, dir: s.project, host: s.host, lookPath: s.lookPath,
 		selfPath: "/opt/homebrew/Caskroom/spacedock/0.28.0/spacedock", selfVersion: "0.28.0-pre6"})
-	want := "MISSING: the compass program is not on PATH. Compass is not yet available from Homebrew."
+	want := "MISSING: the compass program is not on PATH. Install it with: brew install spacedock-dev/tap/compass"
 	if !slices.Contains(report.problems, want) || report.needsUpdate {
 		t.Errorf("problems = %q, needsUpdate = %v, want %q and no `spacedock update` remedy", report.problems, report.needsUpdate, want)
 	}

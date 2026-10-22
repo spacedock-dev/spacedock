@@ -164,9 +164,9 @@ session.
 and Codex that is on PATH and has the Spacedock plugin installed, labelled by host. It
 names a program that differs from a host's plugin, a second `spacedock` on PATH, and a
 missing program or plugin, each per host. An extension may add rows and problems of its
-own to that list. On a Homebrew install that lacks the program of an extension with no
-formula, it says so and names no remedy, since `spacedock update` installs no program
-there.
+own to that list. On a Homebrew install that lacks the program of an extension that
+declares a Homebrew remedy, it names that remedy and not `spacedock update`, which
+installs no program there.
 
 ## The first extensions
 
@@ -184,10 +184,9 @@ including a Homebrew copy, is read from the program.
 
 ### Homebrew
 
-Subspace's formula, `subspace-beta` in `spacedock-dev/tap`, is a dependency of both
-casks. Compass publishes no formula yet, so no cask depends on it, and `doctor` on a
-Homebrew install without `spacedock-compass` says that Compass is not yet available from
-Homebrew. Each cask gains the Compass formula as a dependency once the tap holds it.
+Subspace's formula, `subspace-beta`, and Compass's formula, `compass` (from Compass
+v1.4.0), both in `spacedock-dev/tap`, are dependencies of both casks. `doctor` on a
+Homebrew install without `spacedock-compass` names `brew install spacedock-dev/tap/compass`.
 
 ### Hand-offs
 

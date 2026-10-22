@@ -149,6 +149,7 @@ homebrew_casks:
     dependencies:
       - cask: agentsview
       - formula: spacedock-dev/tap/subspace-beta
+      - formula: spacedock-dev/tap/compass
     caveats: |
       Recommended companion (install separately):
         safehouse  — sandboxes agent runs (https://agent-safehouse.dev)
@@ -203,6 +204,7 @@ homebrew_casks:
     dependencies:
       - cask: agentsview
       - formula: spacedock-dev/tap/subspace-beta
+      - formula: spacedock-dev/tap/compass
     caveats: |
       Recommended companion (install separately):
         safehouse  — sandboxes agent runs (https://agent-safehouse.dev)
