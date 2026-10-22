@@ -1,0 +1,21 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:f77r1rj2g7sgj3hkrht7n37f:implementation:round-3",
+  "question": "Does the correction bind Haiku's five observed live failures as liveXFail(\"claude-haiku\", \"\") with Sonnet/Pi/Opus bindings unchanged, prove blank-owner bindings select and grade XFAIL without failing existing checks, and sync the registry doc, within +200 net LOC?",
+  "artifacts": [
+    {
+      "id": "artifact:f77r1rj2g7-entity-cycle-4",
+      "uri": "git-root://state/2fbbec1f0bda8879319f0bd2e7a042ffde68fbc1/claude-lane-model-agnostic-entry-point.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:f7e3a3eec68d50a01193d8eb59b334131843f613d845ac9aaea5b98428510e04"
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:f77r1rj2g7-haiku-blank-owner-authorization",
+      "label": "Captain revise at validation gate attempt-3 (person:captain, state commit 8113f1764) on candidate 03123dd4f (validator recommended PASSED). Asks: (1) liveXFail(\"claude-haiku\", \"\") on keep-moving-posture, default-headless-gate-stop, withdrawn-gate-recovery, filing, and break-glass selected-bare; claude-haiku never selects a Sonnet binding; Sonnet/Pi/Opus bindings unchanged; (2) update the focused break-glass check (sonnet 060xp69y61yhrww23g3wvwqy, haiku blank, unbound target zero), red under Sonnet-for-everyone, green fixed; (3) prove blank-owner bindings compile, select, grade XFAIL, XPASS non-failing, and pass existing checks including contractlint; (4) registry doc: five claude-haiku rows and four missing claude-sonnet jfdrr2dbdtt952s4cvvy74k8 rows. No workflow, registry, resolver, lane, job, or CI change; no live run; ceiling +200 net LOC."
+    }
+  ]
+}
