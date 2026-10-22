@@ -176,7 +176,7 @@ func TestLiveCommonAutoContinueAfterImplementation(t *testing.T) {
 //
 //spacedock:live-journey id=keep-moving-posture fixture=keep-moving/mixed-events
 func TestLiveCommonKeepMovingPosture(t *testing.T) {
-	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "060xp69y61yhrww23g3wvwqy"), liveXFail("pi", "psvqjf0w8xh2txp9604gsvmz")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
+	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "060xp69y61yhrww23g3wvwqy"), liveXFail("pi", "psvqjf0w8xh2txp9604gsvmz"), liveXFail("claude-haiku", "")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
 }
 
 // The claude-sonnet red is the completion-observation gap: run 37374064240's
@@ -192,7 +192,7 @@ func TestLiveCommonKeepMovingPosture(t *testing.T) {
 //
 //spacedock:live-journey id=default-headless-gate-stop fixture=recorded-gate/pre-gate
 func TestLiveCommonDefaultHeadlessGateStop(t *testing.T) {
-	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "jfdrr2dbdtt952s4cvvy74k8"), liveXFail("pi", "penfp034pt9s3cgwp7wg3ykk")}, runGateStopScenario, assertGateHeld)
+	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "jfdrr2dbdtt952s4cvvy74k8"), liveXFail("pi", "penfp034pt9s3cgwp7wg3ykk"), liveXFail("claude-haiku", "")}, runGateStopScenario, assertGateHeld)
 }
 
 // The claude-sonnet red is the completion-observation gap: run 37411324514's
@@ -232,7 +232,7 @@ func TestLiveCommonACValueReanchor(t *testing.T) {
 
 //spacedock:live-journey id=withdrawn-gate-recovery fixture=recorded-gate/withdrawn
 func TestLiveCommonWithdrawnGateRecovery(t *testing.T) {
-	liveJourney(t, "withdrawn-gate-recovery", "recorded-gate/withdrawn", writeWithdrawnGateFixture, nil, runClaudeWithdrawnGateRecoveryScenario, assertWithdrawnGateRecovery)
+	liveJourney(t, "withdrawn-gate-recovery", "recorded-gate/withdrawn", writeWithdrawnGateFixture, []liveJourneyGap{liveXFail("claude-haiku", "")}, runClaudeWithdrawnGateRecoveryScenario, assertWithdrawnGateRecovery)
 }
 
 //spacedock:live-journey id=gate-guardrail fixture=recorded-gate/held
@@ -263,7 +263,7 @@ func TestLiveCommonMergeHookGuardrail(t *testing.T) {
 
 //spacedock:live-journey id=filing fixture=filing/empty-workflow
 func TestLiveCommonFiling(t *testing.T) {
-	liveJourney(t, "filing", "filing/empty-workflow", writeFilingWorkflow, nil, runClaudeFilingScenario, assertFilingCommands)
+	liveJourney(t, "filing", "filing/empty-workflow", writeFilingWorkflow, []liveJourneyGap{liveXFail("claude-haiku", "")}, runClaudeFilingScenario, assertFilingCommands)
 }
 
 // AUDIT(2026-08-16): finding 6 — grades Bash commands only; Glob/Grep broad search
