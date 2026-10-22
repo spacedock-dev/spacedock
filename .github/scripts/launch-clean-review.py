@@ -193,10 +193,10 @@ def main():
         end_x = x + len(TARGET) - 1
         drag = f'\033[<0;{x};{y}M\033[<32;{end_x};{y}M\033[<0;{end_x};{y}m'
         tmux('send-keys', '-t', pane, '-l', drag)
-        wait_for('selection comment shortcut', lambda: 'C comment' in capture(pane), 15)
+        wait_for('selection comment shortcut', lambda: 'c comment' in capture(pane).lower(), 15)
         save('03-selected-anchor.txt')
-        tmux('send-keys', '-t', pane, '-l', 'C')
-        wait_for('comment editor', lambda: 'comment body' in capture(pane).lower(), 15)
+        tmux('send-keys', '-t', pane, '-l', 'c')
+        wait_for('comment editor', lambda: 'comment input' in capture(pane).lower(), 15)
         save('04-comment-editor.txt')
         tmux('send-keys', '-t', pane, '-l', nonce)
         tmux('send-keys', '-t', pane, 'Enter')
@@ -204,7 +204,7 @@ def main():
         save('05-saved-comment.txt')
         tmux('send-keys', '-t', pane, '-l', 'q')
         wait_for('finish review summary', lambda: 'approve' in capture(pane).lower() and
-                 any(word in capture(pane).lower() for word in ['finish', 'submit', 'confirm']), 15)
+                 'enter send' in capture(pane).lower(), 15)
         save('06-finish-summary.txt')
         tmux('send-keys', '-t', pane, 'Enter')
         stream = evidence / 'claude-stream.jsonl'
