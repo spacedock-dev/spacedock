@@ -1,4 +1,4 @@
-# Debrief a session
+# Session debrief
 
 A workflow improves when friction is recorded and revisited instead of lost when the session ends. `/spacedock:debrief` captures the session into a chronological record of the work completed: what shipped, what you decided at the gates, and where it rubbed. Run it before you stop; the next session's first officer reads the latest debrief and starts with context instead of cold.
 

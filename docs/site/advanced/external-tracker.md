@@ -1,4 +1,4 @@
-# Bridge an external tracker
+# External trackers
 
 Your backlog may already live somewhere else: Linear, GitHub Issues, another ticket ledger. The bridge is asking, not configuring: tell the first officer to intake an external item ("intake GitHub PR #134") and it files an entity carrying the reference. The external system keeps owning intake, discussion, and assignment; Spacedock Workflow stays the execution workflow.
 

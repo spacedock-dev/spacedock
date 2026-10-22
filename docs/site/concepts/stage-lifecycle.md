@@ -32,7 +32,9 @@ When validation recommends `REJECTED`, `feedback-to: implementation` routes the 
 
 When a stage declares `worktree: true`, everything from that stage onward happens in an isolated worktree: the work and its commits stay there, concurrent items never collide with each other or with you, and at the terminal stage the branch is merged back and the worktree cleaned up.
 
-## Where to go next
+<a id="where-to-go-next"></a>
+
+**Related guides**
 
 - [The operating model](operating-model.md) for who does what: you, the orchestrator, the workers.
 - [Gates and decisions](gates-and-decisions.md) to see exactly what you decide at a stage boundary and on what evidence.

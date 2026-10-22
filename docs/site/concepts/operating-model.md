@@ -36,7 +36,9 @@ Decisions reach you batched and backed by evidence, not as a stream of interrupt
 
 **The decision leaves a trail.** Each gate records the verdict and its reason alongside the stage report in the work item's file. The record outlives the reviewer, so a bad result traces back to the call that caused it. When you end a session, [`/spacedock:debrief`](../running-workflows/debrief.md) captures what happened, and the next session picks up from it.
 
-## Where to go next
+<a id="where-to-go-next"></a>
+
+**Related guides**
 
 - [Workflows and entities](workflows-and-entities.md) to see where your work lives as plain files.
 - [Stage lifecycle](stage-lifecycle.md) to follow one item end to end.

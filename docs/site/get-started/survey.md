@@ -1,4 +1,4 @@
-# Survey your project
+# Project survey
 
 When you use the `spacedock:survey` skill, it looks at your existing agent
 conversation logs on local disk (through [agentsview](https://agentsview.io/),
