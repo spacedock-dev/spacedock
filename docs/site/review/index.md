@@ -34,7 +34,8 @@ What stays yours:
 
 - Only you decide. Reviewers comment. Only the owner can choose Approve, Request changes or Hold decision, and that decision goes back to the agent that asked.
 - You see everyone's comments; each reviewer sees only their own.
-- Nobody needs an account to comment. A reviewer comments under a random name, or under their account's name if they sign in. Names are not checked. You sign in once, from the owner link your first share gives you, to become the owner. Your account is kept as a hash, never your email address, and Spacedock Review stores no visitor's IP address.
+- Reviewers need no account. They use a random name, or sign in to use their account's name; names are not verified. To become the owner, sign in from the owner link your first share gives you.
+- Spacedock Review stores a hash of your account, not your email address, and stores no visitor's IP address.
 
 ## Next
 

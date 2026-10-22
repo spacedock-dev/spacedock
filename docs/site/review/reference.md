@@ -2,6 +2,8 @@
 
 ## `/spacedock:review`
 
+In Claude Code, use `/spacedock:review` with the arguments below. In Codex, ask for the same action in plain words, for example "review plan.md with Spacedock Review".
+
 | Argument | What it does | Default |
 | --- | --- | --- |
 | none | Shows this project's choice and lets you keep, switch or clear it, or leave. Opens nothing. | |

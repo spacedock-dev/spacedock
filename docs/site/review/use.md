@@ -27,7 +27,11 @@ Spacedock Review remembers your answer for this project. To change it, run `/spa
 2. Select text and press <kbd>c</kbd> to comment, or <kbd>s</kbd> to suggest the text you want instead.
 3. Press <kbd>q</kbd> to finish. Your comments go back to your agent, each attached to its text.
 
-`/spacedock:review` in the terminal returns your comments only; to approve or request changes, review on the web. A [Spacedock Workflow](../workflow/index.md) gate can open a terminal review that asks for your decision. There, <kbd>q</kbd> opens a finish screen first:
+For a review you start with `/spacedock:review`, <kbd>q</kbd> sends your comments and finishes. To send a decision too, review on the web.
+
+### If a workflow asks for a decision
+
+A [Spacedock Workflow](../workflow/index.md) gate can open a terminal review that asks for your decision. There, <kbd>q</kbd> opens a finish screen first:
 
 1. Press <kbd>Tab</kbd> to choose Approve, Request changes or Hold decision. The screen starts at "No decision". Request changes and Hold decision need an overall note or at least one comment.
 2. Type an overall note if you want one. <kbd>Enter</kbd> saves it; <kbd>Esc</kbd> discards it.
@@ -43,8 +47,8 @@ Press <kbd>?</kbd> in the review for every key.
 2. Press "Sign in as owner". Signing in also links your agent to your account.
 3. Select text and comment.
 4. Send the share link to anyone whose comments you want. Their comments appear on your page.
-5. Choose the comments that go with your decision. Your own unsent comments go with it. In the "All feedback" list, tick Include on any comment already sent, such as a colleague's.
-6. Press "Finish review…" and choose Approve, Request changes or Hold decision.
+5. In "All feedback", tick Include beside each already-sent comment you want your agent to receive, including colleagues' comments. Your own unsent comments are included automatically.
+6. Press "Finish review…". Choose Approve to continue the task, Request changes to have the agent revise, or Hold decision to stop without changes.
 7. Press "Send decision". The review closes.
 
 Your agent picks up your decision and the comments you chose, and acts on it as the [decision table](reference.md#decisions) says. After Request changes, it shares the edited file under a new link; colleagues on the old link do not move to the new version, so send them the new link.
