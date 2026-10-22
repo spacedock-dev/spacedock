@@ -13,7 +13,8 @@ func TestCodexMultiAgentV2SpawnInputAlwaysIsolatesFreshDispatch(t *testing.T) {
 		{name: "absent", raw: `{"prompt":"pointer","name":"spacedock-ensign-task-validation"}`},
 		{name: "all", raw: `{"prompt":"pointer","name":"spacedock-ensign-task-validation","fork_turns":"all"}`},
 		{name: "numeric", raw: `{"prompt":"pointer","name":"spacedock-ensign-task-validation","fork_turns":3}`},
-		{name: "future overrides", raw: `{"prompt":"pointer","name":"spacedock-ensign-task-validation","model":"gpt-5.5","reasoning_effort":"high"}`},
+		{name: "empty model and effort", raw: `{"prompt":"pointer","name":"spacedock-ensign-task-validation","model":"","reasoning_effort":""}`},
+		{name: "null model", raw: `{"prompt":"pointer","name":"spacedock-ensign-task-validation","model":null}`},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -33,6 +34,49 @@ func TestCodexMultiAgentV2SpawnInputAlwaysIsolatesFreshDispatch(t *testing.T) {
 	}
 	if _, mutable := reflect.TypeOf(CodexMultiAgentV2Spawn{}).FieldByName("ForkTurns"); mutable {
 		t.Fatal("CodexMultiAgentV2Spawn must not expose a mutable ForkTurns field")
+	}
+}
+
+func TestCodexMultiAgentV2SpawnInputForwardsModelAndEffort(t *testing.T) {
+	cases := []struct {
+		name string
+		raw  string
+		want map[string]string
+	}{
+		{
+			name: "both",
+			raw:  `{"prompt":"pointer","name":"spacedock-ensign-task-validation","model":"gpt-5.5","reasoning_effort":"high","fork_turns":"all"}`,
+			want: map[string]string{"model": "gpt-5.5", "reasoning_effort": "high"},
+		},
+		{
+			name: "model only",
+			raw:  `{"prompt":"pointer","name":"spacedock-ensign-task-validation","model":"gpt-5.5"}`,
+			want: map[string]string{"model": "gpt-5.5"},
+		},
+		{
+			name: "effort only",
+			raw:  `{"prompt":"pointer","name":"spacedock-ensign-task-validation","model":null,"reasoning_effort":"low"}`,
+			want: map[string]string{"reasoning_effort": "low"},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			spawn, err := CodexMultiAgentV2SpawnInput([]byte(tc.raw))
+			if err != nil {
+				t.Fatalf("CodexMultiAgentV2SpawnInput: %v", err)
+			}
+			want := map[string]string{
+				"task_name":  "spacedock_ensign_task_validation",
+				"message":    "pointer",
+				"fork_turns": "none",
+			}
+			for k, v := range tc.want {
+				want[k] = v
+			}
+			if got := spawn.ToolArgs(); !reflect.DeepEqual(got, want) {
+				t.Fatalf("tool args = %#v, want %#v", got, want)
+			}
+		})
 	}
 }
 
