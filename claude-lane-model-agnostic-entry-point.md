@@ -78,6 +78,14 @@ gates:
                 id: briefing:f77r1rj2g7sgj3hkrht7n37f:validation:attempt-3:revision-1
                 digest: sha256:83a26ad5433f66f7f24ae9eab5cbec17741c1787b68f38dc94cb5ff3cf38a259
                 room-ref: '@review/validation/briefing-3'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:f77r1rj2g7sgj3hkrht7n37f:validation:3
+                briefing: briefing:f77r1rj2g7sgj3hkrht7n37f:validation:attempt-3:revision-1
+                by: person:captain
+                at: "2026-10-22T16:24:59.14622Z"
+                decision: revise
+                reason: 'Captain sets cycle-3 scope directly: XFAIL Haiku''s five observed failures now using the existing run evidence (run 37703335512), with a BLANK owner string (no new ids minted) so analysis can later decide whether they share one underlying cause or need separate issues. Asks: (1) liveXFail("claude-haiku", "") on keep-moving-posture, default-headless-gate-stop, withdrawn-gate-recovery, filing, and break-glass selected-bare; Sonnet bindings unchanged and claude-haiku never inherits a Sonnet owner; (2) update the focused break-glass check accordingly; (3) add claude-haiku rows (owner blank, pending analysis) to docs/runtime-live-ci-registry.md and sync its missing claude-sonnet jfdrr2dbdtt952s4cvvy74k8 rows; (4) confirm blank-owner bindings compile, select, grade XFAIL, and do not fail any existing check. Net LOC ceiling raised to +200; stop and report rather than exceed.'
 started: 2026-10-07T18:15:05Z
 worktree: .worktrees/spacedock-ensign-claude-lane-model-agnostic-entry-point
 review-round:
