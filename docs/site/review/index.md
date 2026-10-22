@@ -1,6 +1,6 @@
 # What is Spacedock Review
 
-Your agent hands you a plan, a spec or a draft, and the next step waits on your call. **Spacedock Review opens the file for you to read, comment on the exact lines and decide, and sends your comments and decision back to the agent that asked.**
+Your agent hands you a plan, a spec or a draft as a Markdown file, and the next step waits on your call. **Spacedock Review opens the file for you to read, comment on the exact lines and decide, and sends your comments and decision back to the agent that asked.**
 
 ![A comment attached to selected text in Spacedock Review](https://raw.githubusercontent.com/spacedock-dev/subspace/main/assets/anchored-feedback.png)
 
@@ -8,7 +8,7 @@ Your agent hands you a plan, a spec or a draft, and the next step waits on your 
 
 You review in one of two places, and you choose once per project.
 
-- **Terminal.** The file opens beside your agent session and stays on your machine. You are the only reviewer.
+- **Terminal.** The file opens beside your agent session in Zellij, tmux, Herdr, CMUX, Ghostty or Apple Terminal, and stays on your machine. You are the only reviewer.
 - **Web.** The file is uploaded and you get two links. The owner link is yours: you open it, sign in and decide. The share link is for anyone else whose comments you want, people or their agents.
 
 ```mermaid
@@ -22,7 +22,7 @@ flowchart LR
   R --> A
 ```
 
-Your agent opens the file in the terminal or, once you agree, uploads it to review.spacedock.md. Either way, your comments and your decision go back to the same agent.
+Your agent opens the file in the terminal or, once you agree, uploads it to review.spacedock.md. Either way, your comments go back to the same agent. On the web you also decide; in the terminal you decide when your agent asks for a decision.
 
 ## What happens to a document you share
 
@@ -30,7 +30,7 @@ Sharing on the web asks three things of you.
 
 - **The file leaves your machine.** It uploads to review.spacedock.md, a service Spacedock runs, which keeps the file, the comments and your decision. Nothing uploads until you agree: Spacedock Review asks first, and remembers your answer for that project.
 - **The link is the key.** Anyone holding the share link can read the whole document and comment on it. The address cannot be guessed, so send it only to people who should read it, as you would a password.
-- **It lasts seven days.** Seven days after you share, the link stops working. Nothing extends it; sharing again makes a new link. To end it sooner, ask your agent to revoke the link (`rr revoke <share-url>`).
+- **It lasts seven days.** Seven days after you share, the link stops working. Nothing extends it. Sharing a changed file makes a new link; sharing the same file again keeps its link and expiry and gives you a new owner link. To end it sooner, ask your agent to revoke the link (`rr revoke <share-url>`).
 
 What stays yours:
 

@@ -30,11 +30,13 @@
 
 ## Decisions
 
-| You choose | What it means | Stored as |
-| --- | --- | --- |
-| Approve | Accept this as it is. | `approve` |
-| Request changes | Not accepted. Changes are needed; your comments say which. | `revise` |
-| Hold decision | Not accepted, and no changes asked for. Stop here for now. | `hold` |
+| You choose | What it means | What your agent does | Stored as |
+| --- | --- | --- | --- |
+| Approve | Accept this as it is. | Carries on with the task; gains no other permission | `approve` |
+| Request changes | Not accepted. Changes are needed; your comments say which. | Edits the file, shares it again under a new link, waits again | `revise` |
+| Hold decision | Not accepted, and no changes asked for. Stop here for now. | Stops and changes nothing | `hold` |
+
+A review takes one decision. After it, the review is closed and later comments are not recorded.
 
 ## Commands your agent runs for web reviews
 
@@ -43,7 +45,7 @@
 | Command | What it does |
 | --- | --- |
 | `rr publish <file>` | Uploads the file and prints its share link. `--open-owner-link` opens your owner link in your browser. |
-| `rr decision <share-url>` | Waits for the owner's decision. `--timeout` sets how long. |
+| `rr decision <share-url>` | Waits for the owner's decision. `--with-included` also returns the other reviewers' comments the decision includes; `--timeout` sets how long. |
 | `rr feedback <share-url>` | Prints every comment and decision so far. Only the owner's machine can read them. |
 | `rr revoke <share-url>` | Ends the link now. |
 | `rr device` | Shows whether this machine is linked to an account. |
@@ -51,10 +53,15 @@
 
 ```sh
 rr publish plan.md --open-owner-link
-rr decision https://review.spacedock.md/r/<share-id> --timeout 110m
+rr decision https://review.spacedock.md/r/<share-id> --with-included --timeout 110m
 rr feedback https://review.spacedock.md/r/<share-id>
-rr revoke https://review.spacedock.md/r/<share-id>
 rr device
+```
+
+Ending a link, or unlinking this machine, is a separate step. `rr unbind` ends every browser that owned this machine's reviews.
+
+```sh
+rr revoke https://review.spacedock.md/r/<share-id>
 rr unbind
 ```
 
