@@ -89,13 +89,13 @@ gates:
 started: 2026-10-07T18:15:05Z
 worktree: .worktrees/spacedock-ensign-claude-lane-model-agnostic-entry-point
 review-round:
-    id: round:f77r1rj2g7sgj3hkrht7n37f:implementation:2
+    id: round:f77r1rj2g7sgj3hkrht7n37f:implementation:3
     stage: implementation
-    cycle: 2
+    cycle: 3
     briefing:
-        id: briefing:f77r1rj2g7sgj3hkrht7n37f:implementation:round-2
-        digest: sha256:24e69505eaa73dfcece63ea8d1369b7f89197aa220b2c7a0d22a959dfcea68e0
-        room-ref: '@review/implementation/round-2'
+        id: briefing:f77r1rj2g7sgj3hkrht7n37f:implementation:round-3
+        digest: sha256:1827cf2687131ddf893656e243a138c194fef18f67f3cc9800dc69fbc2844030
+        room-ref: '@review/implementation/round-3'
 ---
 
 ## Problem
@@ -1091,6 +1091,7 @@ One test function now holds the three captain-approved standing assertions. Each
 
 - Cycle 1: REJECTED — validation detached audit (three central dispatch/approval claims had no standing regression check); surface 6 files / +150 net LOC vs estimate 5 files / +180 net LOC (83%); AC narrowed: AC-1 re-scoped by captain-ruling[2026-10-08] to named-model execution without a workflow edit, six-file surface authorized earlier. Captain revised the validation gate (66bb17a16) and approved three standing assertions within +150; producer correction a9f7e8143 is complete, independent re-review pending.
 - Cycle 2: REJECTED — captain at validation gate attempt-2 (validator had recommended PASSED); break-glass selected-bare XFAIL was bound to claude-sonnet unconditionally, so the task's "No inherited XFAIL" claim was false and Haiku inherited a Sonnet known failure; surface 7 files / +170 net LOC vs estimate 5 files / +180 net LOC (94%); AC narrowed: AC-1 re-scoped by captain-ruling[2026-10-08]; captain raised the ceiling to +170 and the seventh file is the one the fix names. Producer correction 03123dd4f is complete, independent re-review pending.
+- Cycle 3: REJECTED — captain at validation gate attempt-3 (validator had recommended PASSED) set scope directly: XFAIL Haiku's five observed failures with blank owners pending analysis, make withdrawn-gate-recovery gap-aware, sync the registry doc; surface 10 files / +220 net LOC vs estimate 5 files / +180 net LOC (122%); AC narrowed: AC-1 re-scoped by captain-ruling[2026-10-08]; captain raised the ceiling to +200 then +220 and directed the added files. Producer correction 861a6e13a is complete; reviewer re-run held for the captain under the cycle-3 rule.
 
 ## Stage Report: validation (cycle 2)
 
