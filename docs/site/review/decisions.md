@@ -1,17 +1,22 @@
 # Comments and decisions
 
-Comments identify passages to discuss or change. A decision tells your agent whether to continue, revise or stop.
+A comment identifies something to discuss or change. A decision tells your agent whether to continue, revise or stop.
 
-[Terminal reviews](terminal.md) can collect comments alone or request a decision. In a [browser review](browser.md), reviewers comment and the owner decides.
+| Decision | What happens next |
+| --- | --- |
+| **Approve** | The agent continues the task within the permission you already gave it |
+| **Request changes** | The agent revises the file using your feedback and presents it again |
+| **Hold decision** | The agent stops without making changes |
 
-## Decisions
+<a id="decisions"></a>
 
-| You choose | What it means | What your agent does | Stored as |
-| --- | --- | --- | --- |
-| Approve | Accept this as it is. | Carries on with the task; gains no other permission | `approve` |
-| Request changes | Not accepted. Changes are needed; your comments say which. | Edits the file and presents it for review again | `revise` |
-| Hold decision | Not accepted, and no changes asked for. Stop here for now. | Stops and changes nothing | `hold` |
+A decision closes the review. Comments alone do not mean approval.
 
-A review takes one decision. After it, the review is closed and later comments are not recorded.
+Terminal reviews can request comments, an advisory recommendation or your decision. The agent chooses this when it opens the review. In browser reviews, other reviewers comment and the owner decides.
 
-For browser reviews, sharing a changed file creates a new link. Send that link to anyone reviewing the revision.
+An advisory recommendation informs the decision; it does not authorize the agent to continue. [Workflow gates](../concepts/gates-and-decisions.md) can bring supporting evidence and reviewer findings together for your call.
+
+**Related guides**
+
+- [Terminal decisions](terminal.md#make-a-decision)
+- [Browser decisions](browser.md#comment-and-decide)

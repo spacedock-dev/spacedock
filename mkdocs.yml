@@ -40,6 +40,7 @@ theme:
     - search.suggest
     - search.highlight
     - navigation.instant
+    - toc.integrate
 
 plugins:
   - search

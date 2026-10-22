@@ -1,20 +1,30 @@
 # Shared reviews
 
-Use the share link from a [browser review](browser.md) to get a second opinion before you decide. Keep the owner link for yourself.
+Invite others to comment before you decide. Send the **share link** from your browser review; keep the **owner link** for yourself.
 
-## What reviewers see
+<a id="what-reviewers-see"></a>
 
-Send the share link to your reviewers. They need nothing installed and no account.
+## Reviewer access
 
-1. They open the link. The page says "You're the reviewer" and offers a random name.
-2. They continue as that name, or sign in to use their account's name.
-3. They select text, comment, and press "Submit". The button counts their comments, then reads "Sent". "My feedback" lists what they sent; they do not see other reviewers' comments.
-4. Their comments appear on your owner page.
+Reviewers open the link, select text and comment. They need nothing installed and can use an anonymous name or sign in.
 
-A colleague can also hand the link to their own agent. It reads `review.spacedock.md/llms.txt` and comments the same way, under the name it declares.
+You see everyone’s comments. Each reviewer sees only their own. A reviewer can also give the link to their agent to leave feedback.
 
-## Decide with their feedback
+<a id="decide-with-their-feedback"></a>
 
-On your owner page, select which comments to include and [send your decision](browser.md#comment-and-decide).
+## Make the call
 
-[Check what happens to a document you share](index.md#what-happens-to-a-document-you-share) before you send a link.
+On your owner page, select **Include** beside the comments you want your agent to receive. Then [send your decision](browser.md#comment-and-decide).
+
+Only the owner decides. Finishing with a decision closes the review to further comments. When your agent shares a revised file, send the new link to your reviewers.
+
+## Document access
+
+Spacedock’s hosted service stores the uploaded document, comments and decision. Anyone holding the share link can read the entire document, so share it only with people who should have access.
+
+The share link expires after seven days. Publishing an unchanged review again does not extend its expiry. Ask your agent to [revoke the link](reference.md#commands-your-agent-runs-for-web-reviews) to end access sooner.
+
+**Related guides**
+
+- [Browser review](browser.md)
+- [Link and account limits](reference.md#limits)

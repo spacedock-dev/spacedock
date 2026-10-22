@@ -156,3 +156,8 @@
     display: none;
   }
 }
+
+/* Keep a readable line length with the page outline in the left navigation. */
+@media (min-width: 1220px) {
+  .md-content { max-width: 38rem; }
+}

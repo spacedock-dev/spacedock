@@ -1,6 +1,10 @@
 # Review reference
 
-## `/spacedock:review`
+## Review requests
+
+To send a file to yourself, ask your agent: "Send plan.md to me in Spacedock Review."
+
+### `/spacedock:review`
 
 In Claude Code, use `/spacedock:review` with the arguments below. In Codex, ask for the same action in plain words, for example "review plan.md with Spacedock Review".
 
@@ -32,9 +36,21 @@ In Claude Code, use `/spacedock:review` with the arguments below. In Codex, ask 
 
 ## Decisions
 
-See [comments and decisions](decisions.md#decisions) for what each choice means.
+See [comments and decisions](decisions.md#decisions) for their meaning.
 
-## Commands your agent runs for web reviews
+| Review mode | Result |
+| --- | --- |
+| Comments only (`feedback`) | Anchored comments; no decision |
+| Recommendation (`advisory`) | Comments and a recommendation; no approval authority |
+| Decision (`binding`) | Comments and a decision |
+
+A plain terminal file review defaults to `feedback`. Your agent must explicitly request `binding` for an approval review; Workflow is not required. Questions (`--allow-question`) currently require `feedback` mode.
+
+The stored decision values are `approve`, `revise` and `hold`.
+
+<a id="commands-your-agent-runs-for-web-reviews"></a>
+
+## Agent commands
 
 `rr` is short for `subspace-relay-client`; where `rr` is taken on your machine, the long name works.
 
@@ -61,12 +77,22 @@ rr revoke https://review.spacedock.md/r/<share-id>
 rr unbind
 ```
 
+## Recovery
+
+| Situation | Ask your agent |
+| --- | --- |
+| Change Terminal or Web for this project | Change my Spacedock Review preference |
+| Owner link expired or already used | Publish the review again |
+| Agent stopped waiting | Check my decision on plan.md |
+
 ## Limits
 
 | Limit | Value |
 | --- | --- |
 | Share link | Seven days from sharing, never extended |
-| Owner link | One use, 15 minutes |
+| Owner link | One use; expiry shown by your agent |
+| Automatic wait in Claude Code | Up to 110 minutes |
+| Automatic wait in Codex | Up to 12 hours |
 | Shares per day, machine not linked to an account | 5 |
 | Shares per day, machine linked to an account | 100 per machine, and 100 per account across its machines |
 | File size | 1 MB per share |

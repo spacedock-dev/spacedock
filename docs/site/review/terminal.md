@@ -1,28 +1,39 @@
 # Terminal review
 
-[Open your file in Review](use.md) and choose Terminal. You need Zellij, tmux, Herdr, CMUX, Ghostty or Apple Terminal.
+Review beside your agent in tmux, Zellij, Herdr or cmux, or in a Ghostty or Apple Terminal window. The file stays on your machine.
 
-## Read and comment
+## Comment on the work
 
-1. Read the file. It opens in a split beside your agent session in Zellij, tmux and Herdr, in your pane in CMUX, and in a new tab or window in Ghostty and Apple Terminal.
-2. Select text and press <kbd>c</kbd> to comment, or <kbd>s</kbd> to suggest the text you want instead.
-3. Press <kbd>q</kbd> to finish. Your comments go back to your agent, each attached to its text.
+1. Select a passage and press <kbd>c</kbd> to comment, or <kbd>s</kbd> to suggest replacement text.
+2. Press <kbd>q</kbd> to finish and return your feedback to the agent.
 
-For a review you start with `/spacedock:review`, <kbd>q</kbd> sends your comments and finishes. To send a decision too, review on the web.
+In Claude Code, a plain `/spacedock:review plan.md` asks for comments. If your agent requested a decision, <kbd>q</kbd> opens the finish screen instead.
 
-### If a workflow asks for a decision
+<a id="read-and-comment"></a>
+<a id="if-a-workflow-asks-for-a-decision"></a>
 
-A [Spacedock Workflow](../workflow/index.md) gate can open a terminal review that asks for your decision. There, <kbd>q</kbd> opens a finish screen first:
+## Make a decision
 
-1. Press <kbd>Tab</kbd> to choose Approve, Request changes or Hold decision. The screen starts at "No decision". Request changes and Hold decision need an overall note or at least one comment.
-2. Type an overall note if you want one. <kbd>Enter</kbd> saves it; <kbd>Esc</kbd> discards it.
-3. Press <kbd>Enter</kbd> to send. Your agent gets the decision, your comments each attached to their text, and your overall note.
+To request an approval review, tell your agent:
 
-> **[Screenshot to take:** the finish screen with Request changes chosen and two comments.**]**
+<div class="sd-agent-prompt">
+  <code>Open plan.md in Spacedock Review and ask for my decision before continuing.</code>
+  <button type="button" class="sd-prompt-copy" aria-label="Copy agent prompt" aria-live="polite" hidden>copy</button>
+</div>
 
-Press <kbd>?</kbd> in the review for every key.
+On the finish screen, press <kbd>Tab</kbd> to choose **Approve**, **Request changes** or **Hold decision**, then <kbd>Enter</kbd> to send. Request changes and Hold decision need a comment or an overall note.
 
-## Next
+[Workflow gates](../concepts/gates-and-decisions.md) can also request a decision here.
 
-- [Comments and decisions](decisions.md).
-- [Terminal keys](reference.md#terminal-keys).
+## Ask about the document
+
+Ask your agent to enable questions when it opens the review. You can ask about a passage and read the agent’s answer in the review, with its original conversation context.
+
+Questions currently work in comments-only terminal reviews.
+
+<a id="next"></a>
+
+**Related guides**
+
+- [Comments and decisions](decisions.md)
+- [Terminal keys](reference.md#terminal-keys)

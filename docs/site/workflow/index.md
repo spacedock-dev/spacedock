@@ -19,7 +19,9 @@ You are the captain. You set the bar and make the calls; the agents do the rest.
 - **Batch the work; decide as it flows back.** Queue many work items at once. Agents advance each through its stages, and you handle gates as they surface, not one session at a time.
 - **Work survives the context limit.** When an agent runs out of context, a successor carries forward what's in flight.
 
-## Next
+<a id="next"></a>
+
+**Related guides**
 
 - **Start from what you already do.** [Installation](../get-started/install.md), then [survey your project](../get-started/survey.md): it reads your past agent sessions and names the workflow you're already running. Or [start a fresh workflow](../get-started/first-workflow.md) from a common shape like development or research.
 - **Decide its calls where you read best.** When Workflow holds a call for you, you can decide it in [Spacedock Review](../review/index.md) instead of in chat.

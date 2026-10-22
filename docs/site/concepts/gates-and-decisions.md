@@ -135,6 +135,8 @@ Adversarial review differs from validation in what it distrusts: validation chec
 
 The workflow is flexible beyond that: you can add conditional, lens-specific reviews of your own, like checking that the documentation was updated when a change affects end users.
 
-## Where to go next
+<a id="where-to-go-next"></a>
+
+**Related guides**
 
 - [Operate a workflow](../running-workflows/operating.md) covers answering gates in the day-to-day loop.

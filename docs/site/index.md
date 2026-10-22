@@ -4,7 +4,9 @@ Keeping up with their work takes attention. Spacedock brings plans and drafts to
 
 <a id="install"></a>
 
-## Get started
+<a id="get-started"></a>
+
+## Quick start
 
 Paste this into your agent:
 
@@ -15,7 +17,11 @@ Paste this into your agent:
 
 [Manual installation](get-started/install.md).
 
-## Explore how Spacedock helps with your attention bottleneck
+<a id="explore-how-spacedock-helps-with-your-attention-bottleneck"></a>
+
+## Your attention bottlenecks
+
+Your attention goes into judging work, keeping goals on track and setting the standards agents work to.
 
 - **[Review](review/index.md):** Bring the work and evidence together when you need to make a call.
 - **[Compass](compass/index.md):** Check where your agents' work stands against your goals.

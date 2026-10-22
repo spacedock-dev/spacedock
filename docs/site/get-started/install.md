@@ -1,10 +1,10 @@
 # Installation
 
-Spacedock should work with most coding agents. This guide covers manual setup for Claude Code and Codex.
+Spacedock works with most coding agents.
 
-## 1. Install Spacedock
+<a id="1-install-spacedock"></a>
 
-Choose your operating system. This installs the programs on your machine.
+## Install Spacedock
 
 === "macOS with Homebrew"
 
@@ -20,9 +20,9 @@ Choose your operating system. This installs the programs on your machine.
       <button type="button" class="sd-prompt-copy" aria-label="Copy command" aria-live="polite" hidden>copy</button>
     </div>
 
-## 2. Set up your agent
+<a id="2-set-up-your-agent"></a>
 
-Choose the agent you use with Spacedock.
+## Set up your agent
 
 === "Claude Code"
 
@@ -31,7 +31,7 @@ Choose the agent you use with Spacedock.
       <button type="button" class="sd-prompt-copy" aria-label="Copy command" aria-live="polite" hidden>copy</button>
     </div>
 
-    In Claude Code, run `/reload-plugins` or start a new session.
+    Run `/reload-plugins` or start a new session.
 
 === "Codex"
 
@@ -40,21 +40,17 @@ Choose the agent you use with Spacedock.
       <button type="button" class="sd-prompt-copy" aria-label="Copy command" aria-live="polite" hidden>copy</button>
     </div>
 
-    Start a new Codex session to load the installed skills.
+    Start a new session.
 
-## 3. Confirm setup
+<a id="3-confirm-setup"></a>
+
+## Confirm setup
 
 <div class="sd-agent-prompt sd-command-prompt">
   <code>spacedock doctor</code>
   <button type="button" class="sd-prompt-copy" aria-label="Copy command" aria-live="polite" hidden>copy</button>
 </div>
 
-Check the report for missing programs or plugins. If it reports missing programs, repeat step 1. For missing plugins, repeat step 2.
+Follow the instructions in the doctor output.
 
-Setup is complete when the required programs and plugins are available. To use Review, continue to [Your first review](../review/use.md).
-
-## Troubleshooting
-
-### Your agent cannot see the skills
-
-In Claude Code, run `/reload-plugins`. In Codex, start a new session. If the skills are still missing, repeat step 2.
+[Your first review](../review/use.md).

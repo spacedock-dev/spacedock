@@ -1,39 +1,52 @@
 # Your first review
 
-Ask your agent for a review, comment on the lines that need it, and send back your decision.
+[Install Spacedock](../get-started/install.md), then send a file to yourself through your agent:
 
-You need:
+<div class="sd-agent-prompt">
+  <code>Send plan.md to me in Spacedock Review for a decision.</code>
+  <button type="button" class="sd-prompt-copy" aria-label="Copy agent prompt" aria-live="polite" hidden>copy</button>
+</div>
 
-- [Spacedock installed and connected to your agent](../get-started/install.md).
-- One Markdown file to review.
+No file yet? Ask your agent to draft a plan for your next task, then send that file for review.
 
-```text
-/spacedock:review plan.md
-```
+<a id="choose-where-to-review"></a>
 
-That is the command in Claude Code. In Codex, ask in plain words, for example "review plan.md with Spacedock Review".
+## Open the review
 
-## Choose where to review
+The first time in a project, your agent asks **Terminal** or **Web**. Terminal keeps the file on your machine. Web asks for consent to upload it to review.spacedock.md. Your choice is remembered for the project.
 
-1. Run the command. The first time in a project, your agent asks "Terminal (TUI) or Web?". Terminal keeps the file on your machine. Web uploads it to review.spacedock.md, where anyone with the link can open it.
-2. If you choose Web, agree to the upload. Your agent asks once more: "Web uploads the file to review.spacedock.md. Anyone with the link can open it, and it expires automatically after seven days. Agree?" If you answer No, nothing is recorded; run `/spacedock:review tui` to use the terminal instead.
+In the browser, press **Sign in as owner** on the page your agent opens.
 
-Spacedock Review remembers your answer for this project. To change it, run `/spacedock:review` with no file, or `/spacedock:review tui` or `/spacedock:review web`.
+## Add a comment
+
+Select a passage and comment on what needs to change. For example, on a launch plan’s announcement step:
+
+> Publish after the install docs are live.
+
+In the terminal, press <kbd>c</kbd> after selecting the passage. In the browser, select the passage and type your comment.
+
+## Finish the review
+
+=== "Terminal"
+
+    Press <kbd>q</kbd> to open the finish screen. Press <kbd>Tab</kbd> to choose **Request changes**, then <kbd>Enter</kbd> to send.
+
+    If the review closes without a decision screen, it was opened for comments only. Ask your agent to reopen it for your decision.
+
+=== "Browser"
+
+    Press **Finish review**, choose **Request changes**, then **Send decision**. You can review alone; sharing is optional.
+
+## Read the response
+
+Your decision and anchored comment return to the same agent conversation. **Request changes** tells the agent what needs revision before you review again.
 
 <a id="review-in-the-terminal"></a>
-
-## Terminal
-
-[Read and comment beside your agent](terminal.md).
-
 <a id="review-in-the-browser"></a>
-
-## Browser
-
-[Review and decide in your browser](browser.md).
-
 <a id="what-a-colleague-sees"></a>
 
-## Sharing
+**Related guides**
 
-[Shared reviews](sharing.md).
+- [Terminal controls and approval requests](terminal.md)
+- [Browser review](browser.md)
+- [Sharing](sharing.md)
