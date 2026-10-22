@@ -1,0 +1,78 @@
+name: Clean published Review journey
+on:
+  push:
+    branches: [launch/clean-review-pre5]
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: CI-E2E
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      GH_TOKEN: ${{ github.token }}
+      DISABLE_AUTOUPDATER: '1'
+    steps:
+      - uses: actions/checkout@v5
+      - name: Prepare empty configuration and project
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$ANTHROPIC_API_KEY"
+          for name in bin claude data state project review-evidence; do
+            mkdir -p "$RUNNER_TEMP/clean-review/$name"
+          done
+          printf 'CLAUDE_CONFIG_DIR=%s\n' "$RUNNER_TEMP/clean-review/claude" >> "$GITHUB_ENV"
+          printf 'XDG_DATA_HOME=%s\n' "$RUNNER_TEMP/clean-review/data" >> "$GITHUB_ENV"
+          printf 'XDG_STATE_HOME=%s\n' "$RUNNER_TEMP/clean-review/state" >> "$GITHUB_ENV"
+          printf 'SPACEDOCK_INSTALL_DIR=%s\n' "$RUNNER_TEMP/clean-review/bin" >> "$GITHUB_ENV"
+          printf 'REVIEW_TEST_ARTIFACTS=%s\n' "$RUNNER_TEMP/clean-review/review-evidence" >> "$GITHUB_ENV"
+          printf '%s\n' "$RUNNER_TEMP/clean-review/bin" "$HOME/.local/bin" >> "$GITHUB_PATH"
+          printf '# Launch plan\n\nKeep the launch goal visible.\n\nReview the plan before starting implementation.\n' > "$RUNNER_TEMP/clean-review/project/plan.md"
+          git -C "$RUNNER_TEMP/clean-review/project" init -q
+          test -z "$(find "$RUNNER_TEMP/clean-review/claude" -mindepth 1 -print -quit)"
+          command -v tmux
+      - name: Install Claude Code
+        run: |
+          set -euo pipefail
+          curl -fsSL https://claude.ai/install.sh -o "$RUNNER_TEMP/install-claude.sh"
+          bash "$RUNNER_TEMP/install-claude.sh" latest
+          "$HOME/.local/bin/claude" --version
+      - name: Install published edge release and plugins
+        shell: bash
+        run: |
+          set -euo pipefail
+          authbin="$RUNNER_TEMP/clean-review/authbin"
+          mkdir -p "$authbin"
+          cat > "$authbin/curl" <<'SH'
+          #!/bin/sh
+          for arg do
+            case "$arg" in
+              https://api.github.com/*) exec /usr/bin/curl -H "Authorization: Bearer $GH_TOKEN" "$@" ;;
+            esac
+          done
+          exec /usr/bin/curl "$@"
+          SH
+          chmod +x "$authbin/curl"
+          export PATH="$authbin:$PATH"
+          curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/main/install.sh -o "$RUNNER_TEMP/install-spacedock.sh"
+          SPACEDOCK_CHANNEL=edge sh "$RUNNER_TEMP/install-spacedock.sh" 2>&1 | tee "$REVIEW_TEST_ARTIFACTS/install.log"
+          spacedock --version | tee "$REVIEW_TEST_ARTIFACTS/version.log"
+          spacedock --version | grep -F 'spacedock 0.28.0-pre5'
+          spacedock review --version
+          claude plugin list --json > "$REVIEW_TEST_ARTIFACTS/plugins.json"
+          spacedock doctor > "$REVIEW_TEST_ARTIFACTS/doctor.txt"
+      - name: Run real Review decision round trip
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP/clean-review/project"
+          spacedock review-mode set local
+          python3 "$GITHUB_WORKSPACE/.github/scripts/launch-clean-review.py"
+      - name: Upload synthetic test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clean-review-pre5
+          path: ${{ runner.temp }}/clean-review/review-evidence
+          retention-days: 7
