@@ -1,6 +1,6 @@
 # What is Spacedock Review
 
-Your agent hands you a plan, a spec or a draft as a Markdown file, and the next step waits on your call. Spacedock Review opens the file for you to read, comment on the exact lines and decide. It sends your comments and decision back to the agent that asked.
+Your agent hands you a plan, a spec or a draft as a Markdown file, and the next step waits on your call. Spacedock Review opens the file for you to read, comment on the exact lines and decide whether the work goes ahead. It sends your comments and decision back to the agent that asked.
 
 ![A comment attached to selected text in Spacedock Review](https://raw.githubusercontent.com/spacedock-dev/subspace/main/assets/anchored-feedback.png)
 
@@ -27,7 +27,7 @@ Your agent opens the file in the terminal or, once you agree, uploads it to revi
 ## What happens to a document you share
 
 - The file uploads to review.spacedock.md, a service Spacedock runs, which keeps the file, the comments and your decision. Nothing uploads until you agree: Spacedock Review asks first, and remembers your answer for that project.
-- Anyone holding the share link can read the whole document and comment on it. The address cannot be guessed, so send it only to people who should read it, as you would a password.
+- Anyone holding the share link can read the whole document and comment on it. The address cannot be guessed. Treat it like a password: send it only to people who should read it.
 - The share link stops working seven days after you share, and nothing extends it. Sharing a changed file makes a new link. Sharing the same file again keeps its link and expiry, and gives you a new owner link. To end it sooner, ask your agent to [revoke the link](reference.md#commands-your-agent-runs-for-web-reviews).
 
 What stays yours:
@@ -35,7 +35,7 @@ What stays yours:
 - Only you decide. Reviewers comment. Only the owner can choose Approve, Request changes or Hold decision, and that decision goes back to the agent that asked.
 - You see everyone's comments; each reviewer sees only their own.
 - Reviewers need no account. They use a random name, or sign in to use their account's name; names are not verified. To become the owner, sign in from the owner link your first share gives you.
-- Spacedock Review stores a hash of your account, not your email address, and stores no visitor's IP address.
+- Spacedock Review does not keep your email address or any visitor's IP address.
 
 ## Next
 
