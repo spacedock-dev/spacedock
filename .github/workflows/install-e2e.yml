@@ -31,7 +31,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.22"
+          go-version: "1.26"
 
       # Build the release tarballs + checksums.txt locally without publishing.
       # The runner's native-OS tarball is what install.sh below consumes.
