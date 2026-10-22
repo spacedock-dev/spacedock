@@ -49,7 +49,7 @@ A review takes one decision. After it, the review is closed and later comments a
 | `rr feedback <share-url>` | Prints every comment and decision so far. Only the owner's machine can read them. |
 | `rr revoke <share-url>` | Ends the link now. |
 | `rr device` | Shows whether this machine is linked to an account. |
-| `rr unbind` | Unlinks this machine from its account, which ends every browser that owned its reviews. |
+| `rr unbind` | Unlinks this machine from its account, which ends ownership for every browser that owned its reviews. |
 
 ```sh
 rr publish plan.md --open-owner-link
@@ -58,7 +58,7 @@ rr feedback https://review.spacedock.md/r/<share-id>
 rr device
 ```
 
-Ending a link, or unlinking this machine, is a separate step. `rr unbind` ends every browser that owned this machine's reviews.
+These two end access:
 
 ```sh
 rr revoke https://review.spacedock.md/r/<share-id>
@@ -72,6 +72,6 @@ rr unbind
 | Share link | Seven days from sharing, never extended |
 | Owner link | One use, 15 minutes |
 | Shares per day, machine not linked to an account | 5 |
-| Shares per day, machine linked to an account | 100, and 100 for the account across its machines |
+| Shares per day, machine linked to an account | 100 per machine, and 100 per account across its machines |
 | File size | 1 MB per share |
 | Feedback sends | 100 per reviewer session, 200 per review |
