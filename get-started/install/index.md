@@ -2,7 +2,7 @@
 title: "Install"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-10-07 05:13:52"
+last_updated: "2026-10-22 05:32:11"
 ---
 
 # Install Spacedock
@@ -33,6 +33,12 @@ curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/main/instal
 ```
 
 Match the channel to the skills you run. The edge plugin requires an edge-line binary minor, so a stable binary with edge skills aborts at first-officer boot. On macOS, `brew install spacedock-dev/tap/spacedock@next` is the Homebrew equivalent; casks are macOS-only, so on Linux this script is the only edge path.
+
+The script also installs each Spacedock extension beside the binary, on either channel, from its newest release on that channel. `SPACEDOCK_EXTRAS=none` skips them.
+
+## Update
+
+Edge only until a stable release carries it: run `spacedock update`. A Homebrew install prints the `brew upgrade` command.
 
 ## Launch
 

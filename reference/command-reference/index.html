@@ -71,7 +71,7 @@
         "headline": "Command reference",
         "description": "A multi-agent orchestrator where nothing ships without a decision.",
         "url": "https://spacedock.md/docs/reference/command-reference/",
-        "dateModified": "2026-10-07 05:13:52",
+        "dateModified": "2026-10-22 05:32:11",
         "isPartOf": { "@type": "WebSite", "name": "Spacedock", "url": "https://spacedock.md/docs/" }
       },
       {
@@ -1385,11 +1385,15 @@ plugins must be installed persistently with <code>codex plugin add</code>.</p>
 </tr>
 <tr>
 <td><code>spacedock doctor</code></td>
-<td>Run the compatibility check alone</td>
+<td>Run the compatibility check alone, and list the version of each installed piece</td>
+</tr>
+<tr>
+<td><code>spacedock update</code></td>
+<td>Update Spacedock, its extensions and their plugins to the newest release on the channel of this binary</td>
 </tr>
 </tbody>
 </table>
-<p>Both take <code>--host claude|codex|pi</code> (default <code>claude</code>). When <code>doctor</code> reports the plugin is out of date, refresh it with <code>spacedock install</code>. When the plugin is still contract-compatible but a newer one is available, <code>doctor</code> and the front-door launch print an opt-in upgrade hint (<code>run spacedock install --host &lt;host&gt; to refresh</code>); the hint never blocks the launch. See <a href="../../get-started/install/">Install Spacedock</a> for the full setup path.</p>
+<p><code>install</code> and <code>doctor</code> take <code>--host claude|codex|pi</code> (default <code>claude</code>). The version list and <code>update</code> are edge only until a stable release carries them, and <code>update</code> refreshes the plugins of Claude Code and Codex, whichever is on PATH and has the Spacedock plugin; the version list shows the extension plugin rows of each of Claude Code and Codex that is on PATH and has the Spacedock plugin. When <code>doctor</code> reports the plugin is out of date, refresh it with <code>spacedock install</code>. When the plugin is still contract-compatible but a newer one is available, <code>doctor</code> and the front-door launch print an opt-in upgrade hint (<code>run spacedock install --host &lt;host&gt; to refresh</code>); the hint never blocks the launch. See <a href="../../get-started/install/">Install Spacedock</a> for the full setup path.</p>
 <p>The launcher and plugin are a version-gated bundle. During a gate lifecycle, the real <code>gate prepare</code> invocation is the capability check: a nonzero result halts before presentation or later state effects. Refresh the installed bundle or build the current checkout and select that executable with <code>SPACEDOCK_BIN</code>; do not scrape help output or hand-edit gate frontmatter as a fallback. Selected-source inputs may be absolute, launch-working-directory-relative, or state-checkout-relative. A relative spelling that names different existing paths under the launch directory and state checkout is refused; use an absolute path. Relative room inputs continue to resolve from the launch working directory.</p>
 <h2 id="workflow">Workflow<a class="headerlink" href="#workflow" title="Permanent link">&para;</a></h2>
 <p>The first officer runs these against workflow state as it moves entities; you operate through it, not by hand. They are documented here for completeness and for the rare direct use (scripting, debugging, restoring a state checkout on a fresh clone).</p>
@@ -1507,7 +1511,7 @@ locally but could not push, regardless of which command wrote it.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="October 7, 2026 05:13:52 UTC">2026-10-07 05:13:52</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="October 22, 2026 05:32:11 UTC">2026-10-22 05:32:11</span>
   </span>
 
     
