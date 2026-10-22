@@ -107,7 +107,8 @@ def read_events(path):
 def envelopes(value):
     """Inspect serialized tool result bodies, never assistant claims."""
     if isinstance(value, dict):
-        if set(value) == {'type', 'briefing', 'artifact', 'annotations', 'resolution'}:
+        if (set(value) == {'type', 'briefing', 'artifact', 'annotations', 'resolution'}
+            or (set(value) == {'type', 'mode', 'briefing', 'artifact', 'annotations', 'actor'} and value.get('mode') == 'feedback')):
             yield value
         for child in value.values():
             yield from envelopes(child)
@@ -180,15 +181,21 @@ def inventory():
 def human_choice_reply(text, structured_question=False):
     """Answer only an actual surface or terminal-family question."""
     low = text.lower()
-    asks = structured_question or '?' in text or bool(re.search(r'\b(?:choose|prefer|which|what)\b', low))
-    if not asks:
-        return None
-    if (re.search(r'\b(?:which|what)\b[^.!?]{0,100}\b(?:terminal|multiplexer)\b', low)
-        or re.search(r'\b(?:terminal|multiplexer)\b[^.!?]{0,100}\b(?:are you using|do you use|are you running)\b', low)):
-        if not re.search(r'\b(?:browser|remote|web)\b', low):
-            return 'tmux'
-    if re.search(r'\bterminal\b', low) and re.search(r'\b(?:browser|remote|web)\b', low):
-        return 'Terminal'
+    terminal = bool(re.search(r'\bterminal\b', low))
+    alternative = bool(re.search(r'\b(?:browser|remote|web)\b', low))
+    questions = re.findall(r'[^.!?\n]*\?', low)
+    asks_surface = structured_question or bool(re.search(r'^\s*(?:please\s+)?choose\b', low, re.M))
+    if terminal and alternative:
+        asks_surface = asks_surface or any(
+            (re.search(r'\bterminal\b', q) and re.search(r'\b(?:browser|remote|web)\b', q))
+            or re.search(r'\bwhich (?:one|option|do you (?:want|prefer)|would you (?:like|prefer))\b', q)
+            for q in questions)
+        return 'Terminal' if asks_surface else None
+    family_questions = [low] if structured_question else questions
+    if any(re.search(r'\b(?:which|what)\b[^.!?]{0,100}\b(?:terminal|multiplexer)\b', q)
+           or re.search(r'\b(?:terminal|multiplexer)\b[^.!?]{0,100}\b(?:are you using|do you use|are you running)\b', q)
+           for q in family_questions):
+        return 'tmux'
     return None
 
 
@@ -361,15 +368,17 @@ def main():
             wait_for('Selection comment control', lambda: 'c comment' in capture(pane).lower(), 15)
             save('03-selected-anchor.txt', pane)
             tmux('send-keys', '-t', pane, '-l', 'c')
-            wait_for('Comment input', lambda: 'comment input' in capture(pane).lower(), 15)
+            wait_for('Comment input', lambda: any(label in capture(pane).lower() for label in ('comment input', 'comment body')), 15)
             tmux('send-keys', '-t', pane, '-l', nonce)
             tmux('send-keys', '-t', pane, 'Enter')
             wait_for('Saved comment', lambda: 'draft saved' in capture(pane).lower(), 15)
             save('04-comment-saved.txt', pane)
             tmux('send-keys', '-t', pane, '-l', 'q')
-            wait_for('Finish summary', lambda: 'enter send' in capture(pane).lower(), 15)
-            save('05-finish-summary.txt', pane)
-            tmux('send-keys', '-t', pane, 'Enter')
+            if binding:
+                wait_for('Finish summary', lambda: 'enter send' in capture(pane).lower(), 15)
+                save('05-finish-summary.txt', pane)
+                tmux('send-keys', '-t', pane, 'Enter')
+            # Released single-file feedback mode submits directly on q.
             def received():
                 for index, event in enumerate(read_events(stream)):
                     for result in tool_results([event]):
