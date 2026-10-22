@@ -1,4 +1,4 @@
-# Gates & decisions
+# Gates and decisions
 
 A gate is the decision point at the end of a stage where nothing advances without your vote. When a stage declares a gate, the first officer stops after the worker completes, presents a review, and waits for you. It never self-approves.
 

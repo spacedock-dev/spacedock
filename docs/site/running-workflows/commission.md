@@ -1,4 +1,4 @@
-# Commission a workflow
+# Workflow design
 
 A workflow is designed in conversation: you make four decisions and commission derives the rest. [Your first workflow](../get-started/first-workflow.md) shows the whole flow, including the design summary and pilot run.
 
@@ -24,10 +24,7 @@ Everything else is derived or asked with a recommendation attached: the director
 
 ## Two ways to tighten the README
 
-The generated per-stage rules are best-guesses; [tighten them before any work runs](../concepts/workflows-and-entities.md#the-readme-is-where-you-set-the-rules). Either:
-
-- open the README and edit the bullets under each stage heading directly, or
-- type `review stages` to have commission walk you through each stage, flag the rules that read as generic, and apply your amendments inline.
+[Refine the standards](../workflow/standards.md) before you start the work.
 
 ## After you accept
 

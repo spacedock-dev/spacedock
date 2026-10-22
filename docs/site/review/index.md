@@ -1,20 +1,28 @@
-# What is Spacedock Review
+# Spacedock Review
 
 Your agent hands you a plan, a spec or a draft as a Markdown file, and the next step waits on your call. Spacedock Review opens the file for you to read, comment on the exact lines and decide whether the work goes ahead. It sends your comments and decision back to the agent that asked.
 
 ![A comment attached to selected text in Spacedock Review](https://raw.githubusercontent.com/spacedock-dev/subspace/main/assets/anchored-feedback.png)
 
-## How it works
+<a id="how-it-works"></a>
 
-You review in one of two places, and you choose once per project.
+## Local and hosted review
 
-- **Terminal.** The file opens beside your agent session and stays on your machine. You are the only reviewer.
-- **Web.** The file is uploaded and you get two links. The owner link is yours: you open it, sign in and decide. The share link is for anyone else whose comments you want, people or their agents.
+| | Terminal review · local | Browser review · hosted |
+| --- | --- | --- |
+| Where you review | On your machine, beside your agent | In your browser at review.spacedock.md |
+| Where the document goes | Review reads the local file without uploading it to Spacedock | With your consent, Review uploads a copy to a service run by Spacedock |
+| Where feedback stays | On your machine, then back to your agent | The hosted service stores comments and your decision, and returns feedback to your agent |
+| Who can review | You | You and anyone with the share link |
+
+Your agent continues to run in your existing environment. Hosted review shares the document, not your whole project or agent conversation.
+
+## Review architecture
 
 ```mermaid
 flowchart LR
-  A[Your agent] -->|the file| T[Terminal, on your machine]
-  A -->|uploads, once you agree| W[review.spacedock.md]
+  A[Your agent] -->|the file| T[Terminal · local]
+  A -->|uploads, once you agree| W[review.spacedock.md · hosted]
   W -->|share link| C[Others comment]
   W -->|owner link| O[You comment and decide]
   T --> R[Your comments and decision]
@@ -24,7 +32,9 @@ flowchart LR
 
 Your agent opens the file in the terminal or, once you agree, uploads it to review.spacedock.md. Either way, your comments go back to the same agent. On the web you also decide; in the terminal you decide when your agent asks for a decision.
 
-## What happens to a document you share
+<a id="what-happens-to-a-document-you-share"></a>
+
+## Shared document access
 
 - The file uploads to review.spacedock.md, a service Spacedock runs, which keeps the file, the comments and your decision. Nothing uploads until you agree: Spacedock Review asks first, and remembers your answer for that project.
 - Anyone holding the share link can read the whole document and comment on it. The address cannot be guessed. Treat it like a password: send it only to people who should read it.
@@ -37,7 +47,7 @@ What stays yours:
 - Reviewers need no account. They use a random name, or sign in to use their account's name; names are not verified. To become the owner, sign in from the owner link your first share gives you.
 - Spacedock Review does not keep your email address or any visitor's IP address.
 
-## Next
+## Related guides
 
 - [Review your agent's next file](use.md), in the terminal or the browser.
 - [Look up an argument, key, decision or limit](reference.md).

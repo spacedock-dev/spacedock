@@ -32,13 +32,7 @@ In Claude Code, use `/spacedock:review` with the arguments below. In Codex, ask 
 
 ## Decisions
 
-| You choose | What it means | What your agent does | Stored as |
-| --- | --- | --- | --- |
-| Approve | Accept this as it is. | Carries on with the task; gains no other permission | `approve` |
-| Request changes | Not accepted. Changes are needed; your comments say which. | Edits the file, shares it again under a new link, waits again | `revise` |
-| Hold decision | Not accepted, and no changes asked for. Stop here for now. | Stops and changes nothing | `hold` |
-
-A review takes one decision. After it, the review is closed and later comments are not recorded.
+See [comments and decisions](decisions.md#decisions) for what each choice means.
 
 ## Commands your agent runs for web reviews
 
