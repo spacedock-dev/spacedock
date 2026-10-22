@@ -1,0 +1,21 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:f77r1rj2g7sgj3hkrht7n37f:implementation:round-2",
+  "question": "Does the correction bind the break-glass selected-bare known failure only on the claude-sonnet target through liveJourney's target match, prove that claude-haiku inherits no binding, and correct the false 'No inherited XFAIL' record, within +170 net LOC?",
+  "artifacts": [
+    {
+      "id": "artifact:f77r1rj2g7-entity-cycle-3",
+      "uri": "git-root://state/47fea25ab97af8f52796d3845367e8af548860d7/claude-lane-model-agnostic-entry-point.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:9395ec6e98886acd214f68df8a2aac098af235d318f563d5c808ecf7af11fb81"
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:f77r1rj2g7-break-glass-binding-authorization",
+      "label": "Captain resolution:spacedock:f77r1rj2g7sgj3hkrht7n37f:validation:2 (person:captain, decision revise, state commit 6d53f9c7c) rejects validation attempt-2: dispatch_recovery_live_test.go:108 assigns liveXFail(\"claude-sonnet\", 060xp69y61yhrww23g3wvwqy) unconditionally. Asks: (1) bind only when the runtime target is claude-sonnet, reusing liveJourney's target match; (2) one focused check that a non-Sonnet target inherits no binding, red without the guard and green with it; (3) correct the 'No inherited XFAIL' record and route Haiku break-glass selected-bare, unowned, to the Haiku follow-up. No workflow, registry, resolver, other-binding, lane, job, or CI change; no live run. Ceiling raised to +170 net LOC; stop rather than exceed."
+    }
+  ]
+}

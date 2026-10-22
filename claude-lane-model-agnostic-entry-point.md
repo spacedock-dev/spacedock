@@ -76,13 +76,13 @@ gates:
 started: 2026-10-07T18:15:05Z
 worktree: .worktrees/spacedock-ensign-claude-lane-model-agnostic-entry-point
 review-round:
-    id: round:f77r1rj2g7sgj3hkrht7n37f:implementation:1
+    id: round:f77r1rj2g7sgj3hkrht7n37f:implementation:2
     stage: implementation
-    cycle: 1
+    cycle: 2
     briefing:
-        id: briefing:f77r1rj2g7sgj3hkrht7n37f:implementation:round-1
-        digest: sha256:d6bf0cf11bffa04b1199e287703b7b774e7cf4db609781c077995a6ce9d822c7
-        room-ref: '@review/implementation/round-1'
+        id: briefing:f77r1rj2g7sgj3hkrht7n37f:implementation:round-2
+        digest: sha256:24e69505eaa73dfcece63ea8d1369b7f89197aa220b2c7a0d22a959dfcea68e0
+        room-ref: '@review/implementation/round-2'
 ---
 
 ## Problem
@@ -1077,6 +1077,7 @@ One test function now holds the three captain-approved standing assertions. Each
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — validation detached audit (three central dispatch/approval claims had no standing regression check); surface 6 files / +150 net LOC vs estimate 5 files / +180 net LOC (83%); AC narrowed: AC-1 re-scoped by captain-ruling[2026-10-08] to named-model execution without a workflow edit, six-file surface authorized earlier. Captain revised the validation gate (66bb17a16) and approved three standing assertions within +150; producer correction a9f7e8143 is complete, independent re-review pending.
+- Cycle 2: REJECTED — captain at validation gate attempt-2 (validator had recommended PASSED); break-glass selected-bare XFAIL was bound to claude-sonnet unconditionally, so the task's "No inherited XFAIL" claim was false and Haiku inherited a Sonnet known failure; surface 7 files / +170 net LOC vs estimate 5 files / +180 net LOC (94%); AC narrowed: AC-1 re-scoped by captain-ruling[2026-10-08]; captain raised the ceiling to +170 and the seventh file is the one the fix names. Producer correction 03123dd4f is complete, independent re-review pending.
 
 ## Stage Report: validation (cycle 2)
 
