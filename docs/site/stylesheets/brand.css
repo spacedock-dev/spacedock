@@ -114,6 +114,12 @@
   user-select: all;
 }
 
+.md-typeset .sd-command-prompt code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+}
+
 .sd-prompt-copy {
   position: absolute;
   top: 50%;

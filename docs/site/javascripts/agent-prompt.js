@@ -10,12 +10,13 @@
   document.addEventListener('click', async (event) => {
     const button = event.target.closest('.sd-prompt-copy');
     if (!button || button.disabled) return;
+    const copyLabel = button.getAttribute('aria-label');
     const prompt = button.closest('.sd-agent-prompt').querySelector('code');
     button.disabled = true;
     try {
       await navigator.clipboard.writeText(prompt.textContent);
       button.textContent = 'copied';
-      button.setAttribute('aria-label', 'Agent prompt copied');
+      button.setAttribute('aria-label', 'Copied to clipboard');
       button.classList.add('done');
     } catch {
       button.textContent = 'retry';
@@ -23,7 +24,7 @@
     }
     setTimeout(() => {
       button.textContent = 'copy';
-      button.setAttribute('aria-label', 'Copy agent prompt');
+      button.setAttribute('aria-label', copyLabel);
       button.classList.remove('done');
       button.disabled = false;
     }, 1500);
