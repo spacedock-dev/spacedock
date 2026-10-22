@@ -4,11 +4,11 @@
 
 | Argument | What it does | Default |
 | --- | --- | --- |
-| none | Shows this project's choice and lets you keep, switch or clear it. Opens nothing. | |
+| none | Shows this project's choice and lets you keep, switch or clear it, or leave. Opens nothing. | |
 | `tui`, `terminal` or `local` | Records Terminal (TUI) for this project. Opens nothing. | |
-| `web`, `webui` or `remote` | Asks you to agree to uploading, then records Web. Opens nothing. | |
+| `web`, `webui` or `remote` | Asks you to agree to uploading; records Web only if you agree. Opens nothing. | |
 | a file path | Reviews the file in the recorded place. | Asks Terminal or Web when nothing is recorded |
-| any other text | Your agent carries it out as a prompt, then reviews the file it wrote. | |
+| any other text | Your agent carries it out as a prompt, then reviews the file that results. | |
 
 ```text
 /spacedock:review plan.md
@@ -22,15 +22,15 @@
 | --- | --- |
 | <kbd>c</kbd> | Comment on the selected text |
 | <kbd>s</kbd> | Suggest replacement text for the selection |
-| <kbd>q</kbd> | Open the finish screen |
+| <kbd>q</kbd> | Finish, or open the finish screen when your agent asked for a decision |
 | <kbd>Tab</kbd> | On the finish screen, cycle the decision |
-| <kbd>Enter</kbd> | On the finish screen, send |
-| <kbd>Esc</kbd> | Leave the finish screen without sending |
+| <kbd>Enter</kbd> | On the finish screen, send; while typing a note, save it |
+| <kbd>Esc</kbd> | On the finish screen, go back to the document; while typing a note, discard it |
 | <kbd>?</kbd> | Show every key |
 
 ## Decisions
 
-| You choose | What it means | Your agent reports |
+| You choose | What it means | Stored as |
 | --- | --- | --- |
 | Approve | Accept this as it is. | `approve` |
 | Request changes | Not accepted. Changes are needed; your comments say which. | `revise` |
