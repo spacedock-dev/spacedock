@@ -371,12 +371,13 @@ def main():
             save('05-finish-summary.txt', pane)
             tmux('send-keys', '-t', pane, 'Enter')
             def received():
-                for result in tool_results(read_events(stream)):
-                    for value in envelopes(result.get('content')):
-                        if any(a.get('body') == nonce for a in value.get('annotations', [])):
-                            return value
+                for index, event in enumerate(read_events(stream)):
+                    for result in tool_results([event]):
+                        for value in envelopes(result.get('content')):
+                            if any(a.get('body') == nonce for a in value.get('annotations', [])):
+                                return value, index
                 return None
-            value = wait_for('Canonical comment result in original agent conversation', received, 90)
+            value, receipt_event_index = wait_for('Canonical comment result in original agent conversation', received, 90)
             record('canonical-result.json', value)
             assert value['artifact']['rev'] == digest, 'Artifact SHA256 changed'
             annotations = [a for a in value['annotations'] if a.get('body') == nonce]
@@ -386,7 +387,7 @@ def main():
             if binding:
                 assert resolution and resolution.get('decision') == 'approve', 'Binding UI did not return approve'
                 assert annotations[0]['id'] in resolution.get('includes', []), 'Approval omits submitted comment'
-            events = wait_for('Agent turn completed after review', lambda: (es if len([e for e in es if e.get('type') == 'result']) > handled_results else None) if (es := read_events(stream)) else None, 45)
+            events = wait_for('Agent turn completed after canonical review receipt', lambda: (es if any(e.get('type') == 'result' for e in es[receipt_event_index + 1:]) else None) if (es := read_events(stream)) else None, 45)
             receipt = assistant_text(events)
             record('claude-receipt.txt', receipt)
             if binding:
