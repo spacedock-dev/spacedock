@@ -37,14 +37,14 @@ so the two shapes stay distinguishable.
 
 Stable v1 gate reviews may appear in chat or Subspace. Before presenting one, the first officer commits
 newly authored selected sources and calls `gate prepare` with its question, primary
-Markdown review, exact concise summary, and References. Spacedock authors and binds a
+Markdown review, exact concise summary, and References. Spacedock Workflow authors and binds a
 one-file recorder-ready room; the first officer commits that entity-owned room. The
 selected source payloads remain singular local Git objects rather than room copies.
 
 Both presentation interfaces return semantic decision and reason input to the first
 officer. The first officer records that input through the same `gate record --decision`
 command; Subspace is not a second recorder and does not return Result or inventory
-files for Spacedock to ingest.
+files for Workflow to ingest.
 
 If a prepared room becomes stale before any Captain decision, the first officer runs
 `gate withdraw` with a reason. Withdrawal is not approve, revise, or hold: it preserves
