@@ -1,0 +1,24 @@
+name: Prerelease offline validation
+on:
+  push:
+    branches: [launch/installer-pre5-validation]
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.22'
+      - name: Install test runner
+        run: bash .github/scripts/install-gotestsum.sh
+      - name: Test
+        run: go test ./...
+      - name: Race test
+        run: go test ./... -race
