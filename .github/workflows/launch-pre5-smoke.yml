@@ -1,0 +1,158 @@
+name: Published pre5 smoke
+on:
+  push:
+    branches: [launch/pre5-published-smoke]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - name: Verify published downloads and isolated installs
+        shell: bash
+        run: |
+          python3 - --published --edge v0.28.0-pre5 --stable v0.27.3 <<'PY'
+          #!/usr/bin/env python3
+          """Published-release smoke only. No host plugin installs or agent launches."""
+          import argparse
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import platform
+          import shutil
+          import subprocess
+          import tempfile
+          import urllib.request
+          
+          API = 'https://api.github.com/repos/'
+          REPO = 'spacedock-dev/spacedock'
+          
+          
+          def fetch(url):
+              request = urllib.request.Request(url, headers={'User-Agent': 'spacedock-release-smoke'})
+              return urllib.request.urlopen(request, timeout=90)
+          
+          
+          def release(repo, suffix):
+              with fetch(API + repo + '/releases' + suffix) as response:
+                  result = json.load(response)
+              if isinstance(result, list):
+                  result = result[0]
+              assert not result['draft'], (repo, 'draft release')
+              return result
+          
+          
+          def verify_assets(metadata, names=None):
+              assets = {asset['name']: asset for asset in metadata['assets']}
+              with fetch(assets['checksums.txt']['browser_download_url']) as response:
+                  checksums = dict((line.split()[1].lstrip('*'), line.split()[0])
+                                   for line in response.read().decode().splitlines() if line.strip())
+              selected = names if names is not None else [name for name in assets if name.endswith('.tar.gz')]
+              for name in selected:
+                  assert name in assets and name in checksums, ('missing release asset/checksum', name)
+                  digest = hashlib.sha256()
+                  count = 0
+                  with fetch(assets[name]['browser_download_url']) as response:
+                      while chunk := response.read(1024 * 1024):
+                          digest.update(chunk)
+                          count += len(chunk)
+                  assert count == assets[name]['size'], ('asset size', name, count)
+                  assert digest.hexdigest() == checksums[name], ('asset checksum', name)
+                  if assets[name].get('digest'):
+                      assert 'sha256:' + digest.hexdigest() == assets[name]['digest'], ('GitHub digest', name)
+                  print('PASS checksum', name, count, 'bytes', flush=True)
+          
+          
+          def main():
+              parser = argparse.ArgumentParser(description=__doc__)
+              parser.add_argument('--published', action='store_true', help='operator confirms pre5 is published')
+              parser.add_argument('--edge', default='v0.28.0-pre5')
+              parser.add_argument('--stable', default='v0.27.3')
+              parser.add_argument('--minimum-free-mib', type=int, default=1024)
+              args = parser.parse_args()
+              if not args.published:
+                  parser.error('wait for publication confirmation, then pass --published')
+              free = shutil.disk_usage(tempfile.gettempdir()).free // (1024 * 1024)
+              if free < args.minimum_free_mib:
+                  parser.error(f'{free} MiB free; need {args.minimum_free_mib} MiB. Use a hosted runner.')
+              os_name = {'Darwin': 'darwin', 'Linux': 'linux'}[platform.system()]
+              arch = {'arm64': 'arm64', 'aarch64': 'arm64', 'x86_64': 'amd64'}[platform.machine()]
+              stable = release(REPO, '/latest')
+              edge = release(REPO, '?per_page=1')
+              assert stable['tag_name'] == args.stable, ('stable changed', stable['tag_name'])
+              assert edge['tag_name'] == args.edge and edge['prerelease'], ('edge not published/current prerelease', edge['tag_name'])
+              companions = {name: release('spacedock-dev/' + name, '?per_page=1') for name in ('subspace', 'compass')}
+              print('Resolved:', json.dumps({'stable': args.stable, 'edge': args.edge,
+                    **{name: item['tag_name'] for name, item in companions.items()}}), flush=True)
+              # Streaming checks do not retain archives. Verify all pre5 platform/channel archives.
+              expected_edge_assets = [f'spacedock_{args.edge[1:]}_{host}_{cpu}_{stamp}.tar.gz'
+                                      for host in ('darwin', 'linux') for cpu in ('amd64', 'arm64')
+                                      for stamp in ('stable', 'edge')]
+              verify_assets(edge, expected_edge_assets)
+              verify_assets(stable, [f'spacedock_{args.stable[1:]}_{os_name}_{arch}.tar.gz'])
+              for name, metadata in companions.items():
+                  verify_assets(metadata, [f'{name}_{metadata["tag_name"][1:]}_{os_name}_{arch}.tar.gz'])
+              with tempfile.TemporaryDirectory(prefix='launch-pre5-smoke-') as tmp:
+                  root = Path(tmp)
+                  with fetch('https://raw.githubusercontent.com/' + REPO + '/main/install.sh') as response:
+                      installer = root / 'install.sh'
+                      installer.write_bytes(response.read())
+                  print('main/install.sh sha256:', hashlib.sha256(installer.read_bytes()).hexdigest(), flush=True)
+                  for channel, tag in (('stable', args.stable), ('edge', args.edge)):
+                      base = root / channel
+                      bin_dir = base / 'bin'
+                      data = base / 'data'
+                      state = base / 'state'
+                      temp = base / 'tmp'
+                      for directory in (bin_dir, data, state, temp):
+                          directory.mkdir(parents=True, exist_ok=True)
+                      # Keep HOME and CODEX_HOME intact. Remove inherited installer/dev overrides.
+                      env = os.environ.copy()
+                      for key in ('SPACEDOCK_INSTALL_FROM', 'SPACEDOCK_INSTALL_VERSION', 'SPACEDOCK_EXTRAS_FROM',
+                                  'SPACEDOCK_PRINT_TARGET', 'SPACEDOCK_EXTRAS', 'SPACEDOCK_CHANNEL', 'SPACEDOCK_DEV_BRANCH'):
+                          env.pop(key, None)
+                      env.update(SPACEDOCK_INSTALL_DIR=str(bin_dir), XDG_DATA_HOME=str(data), XDG_STATE_HOME=str(state),
+                                 SPACEDOCK_PLUGINS='none', TMPDIR=str(temp), PATH=str(bin_dir) + os.pathsep + env['PATH'])
+                      if channel == 'edge':
+                          env['SPACEDOCK_CHANNEL'] = 'edge'
+                      run = subprocess.run(['sh', str(installer)], env=env, capture_output=True, text=True, timeout=600)
+                      print(run.stdout + run.stderr, end='', flush=True)
+                      assert run.returncode == 0, ('installer exit', channel, run.returncode)
+                      assert f'resolved {channel} channel to {tag}' in run.stderr, ('channel moved during install', channel)
+                      launcher = bin_dir / 'spacedock'
+                      def command(*argv):
+                          result = subprocess.run([str(launcher), *argv], env=env, capture_output=True, text=True, timeout=60)
+                          print('$ spacedock', ' '.join(argv), '\n' + result.stdout + result.stderr, flush=True)
+                          assert result.returncode == 0, ('command exit', argv, result.returncode)
+                          return result.stdout.strip()
+                      version = command('--version')
+                      assert version.splitlines()[0] == 'spacedock ' + tag[1:], ('launcher version', version)
+                      assert f'Channel: {channel} ' in version, ('launcher channel stamp', version)
+                      if channel == 'stable':
+                          assert sorted(p.name for p in bin_dir.iterdir()) == ['spacedock'], 'stable installed extra binaries'
+                          assert not list(data.iterdir()) and not list(state.iterdir()), 'stable wrote extension data/state'
+                          assert 'installs only the spacedock binary' in run.stderr, 'stable compatibility guard not observed'
+                      else:
+                          for name in ('subspace-tui', 'subspace-relay-client', 'spacedock-review', 'compass', 'spacedock-compass'):
+                              assert (bin_dir / name).is_file() and os.access(bin_dir / name, os.X_OK), ('missing executable', name)
+                          assert (bin_dir / 'spacedock-review').resolve() == (bin_dir / 'subspace-tui').resolve()
+                          assert (bin_dir / 'spacedock-compass').resolve() == (bin_dir / 'compass').resolve()
+                          for name, verb in (('subspace', 'review'), ('compass', 'compass')):
+                              expected = companions[name]['tag_name']
+                              assert f'installed {name} {expected}' in run.stderr, ('companion moved/failed', name)
+                              assert command(verb, '--version') == expected[1:], ('companion version', name)
+                      print('PASS published', channel, 'install and executable versions', flush=True)
+                      shutil.rmtree(base)
+              print('PASS release smoke. Plugin registration, interactive Review, and agent live tests were not run.', flush=True)
+          
+          
+          if __name__ == '__main__':
+              main()
+          PY
