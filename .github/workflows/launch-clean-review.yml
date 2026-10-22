@@ -1,13 +1,13 @@
-name: Clean published Review journey
+name: First-use public CTA journey
 on:
   push:
-    branches: [launch/clean-review-pre5]
+    branches: [launch/first-use-pre5]
 permissions:
   contents: read
 jobs:
   review:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 18
     environment: CI-E2E
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -39,7 +39,7 @@ jobs:
           curl -fsSL https://claude.ai/install.sh -o "$RUNNER_TEMP/install-claude.sh"
           bash "$RUNNER_TEMP/install-claude.sh" latest
           "$HOME/.local/bin/claude" --version
-      - name: Install published edge release and plugins
+      - name: Prepare metadata access and record public guide
         shell: bash
         run: |
           set -euo pipefail
@@ -55,24 +55,23 @@ jobs:
           exec /usr/bin/curl "$@"
           SH
           chmod +x "$authbin/curl"
-          export PATH="$authbin:$PATH"
-          curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/main/install.sh -o "$RUNNER_TEMP/install-spacedock.sh"
-          SPACEDOCK_CHANNEL=edge sh "$RUNNER_TEMP/install-spacedock.sh" 2>&1 | tee "$REVIEW_TEST_ARTIFACTS/install.log"
-          spacedock --version | tee "$REVIEW_TEST_ARTIFACTS/version.log"
-          spacedock --version | grep -F 'spacedock 0.28.0-pre5'
-          spacedock review --version
-          claude plugin list --json > "$REVIEW_TEST_ARTIFACTS/plugins.json"
-          spacedock doctor > "$REVIEW_TEST_ARTIFACTS/doctor.txt"
-      - name: Run real Review decision round trip
+          printf '%s\n' "$authbin" >> "$GITHUB_PATH"
+          curl -fsSL https://spacedock.md/agents.md -o "$REVIEW_TEST_ARTIFACTS/public-agents.md"
+          for binary in spacedock subspace-tui spacedock-review; do
+            if command -v "$binary"; then
+              echo "Unexpected preinstalled program: $binary" >&2
+              exit 1
+            fi
+          done
+      - name: Run exact CTA and first review
         shell: bash
         run: |
           cd "$RUNNER_TEMP/clean-review/project"
-          spacedock review-mode set local
-          python3 "$GITHUB_WORKSPACE/.github/scripts/launch-clean-review.py"
+          python3 "$GITHUB_WORKSPACE/.github/scripts/launch-first-use.py"
       - name: Upload synthetic test evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: clean-review-pre5
+          name: first-use-public-cta
           path: ${{ runner.temp }}/clean-review/review-evidence
           retention-days: 7
