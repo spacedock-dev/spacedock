@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:f77r1rj2g7sgj3hkrht7n37f:validation:attempt-3:revision-1",
+  "question": "Approve validation (PASSED on cycle-3 re-review of 03123dd4f) and advance to done/merge, accepting the listed deferred risks including Opus pre-release losing the Sonnet-owned selected-bare XFAIL and the live-tagged isolation check running in no CI job?",
+  "artifacts": [
+    {
+      "id": "artifact:f77r1rj2g7sgj3hkrht7n37f:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/82f64c7fe81ed0a5327ca3ea9aca2ce42e46298c/claude-lane-model-agnostic-entry-point.md",
+      "rev": "sha256:1f88aef46ba663db67cfb1afdd9842e8cf5ded0edad2d7b52260ad08981501d2",
+      "mediaType": "text/markdown",
+      "summary": "Cycle-3 independent re-review of 03123dd4f recommends PASSED: AST enumeration finds 13 liveXFail bindings, targets only claude-sonnet and pi; claude-opus and claude-haiku inherit none. Focused check fails when either the break-glass guard or selectLiveGap target match is removed. Cycle-1 assertions still fail only under their mutations. 7 files, +170 net (ceiling); both suites pass; workflow/registry/resolver byte-identical to hosted-proven d3df726fe. Deferred risks: call-site target not pinned; live-tagged checks run in no CI job; Opus pre-release no longer XFAILs selected-bare; duplicate claude IDs nondeterministic. Polish: original claim corrected only in appended report."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:f77r1rj2g7sgj3hkrht7n37f:validation:attempt-3:revision-1:item-2",
+      "uri": "git-root://main/c450d5d526fca30bbcd2c06cf2b40358e5a6ea8f/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:68525cd15144ae445da3f721418e16585c3f4d7168a09c507b0485988ff8b948"
+    }
+  ]
+}

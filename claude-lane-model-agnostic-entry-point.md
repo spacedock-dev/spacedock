@@ -73,6 +73,11 @@ gates:
                 at: "2026-10-22T05:30:42.195908Z"
                 decision: revise
                 reason: 'Captain rejects validation attempt-2: the task''s own ''No inherited XFAIL'' claim fails because dispatch_recovery_live_test.go:108 assigns liveXFail("claude-sonnet", 060xp69y61yhrww23g3wvwqy) unconditionally, so Haiku run 37703335512 reported break-glass selected-bare as a Sonnet XFAIL. Asks: (1) apply that binding only when the runtime target is claude-sonnet, reusing liveJourney''s target match rather than a second copy; (2) one focused check that a non-Sonnet target does not inherit the binding, shown red without the guard and green with it; (3) correct the ''No inherited XFAIL'' record and note Haiku break-glass selected-bare as unowned, routed to the Haiku follow-up. Captain raises net LOC ceiling to +170; stop and report rather than exceed.'
+            - id: gate-attempt:f77r1rj2g7sgj3hkrht7n37f-validation-3
+              briefing:
+                id: briefing:f77r1rj2g7sgj3hkrht7n37f:validation:attempt-3:revision-1
+                digest: sha256:83a26ad5433f66f7f24ae9eab5cbec17741c1787b68f38dc94cb5ff3cf38a259
+                room-ref: '@review/validation/briefing-3'
 started: 2026-10-07T18:15:05Z
 worktree: .worktrees/spacedock-ensign-claude-lane-model-agnostic-entry-point
 review-round:
