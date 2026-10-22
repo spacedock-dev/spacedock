@@ -181,7 +181,7 @@ def main():
         write_json(evidence / 'summary.json', summary)
         pane = wait_for('real Review split pane', lambda: next((p for p in pane_ids() if p != original_pane), None), 180)
         summary['review_pane'] = pane
-        wait_for('artifact and binding action controls', lambda: TARGET in capture(pane) and any(label in capture(pane) for label in ('Approve', 'No decision')), 90)
+        wait_for('artifact in initially uncluttered Review pane', lambda: TARGET in capture(pane), 90)
         save('01-review-before.txt')
         tmux('send-keys', '-t', pane, 'Tab')
         wait_for('Approve decision selected', lambda: 'Approve' in capture(pane), 15)
