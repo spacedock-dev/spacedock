@@ -177,6 +177,21 @@ def inventory():
     return result
 
 
+def human_choice_reply(text, structured_question=False):
+    """Answer only an actual surface or terminal-family question."""
+    low = text.lower()
+    asks = structured_question or '?' in text or bool(re.search(r'\b(?:choose|prefer|which|what)\b', low))
+    if not asks:
+        return None
+    if (re.search(r'\b(?:which|what)\b[^.!?]{0,100}\b(?:terminal|multiplexer)\b', low)
+        or re.search(r'\b(?:terminal|multiplexer)\b[^.!?]{0,100}\b(?:are you using|do you use|are you running)\b', low)):
+        if not re.search(r'\b(?:browser|remote|web)\b', low):
+            return 'tmux'
+    if re.search(r'\bterminal\b', low) and re.search(r'\b(?:browser|remote|web)\b', low):
+        return 'Terminal'
+    return None
+
+
 def main():
     project = Path.cwd()
     evidence = Path(os.environ.get('REVIEW_TEST_ARTIFACTS', str(project / 'evidence'))).resolve()
@@ -244,10 +259,11 @@ def main():
             for block in event.get('message', {}).get('content', []):
                 if isinstance(block, dict) and block.get('type') == 'tool_use' and block.get('name') == 'AskUserQuestion':
                     text = json.dumps(block.get('input', {}))
-                    if 'terminal' in text.lower() and any(w in text.lower() for w in ('browser', 'remote')):
+                    reply = human_choice_reply(text, structured_question=True)
+                    if reply:
                         key = block.get('id', text)
                         if key not in terminal_questions:
-                            return key, text
+                            return key, text, reply
         return None
     def finish(outcome, **fields):
         summary.update(status='observed', outcome=outcome, **fields)
@@ -266,8 +282,8 @@ def main():
             question = terminal_question(events)
             if question and question[0] not in terminal_questions:
                 terminal_questions.add(question[0])
-                record('terminal-choice-question.json', {'id': question[0], 'question': question[1]})
-                send('Terminal', reason='Explicit Terminal/browser question from agent')
+                record('human-choice-question.json', {'id': question[0], 'question': question[1], 'answer': question[2]})
+                send(question[2], reason='Explicit review surface or terminal-family question from agent')
                 pending_terminal_result = handled_results + 1
             results = [e for e in events if e.get('type') == 'result']
             if len(results) > handled_results:
@@ -281,12 +297,12 @@ def main():
                 text = result.get('result', '') or assistant_text(events)
                 record(f'{phase}-response.txt', text)
                 low = text.lower()
-                if ('terminal' in low and any(w in low for w in ('browser', 'remote')) and
-                    ('?' in text or any(w in low for w in ('choose', 'prefer', 'which')))):
+                reply = human_choice_reply(text)
+                if reply:
                     key = 'turn-' + str(handled_results)
                     if key not in terminal_questions:
                         terminal_questions.add(key)
-                        send('Terminal', reason='Explicit Terminal/browser question in completed turn')
+                        send(reply, reason='Explicit review surface or terminal-family question in completed turn')
                         continue
                 if result.get('is_error'):
                     finish('agent_error', agent_result=result)
