@@ -1,67 +1,55 @@
-# Use Review on its own
+# Use Spacedock Review
 
-Review your agent's work, fix the lines that need fixing, and send your comments back, all without leaving your session.
-
-You need Review installed. See [Install Review](../index.md#install).
-
-## Comment on the work
-
-Review works the same way in the terminal and the browser: you comment on the exact text, and your comments go back to the agent.
-
-=== "In the terminal"
-
-    1. **Ask your agent to open the file in Review**, or open it yourself:
-
-        ```text
-        /r plan.md
-        ```
-
-        In Codex, type `$r plan.md`. Review opens beside your session.
-
-    2. **Select the text you want to talk about.** Press <kbd>c</kbd> to comment on it, or <kbd>s</kbd> to suggest a replacement.
-
-        ![A comment attached to selected text in Review](https://raw.githubusercontent.com/spacedock-dev/subspace/main/assets/anchored-feedback.png)
-
-    3. **Comment on as many lines as you need.** Leave the rest alone: lines you don't comment on stand as they are.
-
-    4. **Press <kbd>q</kbd> to finish.** Your comments and suggested edits go back to the agent, each one attached to the text it's about.
-
-    The agent's next turn starts from your comments. If its revision needs another round, open the file again and comment on what's left.
-
-    > **[Screenshot to take:** a suggested replacement, showing the original text and the proposed text.**]**
-
-    Press <kbd>?</kbd> in Review for every key.
-
-=== "In the browser"
-
-    > **Draft note, not page copy:** browser steps to come, once the browser view ships (depends on the relay reaching production). Question for Kent Chen below.
-
-    > **[Screenshot to take:** a comment on one line in the browser view.**]**
-
-## Ask the agent while you read
-
-Sometimes you need to know why the agent wrote something before you can judge it. In the terminal, start the review with questions turned on:
+Ask your agent for a review, comment on the lines that need it, and send back your decision.
 
 ```text
-/r --allow-question plan.md
+/spacedock:review plan.md
 ```
 
-1. **Press <kbd>Q</kbd>** and type your question about the file.
-2. **Keep reviewing.** The agent answers from the same file you're reading, and the answer appears in Review.
+That is the command in Claude Code. In Codex, ask your agent to review the file with Spacedock Review. You need Spacedock installed; see [Install](../index.md#install).
 
-> **[Screenshot to take:** a question and the agent's answer, shown in the Review pane.**]**
+## Choose where to review
 
-> **Draft note, not page copy:** asking the agent works in the terminal only today. The browser viewer (subspace-web v0.2.6) handles comments, with nothing for questions. Question for Kent Chen below.
+1. **Run the command.** The first time in a project, your agent asks "Terminal (TUI) or Web?". Terminal keeps the file on your machine. Web uploads it to review.spacedock.md, where anyone with the link can open it.
+2. **If you choose Web, agree to the upload.** Your agent asks once more: "Web uploads the file to review.spacedock.md. Anyone with the link can open it, and it expires automatically after seven days. Agree?"
 
-## Ask for a second opinion
+Your answer is remembered for this project. To change it, run `/spacedock:review` with no file.
 
-Some calls need someone who knows the area better than you do. Send the review to a colleague, and their comments come back to your session next to your own. The call stays yours.
+## Review in the terminal
 
-> **Draft note, not page copy:** steps to come. Sharing depends on the relay reaching production, and the terminal side is an open PR, so the real steps aren't known yet. **Questions for Kent Chen:** on 10-15, (1) how does a user open a review in the browser, and how do they comment and finish there? (2) what exact steps does a user take to share a review, from the terminal and from the browser, and what does the colleague see and do? (3) will asking the agent a question work in the browser on 10-15, or is it terminal-only at launch?
+1. **Read the file.** It opens beside your agent session.
+2. **Select text and press <kbd>c</kbd> to comment**, or <kbd>s</kbd> to suggest the text you want instead.
+3. **Press <kbd>q</kbd> to finish.** The finish screen shows "No decision".
+4. **Press <kbd>Tab</kbd> to choose** Approve, Request changes or Hold decision. Type to add an overall note. Request changes and Hold decision need a note or at least one comment.
+5. **Press <kbd>Enter</kbd> to send.** Your agent gets the decision and every comment, each attached to the text it is about.
 
-> **[Screenshot to take:** your session with a colleague's comments beside your own, each marked with who wrote it.**]**
+> **[Screenshot to take:** the finish screen with Request changes chosen and two comments.**]**
+
+Press <kbd>?</kbd> in the review for every key.
+
+## Review in the browser
+
+1. **Open your owner link.** Your agent shows you a share link and opens your owner link in your browser. The owner link is for you alone, works once, and expires after 15 minutes.
+2. **Press "Sign in as owner".** The page says "Your agent gets every comment and your decision." Signing in also links your agent to your account.
+3. **Select text and comment.**
+4. **Send the share link** to anyone whose comments you want. Their comments appear on your page.
+5. **Press "Finish review…" and choose** Approve, Request changes or Hold decision. Tick the comments, yours or others', that go with it.
+6. **Send.** The review closes, and your agent, which has been waiting, picks up your decision and the comments you chose.
+
+> **[Screenshot to take:** the Finish review sheet with another reviewer's comment ticked and Request changes chosen.**]**
+
+## What a colleague sees
+
+Send the share link to the person who knows the area best. They need nothing installed and no account.
+
+1. **They open the link.** The page says "You're the reviewer", with a random name filled in.
+2. **They continue with that name, type their own, or sign in** to use their account's name.
+3. **They select text and comment.** "My feedback" lists what they sent; they do not see other reviewers' comments.
+4. **Their comments reach your page**, and you choose which go to your agent with your decision.
+
+A colleague can also hand the link to their own agent. It reads `review.spacedock.md/llms.txt` and comments the same way, under the name it declares.
 
 ## Next
 
-- [What connects today](../workflow/index.md#next): decide a call [Workflow](../workflow/index.md) holds for you in Review, instead of in chat.
-- [Review reference](reference.md): every command and key.
+- [Look up every argument, key and limit](reference.md).
+- [Check what happens to a document you share](index.md#what-happens-to-a-document-you-share) before you send a link.
