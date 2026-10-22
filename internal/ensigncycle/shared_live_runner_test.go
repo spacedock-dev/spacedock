@@ -35,14 +35,9 @@ func liveJourney[Builder, Assertion any](t *testing.T, id, fixtureID string, bui
 	build, buildCalls := countedLiveFunction(t, builder)
 	assert, assertionCalls := countedLiveFunction(t, assertion)
 	newDriver, target := liveDriverForRuntime(t, id)
-	var selected liveJourneyGap
-	for _, gap := range gaps {
-		if gap.target == target {
-			selected = gap
-			if gap.kind == "todo" {
-				t.Skipf("TODO(%s): %s/%s lacks passing live evidence", gap.owner, target, id)
-			}
-		}
+	selected := selectLiveGap(gaps, target)
+	if selected.kind == "todo" {
+		t.Skipf("TODO(%s): %s/%s lacks passing live evidence", selected.owner, target, id)
 	}
 	if liveRuntimeRunsParallel(os.Getenv("SPACEDOCK_LIVE_RUNTIME")) && !strings.HasPrefix(t.Name(), "TestLiveScheduled/") {
 		t.Parallel()
@@ -52,6 +47,16 @@ func liveJourney[Builder, Assertion any](t *testing.T, id, fixtureID string, bui
 	if *buildCalls == 0 || *assertionCalls == 0 {
 		t.Fatalf("live journey %s executed builder/assertion %d/%d times", id, *buildCalls, *assertionCalls)
 	}
+}
+
+// selectLiveGap returns the gap bound to exactly this runtime target, or none.
+func selectLiveGap(gaps []liveJourneyGap, target string) (selected liveJourneyGap) {
+	for _, gap := range gaps {
+		if gap.target == target {
+			selected = gap
+		}
+	}
+	return selected
 }
 
 func countedLiveFunction[Function any](t *testing.T, function Function) (Function, *int) {

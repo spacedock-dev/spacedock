@@ -73,6 +73,17 @@ func TestLiveBareReachable(t *testing.T) {
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 
+// breakGlassSelectedBareGap binds the Sonnet-owned known failure only on claude-sonnet.
+func breakGlassSelectedBareGap(target string) liveJourneyGap {
+	return selectLiveGap([]liveJourneyGap{liveXFail("claude-sonnet", "060xp69y61yhrww23g3wvwqy")}, target)
+}
+
+func TestBreakGlassSelectedBareGapBindsOnlySonnet(t *testing.T) {
+	if sonnet, haiku := breakGlassSelectedBareGap("claude-sonnet"), breakGlassSelectedBareGap("claude-haiku"); sonnet.kind != "xfail" || sonnet.target != "claude-sonnet" || haiku != (liveJourneyGap{}) {
+		t.Fatalf("break-glass selected-bare gap: claude-sonnet=%+v claude-haiku=%+v; want a Sonnet xfail and no Haiku binding", sonnet, haiku)
+	}
+}
+
 // TestLiveBreakGlassShimRecovery is AC-3's behavioral proof: a PATH-shimmed
 // `spacedock dispatch build` that fails for real must produce a captain-facing
 // helper-failure report BEFORE any Agent() call, a
@@ -86,6 +97,10 @@ func TestLiveBareReachable(t *testing.T) {
 //spacedock:live-proof id=claude-dispatch-build-break-glass lane=claude-live
 func TestLiveBreakGlassShimRecovery(t *testing.T) {
 	runner := newClaudeLiveRunner(t)
+	target, err := claudeLiveRole(runner.model())
+	if err != nil {
+		t.Fatal(err)
+	}
 	shimDir := writeStubBreakGlassSpacedock(t, runner.binary)
 	runner.env = withSpacedockShimShellEnv(t, runner.env, shimDir)
 	scenarioRunner := runner.withStubPATH(shimDir)
@@ -105,7 +120,7 @@ func TestLiveBreakGlassShimRecovery(t *testing.T) {
 			observablesErr := assertBreakGlassObservables(result.stream, tc.mode)
 			durableErr := assertBreakGlassDurableResult(workflowRoot, entityPath)
 			if tc.name == "selected-bare" {
-				scenario.gap = liveXFail("claude-sonnet", "060xp69y61yhrww23g3wvwqy")
+				scenario.gap = breakGlassSelectedBareGap(target)
 				finishLiveScenario(t, scenarioRunner, scenario, result,
 					durableSemantic("break-glass-observables", observablesErr),
 					durableSemantic("break-glass-durable-result", durableErr),
