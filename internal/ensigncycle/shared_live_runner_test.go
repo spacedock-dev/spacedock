@@ -230,9 +230,11 @@ func TestLiveCommonACValueReanchor(t *testing.T) {
 	liveJourney(t, "ac-value-reanchor", "ac-reanchor/means-pass-value-regressed", authorACReanchorScenario, []liveJourneyGap{liveXFail("pi", "psvqjf0w8xh2txp9604gsvmz")}, runACValueReanchorJourney, assertACReanchorScenario)
 }
 
+var withdrawnGateRecoveryGaps = []liveJourneyGap{liveXFail("claude-haiku", "")}
+
 //spacedock:live-journey id=withdrawn-gate-recovery fixture=recorded-gate/withdrawn
 func TestLiveCommonWithdrawnGateRecovery(t *testing.T) {
-	liveJourney(t, "withdrawn-gate-recovery", "recorded-gate/withdrawn", writeWithdrawnGateFixture, []liveJourneyGap{liveXFail("claude-haiku", "")}, runClaudeWithdrawnGateRecoveryScenario, assertWithdrawnGateRecovery)
+	liveJourney(t, "withdrawn-gate-recovery", "recorded-gate/withdrawn", writeWithdrawnGateFixture, withdrawnGateRecoveryGaps, runClaudeWithdrawnGateRecoveryScenario, assertWithdrawnGateRecovery)
 }
 
 //spacedock:live-journey id=gate-guardrail fixture=recorded-gate/held

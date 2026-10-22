@@ -26,6 +26,6 @@ that runtime target. Removing a binding claims the journey is green there.
 | smallest-sufficient-mechanism | jfdrr2dbdtt952s4cvvy74k8 | claude-sonnet red `smallest-mechanism-violation` |
 | keep-moving-posture | unowned (blank; pending analysis) | claude-haiku red `keep-moving-violation` |
 | default-headless-gate-stop | unowned (blank; pending analysis) | claude-haiku reds `gate-hold-violation`, `gate-not-held`, `implementation-worker-not-dispatched` |
-| withdrawn-gate-recovery | unowned (blank; pending analysis) | claude-haiku red: recovery crossed its prepare/commit gate-stop boundary (runner fatal, no grade code) |
+| withdrawn-gate-recovery | unowned (blank; pending analysis) | claude-haiku red `withdrawn-recovery-boundary` |
 | filing | unowned (blank; pending analysis) | claude-haiku red `filing-command-not-observed` |
 | break-glass selected-bare (`dispatch_recovery_live_test.go`) | unowned (blank; pending analysis) | claude-haiku red `break-glass-observables` |

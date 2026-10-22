@@ -337,38 +337,46 @@ func runClaudeWithdrawnGateRecoveryScenario(t *testing.T, runner liveDriver, sce
 	runner = runner.withStubPATH(shimDir)
 	result := runner.run(t, scenario, workflowRoot, gatePrompt(workflowRoot))
 
-	doc, _, err := gates.Read(fixture.entity)
+	log, _ := os.ReadFile(commandLog) // absent if the model never ran spacedock: no prepare, a boundary finding
+	semantic := []error{withdrawnRecoveryRecord(fixture.entity, assert), withdrawnRecoveryBoundary(string(log))}
+	if readFile(t, firstBriefingPath) != firstBriefing {
+		semantic = append(semantic, &gradedErr{code: "withdrawn-recovery-room", msg: "recovery rewrote withdrawn room bytes"})
+	}
+	if !validatingStatus.MatchString(readFile(t, fixture.entity)) {
+		semantic = append(semantic, &gradedErr{code: "withdrawn-recovery-status", msg: "withdrawn recovery changed workflow status"})
+	}
+	finishLiveScenario(t, runner, scenario, result, semantic...)
+}
+
+func withdrawnRecoveryRecord(entity string, assert func(*gates.Document) error) error {
+	doc, _, err := gates.Read(entity)
 	if err != nil {
-		t.Fatalf("read recovered entity: %v\nArtifacts: %s", err, result.artifactDir)
+		return &gradedErr{code: "withdrawn-recovery-record", msg: fmt.Sprintf("read recovered entity: %v", err)}
 	}
 	if err := assert(doc); err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+		return durableSemantic("withdrawn-recovery-record", err)
 	}
 	current := doc.Records[0].Attempts[1]
-	if readFile(t, firstBriefingPath) != firstBriefing {
-		t.Fatalf("recovery rewrote withdrawn room bytes\nArtifacts: %s", result.artifactDir)
-	}
-	secondRoom, resolveErr := gates.ResolveRoomRef(fixture.entity, current.Briefing.RoomRef)
+	secondRoom, resolveErr := gates.ResolveRoomRef(entity, current.Briefing.RoomRef)
 	entries, err := os.ReadDir(secondRoom)
 	if resolveErr != nil || err != nil || len(entries) != 1 || entries[0].Name() != "index.json" || !entries[0].Type().IsRegular() {
-		t.Fatalf("successor room is not the emitted one-file room: resolve=%v entries=%v err=%v\nArtifacts: %s", resolveErr, entries, err, result.artifactDir)
+		return &gradedErr{code: "withdrawn-recovery-room", msg: fmt.Sprintf("successor room is not the emitted one-file room: resolve=%v entries=%v err=%v", resolveErr, entries, err)}
 	}
 	if current.Briefing.RequestDigest != "" {
-		t.Fatalf("successor binding carries request-digest %q\nArtifacts: %s", current.Briefing.RequestDigest, result.artifactDir)
+		return &gradedErr{code: "withdrawn-recovery-room", msg: fmt.Sprintf("successor binding carries request-digest %q", current.Briefing.RequestDigest)}
 	}
-	log := readFile(t, commandLog)
-	const prepare = "exit=0\tgate prepare recorded-gate-task "
-	if strings.Count(log, prepare) != 1 ||
+	return nil
+}
+
+func withdrawnRecoveryBoundary(log string) error {
+	if strings.Count(log, "exit=0\tgate prepare recorded-gate-task ") != 1 ||
 		strings.Count(log, "exit=0\tstate commit recorded-gate-task") != 1 ||
 		strings.Contains(log, "gate record recorded-gate-task") ||
 		strings.Contains(log, "gate consume recorded-gate-task") ||
 		strings.Contains(log, "dispatch build ") {
-		t.Fatalf("withdrawn recovery crossed its prepare/commit gate-stop boundary\n%s\nArtifacts: %s", log, result.artifactDir)
+		return &gradedErr{code: "withdrawn-recovery-boundary", msg: "withdrawn recovery crossed its prepare/commit gate-stop boundary\n" + log}
 	}
-	if !validatingStatus.MatchString(readFile(t, fixture.entity)) {
-		t.Fatalf("withdrawn recovery changed workflow status\nArtifacts: %s", result.artifactDir)
-	}
-	runner.emitMetrics(t, scenario, result)
+	return nil
 }
 
 func assertWithdrawnGateRecovery(doc *gates.Document) error {
