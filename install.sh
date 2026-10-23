@@ -108,9 +108,7 @@ fetch() {
 
 # release_tag prints the newest release tag of a repo on the selected channel.
 # Stable reads the redirect of github.com/REPO/releases/latest, which skips
-# prereleases and is not subject to the API's 60-an-hour limit; edge reads the
-# newest entry of the API's created_at-descending list. Either falls back to the
-# tags (newest_tag); when nothing resolves it says why and returns 1.
+# prereleases and is outside the API's 60-an-hour limit; edge reads the API.
 release_tag() {
 	rt_repo="$1"
 	rt_tag=""

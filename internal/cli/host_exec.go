@@ -416,8 +416,7 @@ type installStep struct {
 	argv         []string
 	tolerateExit bool
 	reportExit   bool
-	// ifInstalled names a plugin id; claude skips the step when its inventory lists no such id at user scope.
-	ifInstalled string
+	ifInstalled  string
 }
 
 // retiredRouteAID is the retired route-A plugin id from round 1's collapse (the
@@ -441,9 +440,8 @@ const retiredRouteAID = "spacedock-edge@spacedock"
 // The cleanup steps are tolerated. Claude exits 1 on a fresh box and on an
 // already-current source. No stable stderr shape separates those cases from a real
 // failure. An absent sibling alone gives two different non-zero shapes. The pinning
-// steps stay fail-fast, because they report a broken install. An uninstall also
-// carries ifInstalled, so Install runs it only for a plugin the inventory lists, and
-// reportExit, so a listed plugin that fails to uninstall is still shown.
+// steps stay fail-fast, because they report a broken install. An uninstall runs
+// only for a plugin the inventory lists (ifInstalled) and shows its failure (reportExit).
 func installArgvSequence(source, devBranch string) []installStep {
 	id := channelPluginID(devBranch)
 	steps := []installStep{
@@ -596,10 +594,9 @@ func (execHost) Install(host, source, devBranch string) (string, error) {
 	return runInstallSteps(host, steps)
 }
 
-// claudeUserPluginIDs lists the plugin ids installed at user scope, which is the
-// scope `plugin uninstall` acts on. A plugin whose marketplace listing is gone is
-// still listed, with an errors field, and still uninstalls. It returns nil when the
-// inventory cannot be read, so that every step runs as it did before.
+// claudeUserPluginIDs lists the ids installed at user scope, where `plugin uninstall`
+// acts. A plugin whose marketplace listing is gone is still listed, with an errors
+// field. It returns nil when the inventory cannot be read.
 func claudeUserPluginIDs(host string) map[string]bool {
 	out, err := exec.Command(host, "plugin", "list", "--json").Output()
 	if err != nil {
