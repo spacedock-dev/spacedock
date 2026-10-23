@@ -440,8 +440,7 @@ const retiredRouteAID = "spacedock-edge@spacedock"
 // The cleanup steps are tolerated. Claude exits 1 on a fresh box and on an
 // already-current source. No stable stderr shape separates those cases from a real
 // failure. An absent sibling alone gives two different non-zero shapes. The pinning
-// steps stay fail-fast, because they report a broken install. An uninstall runs
-// only for a plugin the inventory lists (ifInstalled) and shows its failure (reportExit).
+// steps stay fail-fast, because they report a broken install.
 func installArgvSequence(source, devBranch string) []installStep {
 	id := channelPluginID(devBranch)
 	steps := []installStep{
