@@ -95,6 +95,7 @@ func assertRenderedCask(t *testing.T, name, body string) {
 		t.Fatalf("rendered cask %q has no caveats block to inspect:\n%s", name, body)
 	}
 	assertSafehouseCaveat(t, name, caveats)
+	assertPluginStepCaveat(t, name, caveats)
 	if strings.Contains(caveats, "agentsview") {
 		t.Errorf("rendered cask %q still lists agentsview in caveats; it moved to depends_on:\n%s", name, caveats)
 	}
@@ -117,6 +118,15 @@ func assertSafehouseCaveat(t *testing.T, name, caveats string) {
 	}
 	if strings.Contains(caveats, "not installed by brew") {
 		t.Errorf("cask %q caveats still says safehouse is \"not installed by brew\"; it is brew-installable from its tap:\n%s", name, caveats)
+	}
+}
+
+func assertPluginStepCaveat(t *testing.T, name, caveats string) {
+	t.Helper()
+	for _, want := range []string{"spacedock install --host claude", "--host codex"} {
+		if !strings.Contains(caveats, want) {
+			t.Errorf("cask %q caveats does not tell the user to run %q:\n%s", name, want, caveats)
+		}
 	}
 }
 
@@ -268,6 +278,7 @@ func assertCaskConfig(t *testing.T) {
 			}
 		}
 		assertSafehouseCaveat(t, cask.Name, cask.Caveats)
+		assertPluginStepCaveat(t, cask.Name, cask.Caveats)
 		if strings.Contains(cask.Caveats, "agentsview") {
 			t.Errorf("cask %q still lists agentsview in caveats; it moved to a dependency:\n%s", cask.Name, cask.Caveats)
 		}
