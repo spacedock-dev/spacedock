@@ -307,9 +307,8 @@ func TestInstallWithNoExtensionTableRowInstallsOnlySpacedock(t *testing.T) {
 
 // stubCurl serves install.sh's release lookups and downloads from the staged
 // directories and logs every URL, so a run without SPACEDOCK_INSTALL_FROM stays
-// offline. STUB_API=fail and STUB_REDIRECT=fail|norelease break those two lookups,
-// STUB_FAIL_REPO breaks every lookup of one repo, and the stub git prints
-// STUB_TAGS for `ls-remote --tags` (nothing when unset).
+// offline. STUB_API, STUB_REDIRECT (fail or norelease) and STUB_FAIL_REPO break
+// lookups; the stub git prints STUB_TAGS.
 func (r *extrasRun) stubCurl(osName, arch string) (log string) {
 	r.t.Helper()
 	log = filepath.Join(r.t.TempDir(), "urls.log")
