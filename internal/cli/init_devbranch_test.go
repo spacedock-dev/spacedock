@@ -42,9 +42,9 @@ func TestInitTargetsNextWhenDevBranchPinned(t *testing.T) {
 func TestInstallArgvSequence(t *testing.T) {
 	withNoExtensions(t)
 	wantEdge := []installStep{
-		{argv: []string{"plugin", "uninstall", "spacedock@spacedock-edge"}, tolerateExit: true},
-		{argv: []string{"plugin", "uninstall", "spacedock@spacedock"}, tolerateExit: true},
-		{argv: []string{"plugin", "uninstall", "spacedock-edge@spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "uninstall", "spacedock@spacedock-edge"}, tolerateExit: true, reportExit: true, ifInstalled: "spacedock@spacedock-edge"},
+		{argv: []string{"plugin", "uninstall", "spacedock@spacedock"}, tolerateExit: true, reportExit: true, ifInstalled: "spacedock@spacedock"},
+		{argv: []string{"plugin", "uninstall", "spacedock-edge@spacedock"}, tolerateExit: true, reportExit: true, ifInstalled: "spacedock-edge@spacedock"},
 		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}},
 		{argv: []string{"plugin", "marketplace", "update", "spacedock-edge"}, tolerateExit: true},
 		{argv: []string{"plugin", "install", "spacedock@spacedock-edge"}},
@@ -54,9 +54,9 @@ func TestInstallArgvSequence(t *testing.T) {
 	}
 
 	wantStable := []installStep{
-		{argv: []string{"plugin", "uninstall", "spacedock@spacedock"}, tolerateExit: true},
-		{argv: []string{"plugin", "uninstall", "spacedock@spacedock-edge"}, tolerateExit: true},
-		{argv: []string{"plugin", "uninstall", "spacedock-edge@spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "uninstall", "spacedock@spacedock"}, tolerateExit: true, reportExit: true, ifInstalled: "spacedock@spacedock"},
+		{argv: []string{"plugin", "uninstall", "spacedock@spacedock-edge"}, tolerateExit: true, reportExit: true, ifInstalled: "spacedock@spacedock-edge"},
+		{argv: []string{"plugin", "uninstall", "spacedock-edge@spacedock"}, tolerateExit: true, reportExit: true, ifInstalled: "spacedock-edge@spacedock"},
 		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}},
 		{argv: []string{"plugin", "marketplace", "update", "spacedock"}, tolerateExit: true},
 		{argv: []string{"plugin", "install", "spacedock@spacedock"}},

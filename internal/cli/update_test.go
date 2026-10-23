@@ -2,9 +2,13 @@ package cli
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -394,5 +398,42 @@ func TestUpdateLeavesAClaudeWithoutTheSpacedockPluginAlone(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), "claude has no Spacedock plugin, so its plugins were skipped.") {
 		t.Errorf("output does not name the skipped claude:\n%s", stdout.String())
+	}
+}
+
+func TestUpdateFailsAndRefreshesNoPluginWhenGitHubLimitsAnExtensionLookup(t *testing.T) {
+	s := stageInstall(t)
+	root := t.TempDir()
+	dist, stubs := filepath.Join(root, "dist"), filepath.Join(root, "stubs")
+	writeProgram(t, filepath.Join(root, "pkg", "spacedock"), "spacedock 9.9.9")
+	writeProgramExiting(t, filepath.Join(stubs, "curl"), 22, "")
+	writeProgram(t, filepath.Join(stubs, "git"), "")
+	archive := "spacedock_9.9.9_" + runtime.GOOS + "_" + runtime.GOARCH + "_edge.tar.gz"
+	mustMkdir(t, dist)
+	if out, err := exec.Command("tar", "-czf", filepath.Join(dist, archive), "-C", filepath.Join(root, "pkg"), "spacedock").CombinedOutput(); err != nil {
+		t.Fatalf("tar: %v\n%s", err, out)
+	}
+	data, err := os.ReadFile(filepath.Join(dist, archive))
+	if err != nil {
+		t.Fatal(err)
+	}
+	sum := sha256.Sum256(data)
+	mustWrite(t, filepath.Join(dist, "checksums.txt"), hex.EncodeToString(sum[:])+"  "+archive+"\n")
+	script, err := filepath.Abs(filepath.Join("..", "..", "install.sh"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	d := updateDepsFor(s, s.host, script)
+	d.env = append(d.env, "PATH="+stubs+":/usr/bin:/bin", "SPACEDOCK_INSTALL_FROM="+dist, "SPACEDOCK_EXTRAS=1")
+
+	var stdout, stderr bytes.Buffer
+	if code := runUpdate(d, &stdout, &stderr); code != 1 {
+		t.Fatalf("exit = %d, want 1; stderr:\n%s", code, stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "rate limit") {
+		t.Errorf("stderr does not name GitHub's rate limit:\n%s", stderr.String())
+	}
+	if strings.Contains(stdout.String(), "Claude Code plugins") || len(s.host.installCmds) != 0 {
+		t.Errorf("a failed lookup still refreshed plugins or printed a result table: installCmds=%v\n%s", s.host.installCmds, stdout.String())
 	}
 }

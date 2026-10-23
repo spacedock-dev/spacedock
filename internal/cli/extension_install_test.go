@@ -29,10 +29,10 @@ func testInstallSequencesFollowEachExtension(t *testing.T, source, branch string
 
 	claude := installArgvSequence(source, branch)
 	wantClaude := []installStep{
-		{argv: []string{"plugin", "uninstall", "alpha@spacedock-edge"}, tolerateExit: true},
+		{argv: []string{"plugin", "uninstall", "alpha@spacedock-edge"}, tolerateExit: true, reportExit: true, ifInstalled: "alpha@spacedock-edge"},
 		{argv: []string{"plugin", "install", "alpha@spacedock"}, tolerateExit: true},
 		{argv: []string{"plugin", "update", "alpha@spacedock"}, tolerateExit: true, reportExit: true},
-		{argv: []string{"plugin", "uninstall", "beta@spacedock-edge"}, tolerateExit: true},
+		{argv: []string{"plugin", "uninstall", "beta@spacedock-edge"}, tolerateExit: true, reportExit: true, ifInstalled: "beta@spacedock-edge"},
 		{argv: []string{"plugin", "install", "beta@spacedock"}, tolerateExit: true},
 		{argv: []string{"plugin", "update", "beta@spacedock"}, tolerateExit: true, reportExit: true},
 	}

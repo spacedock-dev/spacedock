@@ -19,6 +19,9 @@ Pi. Install one of those first.
     The optional sandbox, safehouse, is installed separately — see
     [Sandboxing](../reference/sandbox.md).
 
+    Homebrew installs the program only. Add the agent plugins with
+    `spacedock install --host claude` (or `--host codex`).
+
 === "Binary (macOS / Linux)"
 
     ```bash
