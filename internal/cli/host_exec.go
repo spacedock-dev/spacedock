@@ -29,6 +29,7 @@ type pluginListEntry struct {
 	InstallPath string `json:"installPath"`
 	Installed   bool   `json:"installed"`
 	Enabled     bool   `json:"enabled"`
+	Scope       string `json:"scope"`
 }
 
 // PluginInventory normalizes the host's JSON listing for doctor.
@@ -415,6 +416,8 @@ type installStep struct {
 	argv         []string
 	tolerateExit bool
 	reportExit   bool
+	// ifInstalled names a plugin id; claude skips the step when its inventory lists no such id at user scope.
+	ifInstalled string
 }
 
 // retiredRouteAID is the retired route-A plugin id from round 1's collapse (the
@@ -438,13 +441,15 @@ const retiredRouteAID = "spacedock-edge@spacedock"
 // The cleanup steps are tolerated. Claude exits 1 on a fresh box and on an
 // already-current source. No stable stderr shape separates those cases from a real
 // failure. An absent sibling alone gives two different non-zero shapes. The pinning
-// steps stay fail-fast, because they report a broken install.
+// steps stay fail-fast, because they report a broken install. An uninstall also
+// carries ifInstalled, so Install runs it only for a plugin the inventory lists, and
+// reportExit, so a listed plugin that fails to uninstall is still shown.
 func installArgvSequence(source, devBranch string) []installStep {
 	id := channelPluginID(devBranch)
 	steps := []installStep{
-		{argv: []string{"plugin", "uninstall", id}, tolerateExit: true},
-		{argv: []string{"plugin", "uninstall", "spacedock@" + otherChannelMarketplace(devBranch)}, tolerateExit: true},
-		{argv: []string{"plugin", "uninstall", retiredRouteAID}, tolerateExit: true},
+		uninstallStep(id),
+		uninstallStep("spacedock@" + otherChannelMarketplace(devBranch)),
+		uninstallStep(retiredRouteAID),
 		{argv: []string{"plugin", "marketplace", "add", source}},
 		{argv: []string{"plugin", "marketplace", "update", channelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "install", id}},
@@ -459,12 +464,16 @@ func installArgvSequence(source, devBranch string) []installStep {
 		extID := extensionPluginID(ext.name)
 		// Claude's `plugin install` does nothing for an installed plugin, hence the update.
 		steps = append(steps,
-			installStep{argv: []string{"plugin", "uninstall", edgeCopyID(ext.name)}, tolerateExit: true},
+			uninstallStep(edgeCopyID(ext.name)),
 			installStep{argv: []string{"plugin", "install", extID}, tolerateExit: true},
 			installStep{argv: []string{"plugin", "update", extID}, tolerateExit: true, reportExit: true},
 		)
 	}
 	return steps
+}
+
+func uninstallStep(id string) installStep {
+	return installStep{argv: []string{"plugin", "uninstall", id}, tolerateExit: true, reportExit: true, ifInstalled: id}
 }
 
 // codexInstallArgvSequence is the codex analog of installArgvSequence: no step
@@ -578,13 +587,48 @@ func (execHost) Install(host, source, devBranch string) (string, error) {
 	var steps []installStep
 	switch host {
 	case "claude":
-		steps = installArgvSequence(source, devBranch)
+		steps = skipAbsentPlugins(installArgvSequence(source, devBranch), claudeUserPluginIDs(host))
 	case "codex":
 		steps = codexInstallArgvSequence(source, devBranch)
 	default:
 		return "", fmt.Errorf("programmatic install is supported for claude and codex, not %q", host)
 	}
 	return runInstallSteps(host, steps)
+}
+
+// claudeUserPluginIDs lists the plugin ids installed at user scope, which is the
+// scope `plugin uninstall` acts on. A plugin whose marketplace listing is gone is
+// still listed, with an errors field, and still uninstalls. It returns nil when the
+// inventory cannot be read, so that every step runs as it did before.
+func claudeUserPluginIDs(host string) map[string]bool {
+	out, err := exec.Command(host, "plugin", "list", "--json").Output()
+	if err != nil {
+		return nil
+	}
+	var entries []pluginListEntry
+	if json.Unmarshal(out, &entries) != nil {
+		return nil
+	}
+	ids := map[string]bool{}
+	for _, e := range entries {
+		if e.Scope == "" || e.Scope == "user" {
+			ids[e.ID] = true
+		}
+	}
+	return ids
+}
+
+func skipAbsentPlugins(steps []installStep, installed map[string]bool) []installStep {
+	if installed == nil {
+		return steps
+	}
+	var kept []installStep
+	for _, step := range steps {
+		if step.ifInstalled == "" || installed[step.ifInstalled] {
+			kept = append(kept, step)
+		}
+	}
+	return kept
 }
 
 // InstallCodexLocalPluginDir shells the codex `--plugin-dir` dev-install

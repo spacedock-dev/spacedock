@@ -306,7 +306,10 @@ func TestInstallWithNoExtensionTableRowInstallsOnlySpacedock(t *testing.T) {
 }
 
 // stubCurl serves install.sh's release lookups and downloads from the staged
-// directories and logs every URL, so a run without SPACEDOCK_INSTALL_FROM stays offline.
+// directories and logs every URL, so a run without SPACEDOCK_INSTALL_FROM stays
+// offline. STUB_API=fail and STUB_REDIRECT=fail|norelease break those two lookups,
+// STUB_FAIL_REPO breaks every lookup of one repo, and the stub git prints
+// STUB_TAGS for `ls-remote --tags` (nothing when unset).
 func (r *extrasRun) stubCurl(osName, arch string) (log string) {
 	r.t.Helper()
 	log = filepath.Join(r.t.TempDir(), "urls.log")
@@ -322,17 +325,21 @@ func (r *extrasRun) stubCurl(osName, arch string) (log string) {
 	body := `#!/bin/sh
 out=""; url=""
 while [ $# -gt 0 ]; do
-	case "$1" in -o) out="$2"; shift ;; -*) ;; *) url="$1" ;; esac
+	case "$1" in -o) out="$2"; shift ;; -w) shift ;; -*) ;; *) url="$1" ;; esac
 	shift
 done
 echo "$url" >> '` + log + `'
 repo="${url#https://api.github.com/repos/}"; repo="${repo#https://github.com/}"; repo="${repo%%/releases*}"
+case "$repo" in
+	spacedock-dev/spacedock) tag=v` + r.launcherVersion + ` ;; spacedock-dev/alpha) tag=v0.16.0 ;; *) tag=v1.0.1 ;;
+esac
 case "$url" in
 	https://api.github.com/*)
-		case "$repo" in
-			spacedock-dev/spacedock) tag=v` + r.launcherVersion + ` ;; spacedock-dev/alpha) tag=v0.16.0 ;; *) tag=v1.0.1 ;;
-		esac
+		[ "$STUB_API" = fail ] || [ "$repo" = "$STUB_FAIL_REPO" ] && exit 22
 		printf '{"tag_name": "%s"}\n' "$tag" ;;
+	https://github.com/*/releases/latest)
+		[ "$STUB_REDIRECT" = fail ] || [ "$repo" = "$STUB_FAIL_REPO" ] && exit 22
+		if [ "$STUB_REDIRECT" = norelease ]; then printf 'https://github.com/%s/releases' "$repo"; else printf 'https://github.com/%s/releases/tag/%s' "$repo" "$tag"; fi ;;
 	https://github.com/*/releases/download/*)
 		dir='` + r.extras + `'; [ "$repo" = spacedock-dev/spacedock ] && dir='` + r.dist + `'
 		cp "$dir/${url##*/}" "$out" ;;
@@ -343,6 +350,7 @@ esac
 	if err := os.WriteFile(filepath.Join(dir, "curl"), []byte(body), 0o755); err != nil {
 		r.t.Fatal(err)
 	}
+	r.addProgram("git", `for t in $STUB_TAGS; do printf 'abc123\trefs/tags/%s\n' "$t"; done`)
 	return log
 }
 
@@ -373,7 +381,7 @@ func TestInstallExtrasRunOnEveryChannelUnlessNone(t *testing.T) {
 				t.Errorf("spacedock itself was not installed:\n%s", stderr)
 			}
 			_, linkErr := os.Stat(filepath.Join(r.bin, "spacedock-alpha"))
-			asked := strings.Contains(string(urls), "repos/spacedock-dev/alpha/")
+			asked := strings.Contains(string(urls), "spacedock-dev/alpha/")
 			if tc.extension != (linkErr == nil) || tc.extension != asked {
 				t.Errorf("extension wanted=%v, but spacedock-alpha linked=%v and its release asked=%v\nurls:\n%s\nstderr:\n%s",
 					tc.extension, linkErr == nil, asked, urls, stderr)
@@ -433,7 +441,7 @@ func TestInstallExtrasRespectStableLauncherBoundary(t *testing.T) {
 				}
 			}
 			if !tc.extension {
-				if strings.Contains(string(urls), "repos/spacedock-dev/alpha/") || strings.Contains(string(urls), "repos/spacedock-dev/beta/") {
+				if strings.Contains(string(urls), "spacedock-dev/alpha/") || strings.Contains(string(urls), "spacedock-dev/beta/") {
 					t.Errorf("binary-only install looked up extension releases:\n%s", urls)
 				}
 				if entries, _ := os.ReadDir(r.data); len(entries) != 0 {

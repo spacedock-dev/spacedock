@@ -65,6 +65,10 @@ An extension that Spacedock installs publishes, on its GitHub repository:
 
 Spacedock verifies each archive against `checksums.txt` before installing it.
 
+Publish a release's tag and its archives together: when GitHub does not answer the
+latest-release lookup, Spacedock installs the newest version tag it finds with
+`git ls-remote`.
+
 ## Install table
 
 `install.sh` holds one row per extension in `EXTRAS`:
