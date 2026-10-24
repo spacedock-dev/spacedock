@@ -91,6 +91,17 @@ gates:
                 id: briefing:f77r1rj2g7sgj3hkrht7n37f:validation:attempt-4:revision-1
                 digest: sha256:0d92a025f8be8ef9db4728803843fdfc412db4e3a5f644e8735a16090554b152
                 room-ref: '@review/validation/briefing-4'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:f77r1rj2g7sgj3hkrht7n37f:validation:4
+                briefing: briefing:f77r1rj2g7sgj3hkrht7n37f:validation:attempt-4:revision-1
+                by: person:captain
+                at: "2026-10-24T15:21:09.004555Z"
+                decision: approve
+                reason: 'Captain approves candidate 861a6e13a at validation attempt-4: Haiku blank-owner XFAILs, per-target break-glass binding, gap-aware withdrawn-gate-recovery, registry doc sync; accepts the listed deferred risks and presentation without an independent cycle-3 reviewer.'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-10-07T18:15:05Z
 worktree: .worktrees/spacedock-ensign-claude-lane-model-agnostic-entry-point
 review-round:
