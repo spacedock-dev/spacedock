@@ -4,7 +4,20 @@ Review your agent’s work in your browser. Spacedock hosts the uploaded documen
 
 ## Open your review
 
-Ask your agent to send a file through Spacedock Review and choose **Web**. After you agree to the upload, it opens your owner link. Press **Sign in as owner** so you can make the decision.
+In Claude Code, request a decision in the browser:
+
+<!-- Keyword invocation verification: https://github.com/spacedock-dev/spacedock/issues/852 -->
+
+<div class="sd-agent-prompt">
+  <code>/spacedock:review plan.md web decision</code>
+  <button type="button" class="sd-prompt-copy" aria-label="Copy agent prompt" aria-live="polite" hidden>copy</button>
+</div>
+
+Or ask your agent:
+
+> Send plan.md to me in Spacedock Review in the browser for a decision.
+
+Agree to the upload. Your agent opens your owner link. Press **Sign in as owner** so you can make the decision.
 
 Keep the owner link for yourself. The separate share link is for [inviting others](sharing.md).
 
@@ -12,7 +25,7 @@ Keep the owner link for yourself. The separate share link is for [inviting other
 
 ## Comment and decide
 
-1. Select a passage and add a comment.
+1. Select text and add a comment.
 2. Press **Finish review**. Choose **Approve**, **Request changes** or **Hold decision**.
 3. Press **Send decision**. Your agent receives the decision and included comments. The review closes.
 

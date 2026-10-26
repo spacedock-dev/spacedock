@@ -1,11 +1,17 @@
 # Your first review
 
-[Install Spacedock](../get-started/install.md), then ask your agent. Replace `plan.md` with your file name:
+[Install Spacedock](../get-started/install.md). In Claude Code, use the review skill. Replace `plan.md` with your file name:
+
+<!-- Keyword invocation verification: https://github.com/spacedock-dev/spacedock/issues/852 -->
 
 <div class="sd-agent-prompt">
-  <code>Send plan.md to me in Spacedock Review for a decision.</code>
+  <code>/spacedock:review plan.md decision</code>
   <button type="button" class="sd-prompt-copy" aria-label="Copy agent prompt" aria-live="polite" hidden>copy</button>
 </div>
+
+Or ask your agent:
+
+> Send plan.md to me in Spacedock Review for a decision.
 
 No active plan right now? Try this:
 
@@ -31,19 +37,21 @@ Select the text you want changed.
 
 ## Finish the review
 
+- **Approve** to let your agent continue.
+- **Request changes** to send the work back with your feedback.
+
 === "Terminal"
 
-    Press <kbd>q</kbd> to open the finish screen. Press <kbd>Tab</kbd> to choose **Request changes**, then <kbd>Enter</kbd> to send.
+    Press <kbd>q</kbd> to open the finish screen. Press <kbd>Tab</kbd> to choose your decision, then <kbd>Enter</kbd> to send.
 
 === "Browser"
 
-    Press **Finish review**, choose **Request changes**, then **Send decision**.
+    Press **Finish review**, choose your decision, then **Send decision**.
 
 <a id="read-the-response"></a>
+<a id="review-the-revision"></a>
 
-## Review the revision
-
-Your agent receives your comments and decision automatically. Review the revised file, then choose **Approve** when the work is ready.
+Your agent receives your comments and decision automatically.
 
 <a id="review-in-the-terminal"></a>
 <a id="review-in-the-browser"></a>
@@ -51,6 +59,7 @@ Your agent receives your comments and decision automatically. Review the revised
 
 **Related guides**
 
+- [Comments and decisions](decisions.md): what happens after your decision.
 - [Terminal controls and approval requests](terminal.md)
 - [Browser review](browser.md)
 - [Sharing](sharing.md)

@@ -18,11 +18,9 @@ Your agent picks up your feedback and acts on your decision. No need to copy it 
 
 === "Terminal"
 
-    Review beside your agent. The document stays on your machine. Your agent can ask for comments or a decision.
+    Review beside your agent. The document stays on your machine. Leave comments and approve, request changes or hold the work.
 
     [![Terminal review showing a comment and suggested edit, followed by approval in a later round](assets/terminal-decision.png)](assets/terminal-decision.png)
-
-    Comments and a suggested edit, followed by approval in the next round.
 
     [Supported terminals and controls](terminal.md)
 
@@ -30,11 +28,9 @@ Your agent picks up your feedback and acts on your decision. No need to copy it 
 
     [review.spacedock.md](https://review.spacedock.md) is Spacedock’s hosted review service, free with [limits](reference.md#limits). Create an account for higher limits.
 
-    Pair with your agent to make decisions. People you invite can comment without an account or installation.
+    People you invite can comment through the link you share with them.
 
     [![Browser review showing selected feedback and Request changes in the Finish review dialog](assets/browser-decision.png)](assets/browser-decision.png)
-
-    Your agent asks permission before it uploads a copy of your document. Anyone with the share link can read it.
 
 <a id="review-architecture"></a>
 

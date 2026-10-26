@@ -102,6 +102,10 @@ Read it back and remove every word that survives removal. If a sentence sounds l
 
 ## Canonical terminology and capitalization
 
+For Review annotations, use "text" or "selected text", not "passage".
+
+Lead review procedures with the explicit skill invocation. Give the natural-language request as an alternative. Label slash commands for the harness that supports them.
+
 Pinned from how the README and skills actually use these forms, not an imposed guess. Use them consistently.
 
 | Term | Form | Notes (grounded in real usage) |

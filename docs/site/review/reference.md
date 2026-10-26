@@ -2,14 +2,33 @@
 
 ## Review requests
 
-To send a file to yourself, ask your agent: "Send plan.md to me in Spacedock Review."
-
 ### `/spacedock:review`
 
-In Claude Code, use `/spacedock:review` with the arguments below. In Codex, ask for the same action in plain words, for example "review plan.md with Spacedock Review".
+In Claude Code, use `/spacedock:review` with the arguments below. In Codex, use the natural-language alternative.
+
+<!-- Keyword invocation verification: https://github.com/spacedock-dev/spacedock/issues/852 -->
+
+```text
+/spacedock:review plan.md terminal decision
+/spacedock:review plan.md web decision
+/spacedock:review plan.md decision
+/spacedock:review plan.md terminal questions
+```
+
+`decision` asks for your approval, requested changes or hold. `terminal` or `web` chooses where to review this file without changing your saved preference. Omit the location to use your saved choice, or choose one when asked.
+
+`questions` lets you ask the requesting agent about the document and read its answers in the terminal review.
+
+Or ask your agent:
+
+> Send plan.md to me in Spacedock Review for a decision.
 
 | Argument | What it does | Default |
 | --- | --- | --- |
+| a file path followed by `terminal decision` | Opens a terminal review for your decision. | This review only |
+| a file path followed by `web decision` | Opens a browser review for your decision, with upload consent. | This review only |
+| a file path followed by `decision` | Reviews the file for your decision in the recorded place. | Asks Terminal or Web when nothing is recorded |
+| a file path followed by `terminal questions` | Opens a terminal review with questions enabled. | This review only |
 | none | Shows this project's choice and lets you keep, switch or clear it, or leave. Opens nothing. | |
 | `tui`, `terminal` or `local` | Records Terminal (TUI) for this project. Opens nothing. | |
 | `web`, `webui` or `remote` | Asks you to agree to uploading; records Web only if you agree. Opens nothing. | |
@@ -44,7 +63,7 @@ See [comments and decisions](decisions.md#decisions) for their meaning.
 | Recommendation (`advisory`) | Comments and a recommendation; no approval authority |
 | Decision (`binding`) | Comments and a decision |
 
-A plain terminal file review defaults to `feedback`. Your agent must explicitly request `binding` for an approval review; Workflow is not required. Questions (`--allow-question`) currently require `feedback` mode.
+A plain terminal file review defaults to `feedback`. The `decision` keyword requests `binding` mode; Workflow is not required. The `questions` keyword forwards `--allow-question` to the terminal review skill.
 
 The stored decision values are `approve`, `revise` and `hold`.
 
