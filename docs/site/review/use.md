@@ -9,6 +9,8 @@
   <button type="button" class="sd-prompt-copy" aria-label="Copy agent prompt" aria-live="polite" hidden>copy</button>
 </div>
 
+In Codex, use `$spacedock:review` with the same arguments.
+
 Or ask your agent:
 
 > Send plan.md to me in Spacedock Review for a decision.

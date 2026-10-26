@@ -1,118 +1,88 @@
 # Review reference
 
+<a id="skill-invocation"></a>
+
 ## Review requests
 
-### `/spacedock:review`
-
-In Claude Code, use `/spacedock:review` with the arguments below. In Codex, use the natural-language alternative.
+Use `/spacedock:review` in Claude Code or `$spacedock:review` in Codex. Both use the same arguments. Replace `plan.md` with your file name.
 
 <!-- Keyword invocation verification: https://github.com/spacedock-dev/spacedock/issues/852 -->
 
-```text
-/spacedock:review plan.md terminal decision
-/spacedock:review plan.md web decision
-/spacedock:review plan.md decision
-/spacedock:review plan.md terminal questions
-```
+| Arguments | What happens |
+| --- | --- |
+| `plan.md terminal decision` | Review in the terminal and make a decision |
+| `plan.md web decision` | Review in the browser and make a decision, after agreeing to the upload |
+| `plan.md decision` | Make a decision using your project's saved review location |
+| `plan.md terminal questions` | Review in the terminal with questions enabled |
+| `plan.md` | Review the file using your project's saved location |
+| `terminal` | Save Terminal as this project's preference |
+| `web` | Save Web as this project's preference, after agreeing to uploads |
+| No arguments | View or change this project's preference |
+| A prompt | Ask the agent to carry it out, then review the resulting file |
 
-`decision` asks for your approval, requested changes or hold. `terminal` or `web` chooses where to review this file without changing your saved preference. Omit the location to use your saved choice, or choose one when asked.
+A location supplied with a file applies to that review only. Without a saved preference, your agent asks where to review.
 
-`questions` lets you ask the requesting agent about the document and read its answers in the terminal review.
+`terminal` also accepts `tui` or `local`. `web` also accepts `webui` or `remote`.
 
 Or ask your agent:
 
 > Send plan.md to me in Spacedock Review for a decision.
 
-| Argument | What it does | Default |
-| --- | --- | --- |
-| a file path followed by `terminal decision` | Opens a terminal review for your decision. | This review only |
-| a file path followed by `web decision` | Opens a browser review for your decision, with upload consent. | This review only |
-| a file path followed by `decision` | Reviews the file for your decision in the recorded place. | Asks Terminal or Web when nothing is recorded |
-| a file path followed by `terminal questions` | Opens a terminal review with questions enabled. | This review only |
-| none | Shows this project's choice and lets you keep, switch or clear it, or leave. Opens nothing. | |
-| `tui`, `terminal` or `local` | Records Terminal (TUI) for this project. Opens nothing. | |
-| `web`, `webui` or `remote` | Asks you to agree to uploading; records Web only if you agree. Opens nothing. | |
-| a file path | Reviews the file in the recorded place. | Asks Terminal or Web when nothing is recorded |
-| any other text | Your agent carries it out as a prompt, then reviews the file that results. | |
-
-```text
-/spacedock:review plan.md
-/spacedock:review web
-/spacedock:review
-```
-
 ## Terminal keys
 
-| Key | What it does |
+| Key | Action |
 | --- | --- |
-| <kbd>c</kbd> | Comment on the selected text |
-| <kbd>s</kbd> | Suggest replacement text for the selection |
-| <kbd>q</kbd> | Finish, or open the finish screen when your agent asked for a decision |
-| <kbd>Tab</kbd> | On the finish screen, cycle the decision |
-| <kbd>Enter</kbd> | On the finish screen, send; while typing a note, save it |
-| <kbd>Esc</kbd> | On the finish screen, go back to the document; while typing a note, discard it |
-| <kbd>?</kbd> | Show every key |
+| <kbd>c</kbd> | Comment on selected text |
+| <kbd>s</kbd> | Suggest replacement text |
+| <kbd>Q</kbd> | Ask the agent a question when questions are enabled |
+| <kbd>R</kbd> | Refresh the answer to your latest question |
+| <kbd>T</kbd> | Set an automatic answer refresh interval; press again to stop |
+| <kbd>q</kbd> | Finish, or open the decision screen |
+| <kbd>Tab</kbd> | Choose a decision on the finish screen |
+| <kbd>Enter</kbd> | Send the decision, or save the note you are editing |
+| <kbd>Esc</kbd> | Leave the finish screen, or discard the note you are editing |
+| <kbd>?</kbd> | Show all keys |
 
-## Decisions
+<a id="decisions"></a>
 
-See [comments and decisions](decisions.md#decisions) for their meaning.
+## Review modes
 
-| Review mode | Result |
+| Mode | Result |
 | --- | --- |
-| Comments only (`feedback`) | Anchored comments; no decision |
-| Recommendation (`advisory`) | Comments and a recommendation; no approval authority |
-| Decision (`binding`) | Comments and a decision |
+| `feedback` | Comments |
+| `advisory` | Comments and a recommendation |
+| `binding` | Comments and the owner's decision |
 
-A plain terminal file review defaults to `feedback`. The `decision` keyword requests `binding` mode; Workflow is not required. The `questions` keyword forwards `--allow-question` to the terminal review skill.
+A plain terminal file review defaults to `feedback`. The `decision` keyword requests `binding` mode. An advisory recommendation does not authorize work to proceed.
 
-The stored decision values are `approve`, `revise` and `hold`.
+Decision values are `approve`, `revise` and `hold`. See [Comments and decisions](decisions.md) for what each means.
 
 <a id="commands-your-agent-runs-for-web-reviews"></a>
 
 ## Agent commands
 
-`rr` is short for `subspace-relay-client`; where `rr` is taken on your machine, the long name works.
+`rr` is short for `subspace-relay-client`.
 
-| Command | What it does |
+| Command | Action |
 | --- | --- |
-| `rr publish <file>` | Uploads the file and prints its share link. `--open-owner-link` opens your owner link in your browser. |
-| `rr decision <share-url>` | Waits for the owner's decision. `--with-included` also returns the other reviewers' comments the decision includes; `--timeout` sets how long. |
-| `rr feedback <share-url>` | Prints every comment and decision so far. Only the owner's machine can read them. |
-| `rr revoke <share-url>` | Ends the link now. |
-| `rr device` | Shows whether this machine is linked to an account. |
-| `rr unbind` | Unlinks this machine from its account, which ends ownership for every browser that owned its reviews. |
+| `rr publish <file> --open-owner-link` | Upload the file, print its share link and open the owner link |
+| `rr decision <share-url> --with-included` | Wait for the owner's decision and included comments |
+| `rr feedback <share-url>` | Read the review's comments and decisions from the publishing machine |
+| `rr revoke <share-url>` | Revoke access through the share link |
+| `rr device` | Check whether this machine is paired with an account |
+| `rr unbind` | Unpair this machine and remove the account's owner access to its reviews |
 
-```sh
-rr publish plan.md --open-owner-link
-rr decision https://review.spacedock.md/r/<share-id> --with-included --timeout 110m
-rr feedback https://review.spacedock.md/r/<share-id>
-rr device
-```
-
-These two end access:
-
-```sh
-rr revoke https://review.spacedock.md/r/<share-id>
-rr unbind
-```
-
-## Recovery
-
-| Situation | Ask your agent |
-| --- | --- |
-| Change Terminal or Web for this project | Change my Spacedock Review preference |
-| Owner link expired or already used | Publish the review again |
-| Agent stopped waiting | Check my decision on plan.md |
+Use `--timeout` with `rr decision` to set the wait duration, for example `--timeout 110m`.
 
 ## Limits
 
 | Limit | Value |
 | --- | --- |
-| Share link | Seven days from sharing, never extended |
+| Share link | Seven days from sharing by default |
 | Owner link | One use; expiry shown by your agent |
 | Automatic wait in Claude Code | Up to 110 minutes |
 | Automatic wait in Codex | Up to 12 hours |
-| Shares per day, machine not linked to an account | 5 |
-| Shares per day, machine linked to an account | 100 per machine, and 100 per account across its machines |
+| Shares per day, unpaired machine | 5 |
+| Shares per day, paired machine | 100 per machine and 100 across the account's machines |
 | File size | 1 MB per share |
 | Feedback sends | 100 per reviewer session, 200 per review |

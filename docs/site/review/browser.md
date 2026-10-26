@@ -13,6 +13,8 @@ In Claude Code, request a decision in the browser:
   <button type="button" class="sd-prompt-copy" aria-label="Copy agent prompt" aria-live="polite" hidden>copy</button>
 </div>
 
+In Codex, use `$spacedock:review` with the same arguments.
+
 Or ask your agent:
 
 > Send plan.md to me in Spacedock Review in the browser for a decision.
@@ -34,12 +36,6 @@ Your unsent comments are included automatically. For comments already sent, sele
 ![Browser review with an anchored comment included and Request changes selected on the finish screen](assets/browser-decision.png)
 
 To send comments while keeping the review open, choose **Send comments, leave open**. You can decide later.
-
-After **Request changes**, your agent revises the file and presents the changed version under a new link.
-
-## Recovery
-
-If your owner link has expired or was already used, ask your agent to publish again. If your agent stopped waiting, ask it to check your decision.
 
 <a id="next"></a>
 

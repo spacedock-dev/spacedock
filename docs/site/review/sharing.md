@@ -16,13 +16,13 @@ You see everyone’s comments. Each reviewer sees only their own. A reviewer can
 
 On your owner page, select **Include** beside the comments you want your agent to receive. Then [send your decision](browser.md#comment-and-decide).
 
-Only the owner decides. Finishing with a decision closes the review to further comments. When your agent shares a revised file, send the new link to your reviewers.
+Only the owner decides. Finishing with a decision closes the review to further comments.
 
 ## Document access
 
 Spacedock’s hosted service stores the uploaded document, comments and decision. Anyone holding the share link can read the entire document, so share it only with people who should have access.
 
-The share link expires after seven days. Publishing an unchanged review again does not extend its expiry. Ask your agent to [revoke the link](reference.md#commands-your-agent-runs-for-web-reviews) to end access sooner.
+Share links expire after seven days by default. [Review the limits](reference.md#limits) and create an account for higher limits. Ask your agent to [revoke the link](reference.md#commands-your-agent-runs-for-web-reviews) to end access sooner.
 
 **Related guides**
 

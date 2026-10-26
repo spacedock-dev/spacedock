@@ -13,6 +13,8 @@ In Claude Code, request a decision in the terminal:
   <button type="button" class="sd-prompt-copy" aria-label="Copy agent prompt" aria-live="polite" hidden>copy</button>
 </div>
 
+In Codex, use `$spacedock:review` with the same arguments.
+
 `terminal` is optional. Omit it to use your project's saved preference. To save Terminal for this project, run `/spacedock:review terminal`.
 
 Or ask your agent:
@@ -51,6 +53,10 @@ Or ask your agent:
 > Open plan.md in Spacedock Review in the terminal with questions enabled.
 
 Answers appear beside the document and use the agent's original conversation context.
+
+Press <kbd>Q</kbd> to ask a question, such as "What's next?"
+
+Press <kbd>T</kbd>, enter an interval in minutes, then <kbd>Enter</kbd> to refresh the answer automatically. Press <kbd>T</kbd> again to stop.
 
 <a id="next"></a>
 
