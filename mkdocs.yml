@@ -91,8 +91,8 @@ nav:
   - Review:
       - Overview: review/index.md
       - First review: review/use.md
-      - Terminal: review/terminal.md
-      - Browser: review/browser.md
+      - In Terminal: review/terminal.md
+      - In Browser: review/browser.md
       - Sharing: review/sharing.md
       - Comments and decisions: review/decisions.md
       - Reference: review/reference.md
