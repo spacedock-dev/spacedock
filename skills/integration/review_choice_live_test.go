@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -294,7 +295,7 @@ func (l *reviewLive) said(want string) bool {
 func (l *reviewLive) noPublish() {
 	l.t.Helper()
 	calls, _ := os.ReadFile(l.relay)
-	if strings.Contains(string(calls), "publish") {
+	if reviewPublishCount(calls) != 0 {
 		l.t.Errorf("subspace-relay-client was asked to publish: %q", calls)
 	}
 }
@@ -671,7 +672,7 @@ func TestLiveReviewOneOffWebDeclined(t *testing.T) {
 }
 
 func TestLiveReviewUnsupportedKeywordCombinations(t *testing.T) {
-	for _, suffix := range []string{"terminal decision questions", "terminal questions decision", "web questions", "web decision questions", "terminal maybe"} {
+	for _, suffix := range []string{"terminal decision questions", "terminal questions decision", "web questions", "web decision questions", "terminal maybe", "web", "terminal", "tui", "local", "webui", "remote", "questions"} {
 		t.Run(strings.ReplaceAll(suffix, " ", "-"), func(t *testing.T) {
 			l := newReviewLive(t, nil)
 			l.spacedock("review-mode", "set", "remote")
@@ -687,11 +688,11 @@ func TestLiveReviewUnsupportedKeywordCombinations(t *testing.T) {
 					t.Errorf("unsupported request generated an artifact: %v", tool.Input)
 				}
 			}
-			if !strings.Contains(l.text, "questions") && !strings.Contains(suffix, "maybe") {
+			if strings.Contains(suffix, "questions") && !strings.Contains(l.text, "questions") {
 				t.Errorf("refusal dropped the questions intent: %s", l.text)
 			}
-			if !l.said("/spacedock:review plan.md terminal decision") {
-				t.Errorf("refusal omitted a corrected request: %s", l.text)
+			if !reviewCorrectionSupported(l.text) {
+				t.Errorf("refusal omitted a supported corrected request: %s", l.text)
 			}
 			l.noPublish()
 		})
@@ -710,4 +711,35 @@ func TestLiveReviewUnrelatedSuffixRemainsAPrompt(t *testing.T) {
 		t.Errorf("prompt output was not reviewed: %s", l.flat())
 	}
 	l.noPublish()
+}
+
+func reviewCorrectionSupported(text string) bool {
+	text = strings.ReplaceAll(text, "*", "")
+	requests := regexp.MustCompile("/spacedock:review[ \t]+(?:plan\\.md|\"plan\\.md\")[ \t]+([^`\r\n]+)").FindAllStringSubmatch(text, -1)
+	if len(requests) != 1 {
+		return false
+	}
+	switch strings.Trim(requests[0][1], " \t\"'.;:") {
+	case "terminal decision", "web decision", "decision", "terminal questions":
+		return true
+	}
+	return false
+}
+
+func TestReviewRefusalCorrection(t *testing.T) {
+	for _, form := range []string{"terminal decision", "web decision", "decision", "terminal questions"} {
+		if !reviewCorrectionSupported("Try `/spacedock:review plan.md " + form + "`.") {
+			t.Errorf("supported correction rejected: %s", form)
+		}
+	}
+	for _, text := range []string{
+		"Try `/spacedock:review plan.md web`.",
+		"Try `/spacedock:review plan.md terminal decision` or `/spacedock:review plan.md web`.",
+		"Try `/spacedock:review plan.md terminal decision questions`.",
+		"No corrected request.",
+	} {
+		if reviewCorrectionSupported(text) {
+			t.Errorf("unsupported or non-single correction accepted: %s", text)
+		}
+	}
 }
