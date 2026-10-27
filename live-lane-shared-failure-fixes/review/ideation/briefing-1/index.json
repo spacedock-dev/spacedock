@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:vtgw5b1ar42s6x807nfdzwb9:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation design (fixes 1, 2a+2b, 3a+3b; net +75 across 37 files, tolerance +40..+120 / 32..42 files) and start implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:vtgw5b1ar42s6x807nfdzwb9:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/08db7aed5a4217455d296a0dae167b9abb32746f/live-lane-shared-failure-fixes.md",
+      "rev": "sha256:6a6b7ecf8accc78c990d1eab9fa659c505f7bbd5941e006badc2c2f58306e4ad",
+      "mediaType": "text/markdown",
+      "summary": "Diagnosis: item 1 grader regex (confirmed); item 2 binary consumedNonterminalHistory compares post-set status plus FO contract omits required --verdict and terminal routing never names the guard; item 3 break-glass prompt lacks commit and Summary steps, and the team-lead completion pin is stale (harness resolves main: 40/40 vs 23/23); suspected team-lead link to selected-team disproved. Combined local Sonnet spike: break-glass 2/2 PASS, keep-moving 3/3 XPASS, zero team-lead errors. Touches shipped contract (skills/**/references) and dispatch build goldens."
+    }
+  ]
+}

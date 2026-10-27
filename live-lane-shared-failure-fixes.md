@@ -33,6 +33,14 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:vtgw5b1ar42s6x807nfdzwb9:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:vtgw5b1ar42s6x807nfdzwb9-ideation-1
+              briefing:
+                id: briefing:vtgw5b1ar42s6x807nfdzwb9:ideation:attempt-1:revision-1
+                digest: sha256:af9e708d3f7c3b5a59fc82cced1e0f7c816395c612b60fc487dcc99c0bb31cf8
+                room-ref: '@review/ideation/briefing-1'
 ---
 
 Fix three live-lane failures that hit Sonnet and Haiku alike, so live results show real model behavior and not harness or contract faults.
