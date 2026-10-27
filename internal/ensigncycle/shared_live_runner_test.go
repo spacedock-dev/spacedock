@@ -176,7 +176,7 @@ func TestLiveCommonAutoContinueAfterImplementation(t *testing.T) {
 //
 //spacedock:live-journey id=keep-moving-posture fixture=keep-moving/mixed-events
 func TestLiveCommonKeepMovingPosture(t *testing.T) {
-	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "060xp69y61yhrww23g3wvwqy"), liveXFail("pi", "psvqjf0w8xh2txp9604gsvmz"), liveXFail("claude-haiku", "")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
+	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveXFail("pi", "psvqjf0w8xh2txp9604gsvmz")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
 }
 
 // The claude-sonnet red is the completion-observation gap: run 37374064240's
@@ -265,7 +265,7 @@ func TestLiveCommonMergeHookGuardrail(t *testing.T) {
 
 //spacedock:live-journey id=filing fixture=filing/empty-workflow
 func TestLiveCommonFiling(t *testing.T) {
-	liveJourney(t, "filing", "filing/empty-workflow", writeFilingWorkflow, []liveJourneyGap{liveXFail("claude-haiku", "")}, runClaudeFilingScenario, assertFilingCommands)
+	liveJourney(t, "filing", "filing/empty-workflow", writeFilingWorkflow, nil, runClaudeFilingScenario, assertFilingCommands)
 }
 
 // AUDIT(2026-08-16): finding 6 — grades Bash commands only; Glob/Grep broad search

@@ -50,7 +50,7 @@ When a worker completes:
 
 **Reading a live CI result.** Triage from the step log / job summary — it is small, and on failure names each failing test with its `file:line`. Fetch the archived `*-detail.jsonl` (`gh run download`, or `gh run view --log`) ONLY for root cause; a `grep '"Action":"fail"'` over that full `-json` stream recovers a specific failure's events.
 
-If not gated: terminal → merge; else decide reuse-or-fresh.
+If not gated and the next stage is terminal, run `${SPACEDOCK_BIN:-spacedock} merge guard {slug} --verdict passed|rejected`: it writes the terminal status, verdict and `completed`, then archives. A `status --set` to the terminal stage does not archive and never replaces the guard. Otherwise decide reuse-or-fresh.
 
 **A completed non-gated, non-terminal stage is not a stopping point.** After verifying the report, the FO MUST advance the entity to the next stage and dispatch it (reuse-or-fresh per the dispatch module's reuse conditions) BEFORE ending its turn. Only these conditions legitimately halt the turn here: the entity is terminal (run the merge/cleanup ceremony), an explicit blocker (a `«halt.rebase-conflict»`, an unmet clarification), or a captain decision the contract requires. Absent one, stopping after a completion-only report is a contract violation.
 
