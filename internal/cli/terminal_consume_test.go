@@ -600,35 +600,20 @@ func TestMergeGuardFinalizesConsumedHistoryAfterTerminalSet(t *testing.T) {
 }
 
 // TestMergeGuardRefusesConsumedHistoryPastUnpreparedGate is the fail-closed
-// companion: the approval spent on review entered implementation, but the
-// entity was hand-moved into the gated validation stage without preparing its
-// gate. That gate is not history the spent approval covers, so the guard refuses.
+// companion: the spent review approval entered implementation, then the entity
+// was hand-moved into a gated validation stage whose gate was never prepared.
+// That gate is not history the spent approval covers, so the guard refuses.
 func TestMergeGuardRefusesConsumedHistoryPastUnpreparedGate(t *testing.T) {
-	root := t.TempDir()
+	root, _ := consumedNonterminalWorkflow(t)
 	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nmerge: local\nstages:\n  states:\n"+
 		"    - name: review\n      initial: true\n      gate: true\n    - name: implementation\n"+
 		"    - name: validation\n      gate: true\n    - name: done\n      terminal: true\n---\n# Workflow\n")
-	writeFile(t, filepath.Join(root, "gate-review.md"), "# Review\n")
-	writeFile(t, filepath.Join(root, "task.md"), "---\nid: task\nstatus: review\ntitle: Task\n---\n# Task\n")
-	testgit.InitRepo(t, root, "-q")
-	terminalRunGit(t, root, "add", "-A")
-	terminalRunGit(t, root, "commit", "-q", "-m", "seed")
-	for _, args := range [][]string{
-		{"gate", "prepare", "task", "--question", "Advance?", "--artifact", filepath.Join(root, "gate-review.md"), "--summary", "Enter implementation.", "--workflow-dir", root},
-		{"gate", "record", "task", "--decision", "approve", "--actor", "person:captain", "--workflow-dir", root},
-		{"gate", "consume", "task", "--workflow-dir", root},
-		{"status", "--workflow-dir", root, "--set", "task", "status=validation"},
-	} {
-		if code, out, errOut := terminalInvoke(t, root, args...); code != 0 {
-			t.Fatalf("%v exit=%d stdout=%q stderr=%q", args, code, out, errOut)
-		}
+	if code, out, errOut := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task", "status=validation"); code != 0 {
+		t.Fatalf("hand-move exit=%d stdout=%q stderr=%q", code, out, errOut)
 	}
 	terminalRunGit(t, root, "commit", "-q", "-am", "state: hand-moved to validation")
 	code, out, errOut := terminalInvoke(t, root, "merge", "guard", "task", "--verdict", "passed", "--workflow-dir", root)
-	if code == 0 || !strings.Contains(errOut, "ineligible") {
+	if _, err := os.Stat(filepath.Join(root, "_archive", "task.md")); code == 0 || err == nil || !strings.Contains(errOut, "ineligible") {
 		t.Fatalf("guard at unprepared gated validation exit=%d stdout=%q stderr=%q, want an ineligible refusal", code, out, errOut)
-	}
-	if _, err := os.Stat(filepath.Join(root, "_archive", "task.md")); err == nil {
-		t.Fatal("guard archived an entity sitting at an unprepared gated stage")
 	}
 }
