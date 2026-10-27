@@ -87,7 +87,7 @@ func (l *reviewLive) kinds() []string {
 	return out
 }
 
-func newReviewLive(t *testing.T, answers map[string]string) *reviewLive {
+func newReviewLive(t *testing.T, answers map[string]string, companionPlugins ...string) *reviewLive {
 	t.Helper()
 	bin, cfg := os.Getenv("SPACEDOCK_BIN"), os.Getenv("SPACEDOCK_LIVE_CLAUDE_CONFIG_DIR")
 	if bin == "" || cfg == "" {
@@ -125,9 +125,12 @@ func newReviewLive(t *testing.T, answers map[string]string) *reviewLive {
 		"CLAUDE_CONFIG_DIR=" + cfg, "XDG_STATE_HOME=" + filepath.Join(root, "state"),
 		"XDG_DATA_HOME=" + filepath.Join(root, "data"), "TERM=dumb", "PATH=" + progs + ":/usr/bin:/bin",
 	}}
-	l.cmd = exec.Command(filepath.Join(progs, "claude"), "-p", "--input-format", "stream-json",
+	args := []string{"-p", "--input-format", "stream-json",
 		"--output-format", "stream-json", "--verbose", "--permission-prompt-tool", "stdio",
-		"--plugin-dir", repoRoot(t), "--allowedTools", "Bash,Read,Write,Skill", "--model", "sonnet")
+		"--plugin-dir", repoRoot(t)}
+	args = append(args, companionPlugins...)
+	args = append(args, "--allowedTools", "Bash,Read,Write,Skill", "--model", "sonnet")
+	l.cmd = exec.Command(filepath.Join(progs, "claude"), args...)
 	l.cmd.Dir, l.cmd.Env = proj, l.env
 	if l.stdin, err = l.cmd.StdinPipe(); err != nil {
 		t.Fatal(err)
@@ -605,6 +608,51 @@ func TestLiveReviewProductNameUsesSavedChoice(t *testing.T) {
 					}
 				})
 			}
+		})
+	}
+}
+
+func TestLiveReviewProductNameAfterSimulatedHold(t *testing.T) {
+	for _, run := range []string{"run-1", "run-2", "run-3"} {
+		t.Run(run, func(t *testing.T) {
+			companion := t.TempDir()
+			for path, body := range map[string]string{
+				".claude-plugin/plugin.json": `{"name":"subspace","description":"Test-only simulated review history"}`,
+				"skills/r/SKILL.md": `---
+name: r
+description: Test-only simulated Terminal binding review.
+---
+This fixture simulates a Terminal binding review returning Hold; no real review occurs.
+Run ` + "`simulated-terminal-review`" + ` using Bash, report the simulated Hold, and stop.
+`,
+			} {
+				file := filepath.Join(companion, path)
+				if err := os.MkdirAll(filepath.Dir(file), 0o755); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.WriteFile(file, []byte(body), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			l := newReviewLive(t, nil, companion)
+			simulated := filepath.Join(l.root, "bin", "simulated-terminal-review")
+			if err := os.WriteFile(simulated, []byte("#!/bin/sh\nprintf 'hold\\n' > \"$0.result\"\nprintf '%s\\n' 'SIMULATED Hold: pause dependent work; no real human outcome.'\n"), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			l.spacedock("review-mode", "set", "local")
+			before := l.choiceBytes()
+			l.turn("/spacedock:review plan.md terminal decision")
+			l.wantMenus()
+			l.wantHandoff("subspace:r", "plan.md", "--mode binding")
+			if result, err := os.ReadFile(simulated + ".result"); err != nil || string(result) != "hold\n" {
+				t.Fatalf("prior Terminal review did not complete its simulated Hold: %q, %v", result, err)
+			}
+			l.wantUnchangedChoice(before)
+			l.turn("Send plan.md to me in Spacedock Review for a decision.")
+			l.wantMenus()
+			l.wantHandoff("subspace:r", "plan.md", "--mode binding")
+			l.wantUnchangedChoice(before)
+			l.noPublish()
 		})
 	}
 }
