@@ -41,6 +41,17 @@ gates:
                 id: briefing:vtgw5b1ar42s6x807nfdzwb9:ideation:attempt-1:revision-1
                 digest: sha256:af9e708d3f7c3b5a59fc82cced1e0f7c816395c612b60fc487dcc99c0bb31cf8
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:vtgw5b1ar42s6x807nfdzwb9:ideation:1
+                briefing: briefing:vtgw5b1ar42s6x807nfdzwb9:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-10-27T05:38:20.47712Z"
+                decision: approve
+                reason: 'Captain approves the ideation design: fixes 1, 2a+2b, 3a+3b with net +75 across 37 files (tolerance +40..+120 / 32..42 files), keeping the binary fix 2a.'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Fix three live-lane failures that hit Sonnet and Haiku alike, so live results show real model behavior and not harness or contract faults.
