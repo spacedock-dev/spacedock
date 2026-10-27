@@ -10,13 +10,7 @@ Start Compass from your agent session:
 /compass:compass
 ```
 
-> **[command may change with one install]**
-
 In Codex, type `$compass`. You can also ask your agent to "open compass". Compass starts on your machine and gives you its address, `http://127.0.0.1:4553/` by default. It does not open a browser for you, so open the address yourself.
-
-![The Sessions screen with the sample session link, the Active now and Working counts, and three active sessions](img/sessions-screen.png)
-
-*The Sessions screen opens with the link to the sample session, a count of active sessions, and one row for each active session showing its goal, what it is doing now, and whether it is blocked.*
 
 New to Intent and drift? Open **See a sample session (view only)** above the Sessions list. It is an anonymized Claude Code session that drifted, with a summary of what it did, its reading and the correction Compass composed. Nothing in it is saved, sent or run.
 
@@ -41,6 +35,10 @@ New to Intent and drift? Open **See a sample session (view only)** above the Ses
 ## Read the board
 
 Sessions puts active work first. Each active session answers four questions: where it is, what it is doing now, what it does next, and whether it is blocked. Your goal sits beside what the agent is doing, so a mismatch is visible without opening anything.
+
+![The Sessions screen with the sample session link, the Active now and Working counts, and three active sessions](img/sessions-screen.png)
+
+*The Sessions screen opens with the link to the sample session, a count of active sessions, and one row for each active session showing its goal, what it is doing now, and whether it is blocked.*
 
 | Open | To see |
 | --- | --- |
@@ -89,9 +87,9 @@ To stop model calls, press **Pause model calls** in **Drift settings** on the Dr
 
 ## Watch a session live
 
-For a Claude Code session, turn on **Live monitor** in **Drift settings**. While the page is open and its tab is visible, Compass asks Haiku through your Claude Code about once a minute where the latest turns are heading. It sends your saved goal and the recent turns, without tool output. The card and the page header show the level, None or low, Medium, High or Extreme, labelled **Live monitor · Haiku**, with one sentence on where the session is heading. Until a check returns, or while the monitor is paused or capped, they show an estimate from the session's checks and written files instead, with no model call.
+For a Claude Code session, turn on **Live monitor** in **Drift settings**. While the page is open and its tab is visible, Compass asks Haiku through your Claude Code about once a minute where the latest turns are heading. It sends your saved goal and the recent turns, without tool output. The card and the page header show the level, **None or low**, **Medium**, **High** or **Extreme**, labelled **Live monitor · Haiku**, with one sentence on where the session is heading. Until a check returns, or while the monitor is paused or capped, they show an estimate from the session's checks and written files instead, with no model call.
 
-Live monitor never notifies you and never shows on the Sessions screen. After 20 minutes it asks whether you still want it, and turns itself off if nobody answers within 10. It is not remembered across reloads. The [levels](reference.md#drift-levels) are in the reference.
+Live monitor never notifies you and never shows on the Sessions screen. After 20 minutes it asks whether you still want it, and turns itself off if nobody answers within 10 minutes. It is not remembered across reloads. The [levels](reference.md#drift-levels) are in the reference.
 
 ## Act on a departure
 
@@ -124,8 +122,6 @@ Compass can also check sessions with a typed goal without being asked, and raise
 ```text
 python3 "$SKILL/server.py" --daemon --unasked-readings
 ```
-
-> **[command may change with one install]**
 
 Claude Code checks Claude Code sessions with no further step. For a Codex session, turn on **Allow Codex to run unasked checks** in its Drift card; Attention points to it when sessions are waiting. A check reads your typed goal, not your outcome lines, and stops at three per session and twelve a day. Finding `$SKILL` is in the [reference](reference.md#start-and-stop). What Compass raised shows on the session page under **Raised while you were away**, and in the Intent log.
 

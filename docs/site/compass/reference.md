@@ -8,8 +8,6 @@ Find the newest launcher your agent installed, in Claude Code or Codex, then reu
 SKILL="$(dirname "$(find ~/.claude/plugins/cache ~/.codex/plugins/cache -name server.py -path '*compass*' 2>/dev/null | sort -V | tail -1)")"
 ```
 
-> **[command may change with one install]**
-
 | Command | What it does | Default |
 | --- | --- | --- |
 | `/compass:compass` | Starts Compass from Claude Code. In Codex, `$compass`. | Port 4553 |
