@@ -113,7 +113,7 @@ review-round:
         digest: sha256:1827cf2687131ddf893656e243a138c194fef18f67f3cc9800dc69fbc2844030
         room-ref: '@review/implementation/round-3'
 mod-block: merge:pr-merge
-pr: "#853"
+pr: pr-merge:853
 ---
 
 ## Problem
