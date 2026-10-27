@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:vtgw5b1ar42s6x807nfdzwb9:backlog:attempt-1:revision-1",
+  "question": "Start design on the three shared live-lane fixes (filing grader, keep-moving merge-guard refusal, selected-team/team-lead)?",
+  "artifacts": [
+    {
+      "id": "artifact:vtgw5b1ar42s6x807nfdzwb9:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/7019796639bab651f94305fa764283d4ac409f35/live-lane-shared-failure-fixes.md",
+      "rev": "sha256:085b6f75e48f73c1fde968b7a65afa1c33ddb1892007775dc6fb2c0213c2b5cb",
+      "mediaType": "text/markdown",
+      "summary": "Seed: three live-lane failures hit Sonnet and Haiku alike: filing matcher rejects ';' after the slug (confirmed); merge guard refuses the keep-moving approved-gate entity as ineligible (cause unknown); break-glass selected-team fails on every model and team-lead completion target is unreachable (link unproven). AC-1..AC-3 require local live passes."
+    }
+  ]
+}

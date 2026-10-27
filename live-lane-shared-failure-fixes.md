@@ -11,6 +11,17 @@ worktree:
 issue:
 pr:
 mod-block:
+gates:
+    version: 1
+    records:
+        - id: gate:vtgw5b1ar42s6x807nfdzwb9:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:vtgw5b1ar42s6x807nfdzwb9-backlog-1
+              briefing:
+                id: briefing:vtgw5b1ar42s6x807nfdzwb9:backlog:attempt-1:revision-1
+                digest: sha256:481cb8d061369714414c8a8464c4d84fb6dd9483d2bbb40976d16f250c72edff
+                room-ref: '@review/backlog/briefing-1'
 ---
 
 Fix three live-lane failures that hit Sonnet and Haiku alike, so live results show real model behavior and not harness or contract faults.
