@@ -43,37 +43,140 @@ Fix three live-lane failures that hit Sonnet and Haiku alike, so live results sh
 2. **keep-moving-posture: merge guard refuses the approved-gate entity.** After the captain-approved `approved-gate` entity finishes implementation and reaches the ungated terminal stage, `spacedock merge guard` reports it "ineligible" (no pending terminal approval), so it is never archived. The Sonnet and Haiku streams show the same refusal. This is the failure behind Sonnet's XFAIL (owner `060xp69y61yhrww23g3wvwqy`) and Haiku's blank-owner XFAIL. It is not yet known whether the defect is in the binary's merge guard (an entity that was gated earlier, then reached an ungated terminal) or in the FO contract's terminal path.
 3. **Break-glass `selected-team` fails on every model, and the `team-lead` completion target is unreachable.** `TestLiveBreakGlassShimRecovery/selected-team` fails on Sonnet (PR #853 run 40447244422 and the `kent/compass-poc` run 39608837699) and on Haiku. Every worker-dispatching scenario, for both models, logs `No agent named 'team-lead' is reachable`. The completion target is pinned to `team-lead`, but the current Claude Code resolves only `main`. The suspected link between the two is unproven.
 
+## Diagnosis
+
+Evidence: CI streams in `/tmp/sd-f7/art{2,3,7}` (runs 40448057053, 40447244422, 37703335512) and 14 local Sonnet live runs on this checkout (`661c607ae`), listed under Risk evidence.
+
+**Item 1 (grader, test code).** Confirmed. Fed through `commandFilesViaNew`, the recorded Haiku command `… | ${SPACEDOCK_BIN:-spacedock} new wire-the-thing; echo "exit=$?"` returns false. The ` && …` and ` --workflow-dir . ;` forms return true. The direct-launcher regex in `internal/ensigncycle/shared_filing_test.go:53` ends the slug with `[ \t'\n]|$` only, so a `;`, `&`, `|`, `)` or `"` that directly follows the slug fails. The var-capture branch already splits on separators and is not affected.
+
+**Item 2 (binary, plus FO contract).** Two shared defects and one residual model choice:
+
+1. Binary defect, `internal/status/merge.go` `consumedNonterminalHistory`. It treats a consumed nonterminal approval as history only when `currentStatus == app.TargetStage`. `status --set <slug> status=done verdict=PASSED completed` is allowed on that entity (it classifies the pre-update status `implementation`). Then `merge guard` classifies the post-update status `done` and refuses with `condition "ineligible"`. A gate-less entity in the same state finalizes. Reproduced deterministically with the existing `consumedNonterminalWorkflow` fixture: `--set` exits 0, then the guard exits 1 with the exact CI message. The same guard run from `implementation` exits 0. Both Haiku CI streams (10-07, 10-27) and 3 of 3 local Sonnet baseline runs took this path. The predicate also refuses an entity that moved on through a second ungated stage, which is the same class of defect.
+2. FO contract defect, `skills/first-officer/references/fo-merge-core.md:18`. The only shipped invocation is `spacedock merge guard <slug>`. No FO contract file names `--verdict`, and the binary requires it. Every keep-moving stream that ran the guard (2 Haiku CI, 5 local) first got `merge guard requires --verdict {passed|rejected} or --rework`. One local run then gave up and left all three entities unarchived.
+3. Contract gap, `skills/first-officer/references/fo-dispatch-core.md:53` (`If not gated: terminal → merge`). The Sonnet CI 10-27 stream and one local run never invoked the guard. They used `status --set … status=done` and `state commit`, saying the stage had "no code deliverable". The backlog claim that the Sonnet stream showed the same refusal is not correct for run 40447244422. That stream has no `merge guard` call at all.
+
+**Item 3 (two contract defects plus a stale pin in binary and contract against a harness change; the suspected link is disproved).**
+
+1. `team-lead` is unreachable on the current Claude Code harness. 40 of 40 `SendMessage(to="team-lead")` calls in the 10-27 CI streams failed, and 23 of 23 decisive `SendMessage(to="main")` calls succeeded, in headless `-p`. The same call from this ensign session also failed (`No agent named 'team-lead' is reachable`), and the harness's SendMessage tool lists `"main"` as the main-conversation address. The pin lives in the binary (`internal/dispatch/build.go` `completionSignalBlock`, with the comment "AC-6") and in the contract (`skills/ensign/references/claude-ensign-runtime.md`, `skills/first-officer/references/claude-fo-dispatch.md:33` and `:43`, `skills/fo-dispatch-recovery/SKILL.md`). `claude-fo-dispatch.md:7` already says workers use `SendMessage(to="main")`, so the contract contradicts itself. The pin dates from `1d691b457` (2026-06-18, Claude Code .178). The harness changed after that.
+2. The link is disproved. Haiku 10-07 `selected-team` PASSED with `team-lead` unreachable, and the break-glass template, assertion and runner did not change between `29525bea` and `861a6e13a`. In every failing stream the worker skipped its commit before it called `SendMessage`. Completion still came through the task notification.
+3. The real `selected-team` cause is in the contract, `skills/fo-dispatch-recovery/SKILL.md`. The break-glass worker prompt has no commit step. The normal artifact says "after all commits" and the reuse template says "Commit before sending your completion message", but the break-glass prompt says neither. Failing streams: Sonnet CI and local baseline `entity has uncommitted changes: M widget-task.md`, and Sonnet `selected-bare` XFAIL `break-glass-durable-result` from the same cause. The template asks for DONE/SKIPPED/FAILED entries but never asks for the `### Summary` the durable check requires. Haiku CI and local spike run 1 failed on that.
+
 ## Proposed approach
 
-{Ideation fills this in. Diagnose items 2 and 3 to a root cause before choosing a fix.}
+**Fix 1.** In `shared_filing_test.go:53`, change the slug terminator from `(?:[ \t'\n]|$)` to `(?:[\s'";&|)]|$)`. Add a table test to `shared_filing_pr399_test.go`. The recorded Haiku command and `…new wire-the-thing;echo` give true. `…new wire-the-thing-two; echo` and `…new wire-the-thingy` give false, which is the boundary guard. Remove the now-obsolete `liveXFail("claude-haiku", "")` binding on `filing`, and its registry row.
+
+**Fix 2a (binary).** In `consumedNonterminalHistory`, a consumed approval whose target is the record stage's immediate, non-terminal successor is history. The current status must be that successor, a later stage reached through ungated stages only, or the terminal stage at the end of that path. A gated stage on the path, a terminal target, or a pending, stale or superseded authority still refuses. This was spiked in a scratch copy:
+
+```diff
+-	if app == nil || app.State != "consumed" || app.TargetStage != currentStatus {
++	if app == nil || app.State != "consumed" {
+ 		return false, nil
+ 	}
+ 	stages := parseStagesBlock(filepath.Join(workflowDir, "README.md"))
+ 	for i, stage := range stages {
+-		if stage.Name != record.Stage || i+1 >= len(stages) {
++		if stage.Name != record.Stage || i+1 >= len(stages) || stages[i+1].Name != app.TargetStage {
+ 			continue
+ 		}
+-		target := stages[i+1]
+-		return target.Name == currentStatus && !target.gate && !target.terminal, nil
++		if stages[i+1].terminal {
++			return false, nil
++		}
++		// The spent approval entered an ordinary successor; the entity may have moved
++		// on through ungated stages or already carry the terminal status. A gated
++		// stage on that path is not history this approval covers.
++		for _, later := range stages[i+1:] {
++			if later.gate || (later.terminal && later.Name != currentStatus) {
++				return false, nil
++			}
++			if later.Name == currentStatus {
++				return true, nil
++			}
++		}
++		return false, nil
+ 	}
+```
+
+**Fix 2b (contract).** Apply this before/after text.
+- `fo-merge-core.md:18`. Before: ``- → **shipped**: `` `spacedock merge guard <slug>` `` — invoke it directly per phase``. After: ``- → **shipped**: `` `spacedock merge guard <slug> --verdict passed|rejected` `` — `--verdict` is required on every phase; invoke it directly per phase``.
+- `fo-dispatch-core.md:53`. Before: `If not gated: terminal → merge; else decide reuse-or-fresh.` After: ``If not gated and the next stage is terminal, run `${SPACEDOCK_BIN:-spacedock} merge guard {slug} --verdict passed|rejected`: it writes the terminal status, verdict and `completed`, then archives. A `status --set` to the terminal stage does not archive and never replaces the guard. Otherwise decide reuse-or-fresh.``
+
+Simplest alternative considered: contract only (2b) without 2a. With 2b, 3 of 3 local runs called the guard directly. 2a is still the fix for a real binary inconsistency: `--set` accepts the terminal write, and then the guard refuses the same entity. Haiku pre-set the status in 2 of 2 CI runs. The gate can drop 2a if it judges 2b enough.
+
+Remove `liveXFail("claude-sonnet", "060xp…")` and `liveXFail("claude-haiku", "")` from `keep-moving-posture`, keep the pi binding, and remove the two registry rows. Reason: 3 of 3 Sonnet local runs XPASS with the fixes.
+
+**Fix 3a (completion target).** Pin `main` instead of `team-lead` in `build.go` `completionSignalBlock` (3 strings and the comment). Make the same change in `claude-ensign-runtime.md` (lines 11, 15, 22, 27: `team-lead` becomes `main`, and the prose says "the first officer"), in `claude-fo-dispatch.md:33` (``pinned to the single name **`main`** — the build helper emits `SendMessage(to="main", …)` … Pin one name.``), in `claude-fo-dispatch.md:43`, and in the recovery team template and its line 25. Regenerate the 15 `internal/dispatch/testdata/golden/*` files. Update `build_merged_mode_test.go` (the assertion flips: `main` is required and `team-lead` is banned), `internal/ensigncycle/cycle_test.go` (the regex) and the banned lists in the codex, pi and json tests. The `team-lead` member name in `reconcile*` team-config fixtures is a TeamCreate roster name and does not change.
+
+**Fix 3b (break-glass template).** In both prompts in `skills/fo-dispatch-recovery/SKILL.md`, make two edits. After the stage-report paragraph, change "…with a `- DONE:` / `- SKIPPED:` / `- FAILED:` entry." to "…entry, then end the section with a `### Summary` subsection." Then append ``\n\n### Commit\n\nBefore you finish, commit your work path-scoped: `git -C {workflow_dir} add -- {entity_file_path} && git -C {workflow_dir} commit -m \"{entity title}: {stage} report\" -- {entity_file_path}`.``. In the team prompt this goes before `### Completion Signal`. Simplest alternative considered: rely on the ensign contract's "MUST commit". That failed in 3 of 4 break-glass streams on 10-27 and in 2 of 2 local baseline subtests. Remove `liveXFail("claude-sonnet", "060xp…")` from `breakGlassSelectedBareGap` and its map test, because Sonnet selected-bare XPASSed in 3 of 3 spike runs. The Haiku blank binding stays. After both removals, owner `060xp69y61yhrww23g3wvwqy` has no binding left. Archiving it is the FO's call.
+
+**Docs (user-visible: merge guard accepts more shapes).**
+- `docs/site/reference/command-reference.md:107`, merge guard row. Append: "It also finalizes an entity whose only gate history is a consumed nonterminal approval, after the entity has moved on through ungated stages or a terminal `status --set` has already landed."
+- `docs/site/concepts/gates-and-decisions.md:117-120`. Change "The worker can write atomic terminal fields without `--force` after its report is durable." to "The worker can write atomic terminal fields without `--force` after its report is durable, and `merge guard --verdict` finalizes and archives it from any later ungated stage or after that terminal write." Keep the fail-closed sentences.
+- `docs/specs/gate-resolution-frontmatter-contract.md:254-257`. Change "…can complete that successor without `--force`." to "…can complete that successor, or any later stage reached only through ungated stages, without `--force`; a gated stage on that path is not covered."
+- `docs/runtime-live-ci-registry.md`. Remove the keep-moving Sonnet and Haiku rows and the filing Haiku row.
+- The CLI output format and the dispatch artifact layout do not change. Only the completion target string changes.
 
 ## Risk evidence
 
-Backlog: the three failure signatures and their streams are in the artifacts of runs 37703335512, 40448057053 and 40447244422 (expiry about 90 days). Item 1 is confirmed by applying the matcher regex to the recorded commands. Items 2 and 3 have a known signature but no known cause.
+Riskiest mechanisms: whether `main` is the reachable lead name in headless `-p`, and whether the live journeys flip. Both were exercised locally before the gate. Auth: `~/.claude/benchmark-token` inside agent-safehouse, Sonnet `claude-sonnet-5-5`. All commands followed `docs/runtime-live-ci.md`. The runner builds its own binary from the test's checkout and ignores `SPACEDOCK_BIN`. Binary fixes were therefore run from a scratch source copy, and skill fixes through `SPACEDOCK_REPO_ROOT` pointing at a staged plugin copy.
+
+- `TestLiveBreakGlassShimRecovery` baseline on main: `selected-team` FAIL `entity has uncommitted changes: M widget-task.md`, `selected-bare` XFAIL `break-glass-durable-result`, and `team-lead` unreachable. This matches CI.
+- Spike run 1 (commit step and `main`, no Summary line): commits landed, zero `team-lead` errors, `selected-bare` XPASS. `selected-team` FAIL: the Summary was missing (the Haiku CI shape).
+- Spike runs 2 and 3 (all of 3a for the skills, plus 3b): both subtests PASS in both runs, `selected-bare` XPASS, zero `team-lead` errors.
+- `TestLiveCommonKeepMovingPosture` with the main binary and main skills, 3 runs: 3 of 3 hit `ineligible` on `approved-gate` (one FO then reverted to `implementation` and re-ran, which XPASSed).
+- Fix 2a alone, 2 runs: one XPASS (the guard archived `approved-gate` after a pre-set `done`). One XFAIL (the FO gave up after the `--verdict` usage error).
+- 2a plus 2b `fo-merge-core` line, 2 runs: one run archived all three on the first try, then hung after `end_turn` (no-progress kill). That hang signature also appears in Haiku CI `recorded-gate-lifecycle`, so it is pre-existing. One XFAIL (the FO skipped the guard, the Sonnet CI shape).
+- Combined (2a, 2b both lines, 3a binary and skills, 3b), 3 runs: 3 of 3 XPASS, 0 usage errors, 0 `ineligible`, 0 `team-lead` errors.
+- Deterministic: the merge-guard reproduction and the spiked fix pass in the scratch copy with the existing `TestConsumedNonterminal*` and `TestTerminal*`. The spiked fix also refuses an entity hand-moved to an unprepared gated stage. `go test ./internal/status ./internal/gates` pass there, except for tests that need `docs/dev` and `install.sh`, which are absent from the scratch copy.
 
 ## Out of scope
 
-- Haiku-specific behavior failures: the rejection-flow worker ordering, the named bare `Agent()` call, and the literal FAILED worker report.
-- Changing which model or cadence the lane runs, or the blank-owner Haiku bindings, except to remove a binding that a fix makes obsolete.
+- Haiku-specific behavior failures: the rejection-flow worker ordering, the named bare `Agent()` call, the literal FAILED worker report, and Haiku skipping `Skill(spacedock:ensign)`.
+- Changing which model or cadence the lane runs, or the blank-owner Haiku bindings, except where this task removes a binding its fix makes obsolete (filing, keep-moving).
 - The `parseLiveGap` wiring and the two docs that disagree on whether `pi-live` must pass.
+- The pre-existing headless hang after `end_turn` (no-progress kill). It was seen once locally and once in Haiku CI.
 
 ## Expected surface and tolerance
 
-Estimate net LOC change: {ideation}, across {ideation} files.
+Estimate net LOC change: +75, across 37 files (about +150 insertions, -75 deletions). Tolerance: net +40 to +120, files 32 to 42. The 15 goldens and most skill edits replace lines one for one.
+
+Semantics this task may change:
+- Runtime behavior: `merge guard` and terminal `status --set` now accept consumed nonterminal history on later ungated stages and after a terminal write.
+- Dispatch artifact text: the completion target becomes `main`, and the break-glass prompts gain a Commit step and a Summary instruction.
+- FO contract terminal routing names `merge guard … --verdict`.
+
+Command grammar, stored formats and gate authority are unchanged. Pending, stale, superseded, terminal-target and gated-path authority still fail closed.
 
 ## Acceptance criteria
 
-**AC-1 - A correct filing command with a trailing `;` or `&&` grades as filed.**
-Verified by: a focused matcher test over the recorded Haiku command, red before the fix and green after, plus a local live `filing` journey run that passes.
+**AC-1 - A correct filing command with a slug directly followed by `;` (or `&`, `|`, `)`, `"`) grades as filed, and a longer slug sharing the prefix does not.**
+Verified by: a table test over the recorded Haiku command. It is red on `661c607ae` and green after the fix, and it fails if the terminator class loses `;`. The negative row `wire-the-thing-two` fails if the boundary is dropped. A local live `TestLiveCommonFiling` run passes on Sonnet.
 
-**AC-2 - The keep-moving approved-gate entity reaches done and is archived through the merge guard.**
-Verified by: a local live `keep-moving-posture` run that passes on Sonnet with no XFAIL needed. The Sonnet `060xp…` binding and the Haiku binding on this journey are removed or re-scoped, with the reason recorded.
+**AC-2 - A keep-moving drive leaves all three independent entities archived terminal, including the gate-consumed `approved-gate`, measured against the baseline of 3 of 3 refusals.**
+Verified by: (a) a `internal/cli/terminal_consume_test.go` test. `--set status=done verdict=PASSED completed` followed by `merge guard --verdict passed` exits 0 and archives. It is red on `661c607ae`. (b) A companion test: an entity hand-moved to an unprepared gated stage is still refused. (c) The existing `TestConsumedNonterminal*` and `TestTerminal*` stay green. (d) Local live `TestLiveCommonKeepMovingPosture` on Sonnet, with the Sonnet and Haiku bindings removed, PASSES in at least 2 of 3 runs, and no stream contains `condition "ineligible"` or `merge guard requires --verdict`.
 
-**AC-3 - Break-glass `selected-team` passes, and worker completion messages reach the FO without a `team-lead`-unreachable error.**
-Verified by: a local live `TestLiveBreakGlassShimRecovery` run that passes both subtests, and a stream that has no `No agent named 'team-lead' is reachable`.
+**AC-3 - Break-glass recovery leaves a committed, complete worker report in both modes, and worker completion messages reach the FO.**
+Verified by: (a) local live `TestLiveBreakGlassShimRecovery` on Sonnet. Both subtests PASS in 2 of 2 runs, and `selected-bare` passes with the Sonnet binding removed. (b) No stream from those runs or the AC-2 runs contains `No agent named 'team-lead' is reachable`. (c) `TestBuildMergedModeCompletionSignal` requires `SendMessage(to="main"` and bans `team-lead`. (d) A `skills/integration` check that the recovery team template, `claude-ensign-runtime.md` and the build's completion block name the same target. This fails if one of them drifts back to `team-lead`.
 
 ## Test plan
 
-Focused unit tests for each fix, then local live runs of the affected journeys (`SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -run ...` per `docs/runtime-live-ci.md`), on Sonnet at minimum. Then `go test ./...` and `go test ./... -race`.
+- Primary proof owners: `shared_filing_pr399_test.go` (AC-1), `internal/cli/terminal_consume_test.go` (AC-2, deterministic), `TestLiveCommonKeepMovingPosture` (AC-2, live), `TestLiveBreakGlassShimRecovery` and `TestBuildMergedModeCompletionSignal` (AC-3).
+- The new deterministic tests are cheap and go in existing files. Write them red first. The merge-guard reproduction from this ideation seeds the first AC-2 test.
+- Live runs, local and Sonnet, through the commands in `docs/runtime-live-ci.md`: filing once, keep-moving 3 times, break-glass 2 times. Cost is about 1 minute and well under $1 per run.
+- Before claiming completion, run `go test ./...`, `go test ./... -race` and `gofmt`. The golden regeneration uses the package's existing update path.
 
 ### Feedback Cycles
+
+## Stage Report: ideation
+
+- DONE: Diagnose items 2 (keep-moving merge guard "ineligible") and 3 (selected-team plus team-lead unreachable) to a proven root cause from the recorded streams and code, naming whether each defect is in the binary, the FO/ensign contract, or the harness.
+  Item 2: a binary defect (`consumedNonterminalHistory` compares the post-`--set` status), reproduced deterministically, plus two FO contract gaps (`merge guard <slug>` without the required `--verdict`, and terminal routing that does not name the guard). Item 3: the break-glass contract template has no commit step and no Summary instruction. The `team-lead` pin in the binary and the contract is stale against the harness, which resolves `main` (40 of 40 failed vs 23 of 23 succeeded in CI, and it fails from this session too). The suspected link is disproved: 10-07 passed with `team-lead` unreachable. See `## Diagnosis`.
+- DONE: Propose the smallest fix per item with a falsifiable AC each, an exact proposed diff or file list with net LOC estimate and tolerance, and doc changes if user-visible behavior changes.
+  `## Proposed approach` has the merge.go diff, before/after contract wording, binding removals and the doc diffs. AC-1 to AC-3 each name a red-first test. Estimate: net +75 across 37 files, tolerance +40 to +120 and 32 to 42 files.
+- DONE: Exercise the riskiest mechanism before the gate, at minimum a local live run (or the cheapest local reproduction) that shows the failure reproduces locally, so implementation can prove each fix passes locally.
+  Local live Sonnet runs inside agent-safehouse (benchmark-token auth). Baselines reproduce both failures: break-glass `selected-team` uncommitted, and keep-moving `ineligible` in 3 of 3. Combined spike: break-glass both subtests PASS in 2 of 2 and keep-moving XPASS in 3 of 3, with zero `team-lead` errors. Item 1 was reproduced with a matcher probe (red on the recorded command).
+
+### Summary
+
+All three failures are shared defects, not model faults. Item 1 is a grader regex. Item 2 is a binary predicate that refuses the gate-consumed entity once its terminal status is set, made worse by FO contract text that omits the required `--verdict`. Item 3 is a break-glass worker prompt with no commit or Summary step, alongside a `team-lead` completion pin that no longer resolves on the current harness, which addresses the lead as `main`. The backlog's suspected `team-lead` link to the `selected-team` failure is disproved. All fixes were spiked through local live runs before the gate, outside the main checkout (scratch source copy and staged plugin copy). One residual risk: a pre-existing headless hang after `end_turn` was seen once and is out of scope.
