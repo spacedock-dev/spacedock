@@ -1,7 +1,7 @@
 ---
 id: vtgw5b1ar42s6x807nfdzwb9
 title: Three shared live-lane failures that are not model faults
-status: backlog
+status: ideation
 source: "Captain, 2026-10-27: Haiku analysis after PR #853 (runs 37703335512, 40448057053, 40447244422) found four of nine Haiku journey failures are grader bugs or cross-model failures. Captain: file the targeted fixes and get them passing locally."
 started:
 completed:
@@ -32,7 +32,7 @@ gates:
                 reason: 'Captain directed in chat: ''File a task with those targeted fix, and get them passed locally'' — approves starting design on the three fixes.'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Fix three live-lane failures that hit Sonnet and Haiku alike, so live results show real model behavior and not harness or contract faults.
