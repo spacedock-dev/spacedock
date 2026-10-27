@@ -33,6 +33,14 @@ never your guess.
 
 ## Pick the branch from the argument
 
+In a natural-language review request, "Spacedock Review" names the product, never
+Web. Read the saved choice first: saved Terminal uses Terminal, saved Web uses Web,
+and nothing saved runs **Ask for the choice**. Only explicit Web words (`web`,
+`browser`, `upload`, `share link`, `review.spacedock.md`) select Web for one review.
+Review the named existing file with the requested modifier, such as `decision`;
+do not generate a replacement artifact. This does not change the argument branches
+below or the four file review keyword forms.
+
 Take the first branch that fits. Compare the reserved words as the whole argument,
 ignoring case.
 
