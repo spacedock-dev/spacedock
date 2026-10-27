@@ -71,9 +71,10 @@ is a location or modifier word (`tui`, `terminal`, `local`, `web`, `webui`, `rem
 The four suffixes in the table are exact: a location alone after the file
 (`terminal`, `tui`, `local`, `web`, `webui` or `remote`) is refused. Do not
 reinterpret it as a bare-file review or infer an omitted modifier.
-Give exactly one corrected request from the table on its own line, for example
-`/spacedock:review plan.md terminal decision`, using the actual path and quoting
-it if needed. Explain the refused words without repeating the refused command.
+Give corrected requests only from the table, one per retained intent (so
+`decision` with `questions` may offer both halves), each on its own line; use the
+actual path, quoting it if needed, for example
+`/spacedock:review plan.md terminal decision`. Explain the refused words without repeating the refused command.
 Refusals open, upload and generate nothing. Every other text keeps the prompt
 branch, including
 `plan.md summarize this file into summary.md`.
