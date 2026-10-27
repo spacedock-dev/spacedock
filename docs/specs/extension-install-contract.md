@@ -227,6 +227,17 @@ The file holds `project`, `mode` (`local` or `remote`) and `decided_at` (RFC 333
 | an existing file path | Reviews the file under the recorded choice: Terminal (TUI) opens it, Web uploads it. Asks first when no choice is recorded. |
 | any other text | A prompt the agent carries out, for example writing a file; the resulting file is then reviewed as above. |
 
+After whole-file matching and before the prompt branch, `<file> terminal decision`,
+`<file> web decision`, `<file> decision` and `<file> terminal questions` review that
+existing file; quoted paths preserve spaces. Terminal decisions pass `--mode binding`,
+Terminal questions pass `--allow-question`, and Web decisions use the companion's
+owner-decision flow. Explicit locations apply once without changing the saved choice;
+one-off Web still asks the seven-day agreement unless Web is already recorded.
+Omitted locations keep the ask-and-save flow. Refuse decision with questions and Web
+with questions before opening or uploading; other nonmatching suffixes are refused
+only when their first word after the file is a location or modifier word, with one
+corrected example. Other text remains a prompt.
+
 The question "Terminal (TUI) or Web?" keeps the file on this machine for Terminal
 (TUI). Choosing Web asks a second question: the file uploads to review.spacedock.md,
 anyone with the link can open it, and it expires after seven days, agree? Declining

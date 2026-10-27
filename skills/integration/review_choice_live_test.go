@@ -579,11 +579,11 @@ func TestLiveReviewKeywordForms(t *testing.T) {
 		{"terminal-unset", "plan.md terminal decision", "", "subspace:r", "--mode binding", nil, nil},
 		{"terminal-matching", "plan.md terminal decision", "local", "subspace:r", "--mode binding", nil, nil},
 		{"terminal-conflicting", "plan.md terminal decision", "remote", "subspace:r", "--mode binding", nil, nil},
-		{"web-unset-yes", "plan.md web decision", "", "subspace:remote-review", "", map[string]string{"agree": "Yes"}, []string{"agree"}},
-		{"web-conflicting-yes", "plan.md web decision", "local", "subspace:remote-review", "", map[string]string{"agree": "Yes"}, []string{"agree"}},
-		{"web-matching", "plan.md web decision", "remote", "subspace:remote-review", "", nil, nil},
+		{"web-unset-yes", "plan.md web decision", "", "subspace:remote-review", "decision", map[string]string{"agree": "Yes"}, []string{"agree"}},
+		{"web-conflicting-yes", "plan.md web decision", "local", "subspace:remote-review", "decision", map[string]string{"agree": "Yes"}, []string{"agree"}},
+		{"web-matching", "plan.md web decision", "remote", "subspace:remote-review", "decision", nil, nil},
 		{"decision-local", "plan.md decision", "local", "subspace:r", "--mode binding", nil, nil},
-		{"decision-remote", "plan.md decision", "remote", "subspace:remote-review", "", nil, nil},
+		{"decision-remote", "plan.md decision", "remote", "subspace:remote-review", "decision", nil, nil},
 		{"decision-unset", "plan.md decision", "", "subspace:r", "--mode binding", map[string]string{"choice": "Terminal"}, []string{"choice"}},
 		{"questions-unset", "plan.md terminal questions", "", "subspace:r", "--allow-question", nil, nil},
 		{"questions-matching", "plan.md terminal questions", "local", "subspace:r", "--allow-question", nil, nil},
@@ -621,8 +621,25 @@ func TestLiveReviewKeywordForms(t *testing.T) {
 			if tc.skill == "subspace:r" {
 				l.noPublish()
 			}
-			if tc.skill == "subspace:remote-review" && !strings.Contains(l.text+l.flat(), "decision") {
-				t.Error("Web handoff did not retain the request for an owner decision")
+			if len(tc.menus) == 1 && tc.menus[0] == "agree" {
+				q := l.asked[0]
+				for _, term := range []string{"review.spacedock.md", "Anyone with the link", "seven days"} {
+					if !strings.Contains(q.Question, term) {
+						t.Errorf("upload agreement omitted %q: %s", term, q.Question)
+					}
+				}
+				menu, handoff := -1, -1
+				for i, tool := range l.tools {
+					if tool.Name == "AskUserQuestion" && menu < 0 {
+						menu = i
+					}
+					if skill, _ := tool.Input["skill"].(string); tool.Name == "Skill" && skill == "subspace:remote-review" {
+						handoff = i
+					}
+				}
+				if menu < 0 || handoff <= menu {
+					t.Errorf("Web handoff preceded upload agreement: %s", l.flat())
+				}
 			}
 		})
 	}
