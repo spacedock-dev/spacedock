@@ -14,7 +14,10 @@
 {% endmacro %}
 {% macro render_content(nav_item, ref) %}
   {% set ref = ref or nav_item %}
-  {% if nav_item.meta and nav_item.meta.icon %}
+  {% set product_marks = {"Review": "review", "Compass": "compass", "Workflow": "workflow"} %}
+  {% if not ref.parent and ref.title in product_marks %}
+    <img class="sd-nav-product-mark" src="{{ ('brand/products/' ~ product_marks[ref.title] ~ '.svg') | url }}" alt="" width="18" height="18" aria-hidden="true">
+  {% elif nav_item.meta and nav_item.meta.icon %}
     {% include ".icons/" ~ nav_item.meta.icon ~ ".svg" %}
   {% endif %}
   <span class="md-ellipsis">

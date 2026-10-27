@@ -157,6 +157,14 @@
   }
 }
 
+/* Product marks connect the top-level docs sections to the landing page. */
+.md-nav__link .sd-nav-product-mark {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  object-fit: contain;
+}
+
 /* Keep a readable line length with the page outline in the left navigation. */
 @media (min-width: 1220px) {
   .md-content { max-width: 38rem; }

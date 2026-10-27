@@ -1,32 +1,35 @@
 # Spacedock Workflow
 
-You hand your agents whole chunks of work, and every result comes back to you for a call. Most of those calls repeat a judgment you've already made; only a few really need you. **Workflow is where you write down once what good looks like at each step. Work that misses that bar goes back to the agent to fix before it reaches you, so what does reach you is worth your judgment, with the evidence attached.**
+Your agents can do more work than you can review. Spacedock Workflow lets you define what needs your attention and what agents can handle themselves.
 
 ## How it works
 
-Workflow runs your work as a series of stages. **Nothing crosses a gate without a decision you own.**
+A workflow gives recurring work a set of stages, such as design, implementation and review. You define the standards for each stage. Agents choose how to do the work within those standards.
 
-A gate is a checkpoint where the workflow pauses and puts the question to you: ship this, or not? You approve it, send it back, or escalate. You can also delegate the call to an agent. Either way, the decision is recorded with its evidence and its reason. That is the whole idea. Everything else is detail.
+You also choose where work pauses for your decision. These checkpoints are called [gates](../concepts/gates-and-decisions.md).
 
-You are the captain. You set the bar and make the calls; the agents do the rest. The bar starts rough and sharpens every time you reject, so calls that once needed you become ones you can hand off with confidence. See [the operating model](../concepts/operating-model.md) for how the three roles divide the work.
+The stages and standards live in plain text in your repository. Your agent coordinates the work and records its progress and decisions.
 
-## What you get
+## Gate content
 
-- **The agent doesn't get to judge its own work.** A separate review stage checks it with fresh context and no access to the maker's reasoning. It pushes back on thin evidence and work that looks busy without proving its claim.
-- **Rework stops before it loops.** Work that fails review goes back up to three times. After the third failed round, the call comes to you instead, with every round on the record. See [rejections](../concepts/gates-and-decisions.md#rejections).
-- **Every decision leaves a trail.** Each gate carries a stage report: findings, verdicts, artifacts, anomalies. You decide on evidence, not the transcript, and the record outlives the reviewer.
-- **The bar sharpens as you use it.** Each stage declares what good means and the agent works to that line. When a standard turns out fuzzy in practice, the agent proposes an edit to the written criteria for your approval.
-- **Batch the work; decide as it flows back.** Queue many work items at once. Agents advance each through its stages, and you handle gates as they surface, not one session at a time.
-- **Work survives the context limit.** When an agent runs out of context, a successor carries forward what's in flight.
+Different stages need different context and evidence for your judgment. **Gate content** defines what the agent presents at each decision point.
+
+For example, a feature workflow can pause before implementation. The agent brings you the proposed behavior, tradeoffs and a recommendation. You approve the plan, request changes or hold the work.
+
+After approval, agents can implement and review the change against your standards. You can require another decision before release, with test results and unresolved risks as evidence.
+
+[Spacedock Review](../review/index.md) presents the work for your feedback and decision. Workflow defines when that review happens, what it contains and what happens next.
+
+## Standards and trust
+
+You and your agent can refine the standards and gate content as you learn what each decision needs. Add missing context, remove distracting detail, or change the evidence required.
+
+You can also add decision points or explicitly delegate decisions to an agent. You control how much attention the workflow requires.
 
 <a id="next"></a>
 
 **Related guides**
 
-- **Start from what you already do.** [Installation](../get-started/install.md), then [survey your project](../get-started/survey.md): it reads your past agent sessions and names the workflow you're already running. Or [start a fresh workflow](../get-started/first-workflow.md) from a common shape like development or research.
-- **Decide its calls where you read best.** When Workflow holds a call for you, you can decide it in [Spacedock Review](../review/index.md) instead of in chat.
-- **Learn the model** in [Concepts](../concepts/operating-model.md): the operating model, workflows and entities, the stage lifecycle, and gates and decisions.
-
-## For agents using Spacedock
-
-Agents read these docs too. Start from [`llms.txt`](/llms.txt), the curated index of these pages.
+- [Your first workflow](../get-started/first-workflow.md): design a workflow and run its first work items.
+- [Project survey](../get-started/survey.md): identify the process in your existing agent history.
+- [Review standards](standards.md): define what good work looks like at each stage.

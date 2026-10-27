@@ -1,10 +1,7 @@
 # Review standards
 
-Each stage needs a clear standard before agents start work. Review the rules generated while you [design a workflow](../running-workflows/commission.md).
+Standards define what agents must produce and check at each stage. The rules generated during [workflow design](../running-workflows/commission.md) are a starting point.
 
-The generated per-stage rules are best-guesses; [tighten them before any work runs](../concepts/workflows-and-entities.md#the-readme-is-where-you-set-the-rules). Either:
+Ask your agent to refine them, or type `review stages` during workflow design for a walkthrough.
 
-- open the README and edit the bullets under each stage heading directly, or
-- type `review stages` to have commission walk you through each stage, flag the rules that read as generic, and apply your amendments inline.
-
-When you are ready, [run the workflow](../running-workflows/operating.md).
+Standards define good work. [Gate content](../concepts/gates-and-decisions.md#gate-content) defines the evidence you see before a decision. You can refine both as the workflow develops.

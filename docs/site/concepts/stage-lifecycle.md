@@ -1,41 +1,41 @@
 # The stage lifecycle
 
-An entity moves through an ordered chain of stages that the workflow defines, and each stage declares the work it owns and the proof it must produce. The first officer advances an entity stage by stage, pausing at the gates you declared.
+Each work item moves through the stages in your workflow. Each stage defines the work to do and the evidence required.
 
-## A typical dev workflow
+## A development workflow
 
 ```mermaid
 flowchart LR
-  backlog --> ideation --> implementation --> validation --> done
-  validation -. rejected .-> implementation
+  design --> implementation --> review --> done
+  review -. changes .-> implementation
   classDef gate stroke:#e3b04b,stroke-width:2.5px
-  class ideation,validation gate
+  class design,review gate
 ```
 
-The gold-bordered stages are gates, your calls: before code is written, and before the result ships. Read the chain as a pipeline: each stage takes the prior stage's output as its input, and the bar rises from "is this clear?" to "is this proven?".
+In this example, the outlined stages pause for your decision: before implementation and after review.
 
-The property that matters most is `feedback-to`: rejected work bounces back to the stage that owns the fix (a rejected validation returns to implementation), not to the reviewer that flagged it.
+Requested changes return to implementation. The reviewer checks the revised work before it returns to you.
 
-## What a stage declares
+## Stage settings
 
-A stage can pause at a [gate](gates-and-decisions.md) for your decision, run its work in an isolated worktree, demand a reviewer with no access to the maker's reasoning, route rejected work back to an earlier stage, cap how many items it holds at once, and hand its work to a specialist worker. All of it is declared in the workflow README; ask the first officer to set up or change any of it.
+You can ask your agent to configure a stage to:
 
-Beyond the declarations, the prose of each stage's section in the README is the stage definition. What you write there is exactly what the worker receives as its assignment.
+- Pause at a [gate](gates-and-decisions.md).
+- Use a separate reviewer with fresh context.
+- Return findings to the stage responsible for corrections.
+- Limit concurrent work or use a specialist agent.
 
-## Fresh context at validation
+## Isolated work
 
-Validation declares `fresh: true`, and `fresh: true` means adversarial review: the reviewer is never the maker, arrives without the implementer's reasoning in its context, sees only the entity body and the deliverable, and pushes back on thin evidence. This is the mechanism behind the README's claim that "the agent doesn't get to judge its own work." High-stakes changes can also get a detached, out-of-workflow pass; [Reviews beyond validation](gates-and-decisions.md#reviews-beyond-validation) covers the difference.
+Code stages can use separate Git worktrees so work items have their own branches and files.
 
-When validation recommends `REJECTED`, `feedback-to: implementation` routes the concrete finding back to the implementation stage for rework rather than closing the entity. The entity re-enters implementation, the finding is addressed, and a fresh validator checks it again. A hard cap on feedback cycles prevents an endless bounce; on the third cycle the first officer escalates to you.
-
-## Isolated worktrees
-
-When a stage declares `worktree: true`, everything from that stage onward happens in an isolated worktree: the work and its commits stay there, concurrent items never collide with each other or with you, and at the terminal stage the branch is merged back and the worktree cleaned up.
-
+<a id="a-typical-dev-workflow"></a>
+<a id="fresh-context-at-validation"></a>
+<a id="isolated-worktrees"></a>
+<a id="what-a-stage-declares"></a>
 <a id="where-to-go-next"></a>
 
 **Related guides**
 
-- [The operating model](operating-model.md) for who does what: you, the orchestrator, the workers.
-- [Gates and decisions](gates-and-decisions.md) to see exactly what you decide at a stage boundary and on what evidence.
-- The [frontmatter contract](../reference/frontmatter-contract.md) for the fields these stages write.
+- [Workflow design](../running-workflows/commission.md)
+- [Gates and decisions](gates-and-decisions.md)
