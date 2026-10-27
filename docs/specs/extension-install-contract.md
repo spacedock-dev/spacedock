@@ -130,13 +130,23 @@ adds `NAME@spacedock`. Codex moves an installed plugin to the listing's version
 when you add it again, so re-running that command is the Codex update, and a
 companion that fails to add is named in the output.
 
+Pi has no marketplace and no plugin names, so `spacedock install --host pi` installs
+the packages itself. Spacedock's own package is pinned to the channel (`@stable` for a
+stable binary, `@main` for edge), and each extension with a public repository
+(Subspace today) is installed at the `ref` its listing gives, read from the
+`spacedock` marketplace (`SPACEDOCK_EXTENSION_MARKETPLACE_SOURCE` on every channel).
+`pi install` over an installed package changes nothing, so each install is preceded by
+`pi remove`. `spacedock update` repeats both when Pi holds a published Spacedock
+package. An extension package that cannot be installed is named in the output and
+does not fail Spacedock's.
+
 Each extension's own release keeps its listing on the `spacedock` marketplace
 current. The edge marketplace lists Spacedock only. An extension without a listing on
 the `spacedock` marketplace has no companion plugin: the companion install fails.
 `SPACEDOCK_EXTENSION_MARKETPLACE_SOURCE` replaces the source of that marketplace, so a
 test can stage a newer release. On stable, Spacedock's own marketplace is that
 marketplace and is added once, so `SPACEDOCK_MARKETPLACE_SOURCE` sets it and the
-extension variable has no effect.
+extension variable has no effect there.
 
 ## Compatibility
 
@@ -151,7 +161,7 @@ read the version from its directory name, and Spacedock cannot ask it `--support
 Each hand-off names the program that does the work and the capability it needs.
 Before a hand-off, the skill runs `--supports` for that program. When the answer is
 no, the skill stops and tells the user to run `spacedock update`, then restart
-Claude Code or run `/reload-plugins`, or start a new Codex session.
+Claude Code or run `/reload-plugins`, start a new Codex session, or run `/reload` in Pi.
 
 `spacedock update` installs each extension's newest release on its channel. It
 refreshes the plugins of each of Claude Code and Codex that is on PATH and has the
@@ -253,6 +263,4 @@ then publish the new names.
   the uploader itself; today only the Review skills enforce it.
 - Review menus on Pi and Codex: the question-tool menus above are specified for Claude
   Code only; Pi and Codex ask in plain text.
-- Pi support for Review: Subspace publishes no Pi package carrying its review skills,
-  and nothing has run on Pi.
 - A live logged-in Codex run of the review and compass skills.
