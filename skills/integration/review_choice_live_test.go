@@ -128,7 +128,9 @@ func newReviewLive(t *testing.T, answers map[string]string, companionPlugins ...
 	args := []string{"-p", "--input-format", "stream-json",
 		"--output-format", "stream-json", "--verbose", "--permission-prompt-tool", "stdio",
 		"--plugin-dir", repoRoot(t)}
-	args = append(args, companionPlugins...)
+	for _, plugin := range companionPlugins {
+		args = append(args, "--plugin-dir", plugin)
+	}
 	args = append(args, "--allowedTools", "Bash,Read,Write,Skill", "--model", "sonnet")
 	l.cmd = exec.Command(filepath.Join(progs, "claude"), args...)
 	l.cmd.Dir, l.cmd.Env = proj, l.env
