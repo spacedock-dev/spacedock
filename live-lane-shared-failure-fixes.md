@@ -3,7 +3,7 @@ id: vtgw5b1ar42s6x807nfdzwb9
 title: Three shared live-lane failures that are not model faults
 status: ideation
 source: "Captain, 2026-10-27: Haiku analysis after PR #853 (runs 37703335512, 40448057053, 40447244422) found four of nine Haiku journey failures are grader bugs or cross-model failures. Captain: file the targeted fixes and get them passing locally."
-started:
+started: 2026-10-27T04:56:52Z
 completed:
 verdict:
 score:
