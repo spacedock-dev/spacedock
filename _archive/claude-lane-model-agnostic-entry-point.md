@@ -1,6 +1,6 @@
 ---
 title: The Claude live lane selects a model by cadence, so a new model needs a workflow edit
-status: validation
+status: done
 source: "Captain, 2026-10-07: a manual run on claude-haiku-5-5 was requested and cannot be dispatched. The captain wants opus and sonnet to be a parameter, not a mode, and the underlying entry point to be model-agnostic."
 id: f77r1rj2g7sgj3hkrht7n37f
 gates:
@@ -101,7 +101,7 @@ gates:
                 reason: 'Captain approves candidate 861a6e13a at validation attempt-4: Haiku blank-owner XFAILs, per-target break-glass binding, gap-aware withdrawn-gate-recovery, registry doc sync; accepts the listed deferred risks and presentation without an independent cycle-3 reviewer.'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-10-07T18:15:05Z
 worktree: .worktrees/spacedock-ensign-claude-lane-model-agnostic-entry-point
 review-round:
@@ -112,8 +112,11 @@ review-round:
         id: briefing:f77r1rj2g7sgj3hkrht7n37f:implementation:round-3
         digest: sha256:1827cf2687131ddf893656e243a138c194fef18f67f3cc9800dc69fbc2844030
         room-ref: '@review/implementation/round-3'
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:853
+verdict: PASSED
+completed: 2026-10-27T04:40:17Z
+archived: 2026-10-27T04:40:18Z
 ---
 
 ## Problem
