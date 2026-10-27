@@ -1,67 +1,67 @@
-# Use Review on its own
+# Your first review
 
-Review your agent's work, fix the lines that need fixing, and send your comments back, all without leaving your session.
+[Install Spacedock](../get-started/install.md). In Claude Code, use the review skill. Replace `plan.md` with your file name:
 
-You need Review installed. See [Install Review](../index.md#install).
+<!-- Keyword invocation verification: https://github.com/spacedock-dev/spacedock/issues/852 -->
 
-## Comment on the work
+<div class="sd-agent-prompt">
+  <code>/spacedock:review plan.md decision</code>
+  <button type="button" class="sd-prompt-copy" aria-label="Copy agent prompt" aria-live="polite" hidden>copy</button>
+</div>
 
-Review works the same way in the terminal and the browser: you comment on the exact text, and your comments go back to the agent.
+In Codex, use `$spacedock:review` with the same arguments.
 
-=== "In the terminal"
+Or ask your agent:
 
-    1. **Ask your agent to open the file in Review**, or open it yourself:
+> Send plan.md to me in Spacedock Review for a decision.
 
-        ```text
-        /r plan.md
-        ```
+No active plan right now? Try this:
 
-        In Codex, type `$r plan.md`. Review opens beside your session.
+<div class="sd-agent-prompt">
+  <code>Based on my recent agent history, draft a concise recommendation on whether we should adopt Spacedock Review. Use /spacedock:review to send it to me for a decision.</code>
+  <button type="button" class="sd-prompt-copy" aria-label="Copy agent prompt" aria-live="polite" hidden>copy</button>
+</div>
 
-    2. **Select the text you want to talk about.** Press <kbd>c</kbd> to comment on it, or <kbd>s</kbd> to suggest a replacement.
+<a id="choose-where-to-review"></a>
 
-        ![A comment attached to selected text in Review](https://raw.githubusercontent.com/spacedock-dev/subspace/main/assets/anchored-feedback.png)
+## Open the review
 
-    3. **Comment on as many lines as you need.** Leave the rest alone: lines you don't comment on stand as they are.
+Choose **Terminal** to review on your machine, or **Web** to review in your browser. Your agent remembers the choice for this project.
 
-    4. **Press <kbd>q</kbd> to finish.** Your comments and suggested edits go back to the agent, each one attached to the text it's about.
+For Web, agree to the upload, then press **Sign in as owner** to pair with your agent.
 
-    The agent's next turn starts from your comments. If its revision needs another round, open the file again and comment on what's left.
+## Add a comment
 
-    > **[Screenshot to take:** a suggested replacement, showing the original text and the proposed text.**]**
+Select the text you want changed.
 
-    Press <kbd>?</kbd> in Review for every key.
+- **Terminal:** press <kbd>c</kbd> to add a comment.
+- **Browser:** type your comment in the box that opens.
 
-=== "In the browser"
+## Finish the review
 
-    > **Draft note, not page copy:** browser steps to come, once the browser view ships (depends on the relay reaching production). Question for Kent Chen below.
+- **Approve** to let your agent continue.
+- **Request changes** to send the work back with your feedback.
 
-    > **[Screenshot to take:** a comment on one line in the browser view.**]**
+=== "Terminal"
 
-## Ask the agent while you read
+    Press <kbd>q</kbd> to open the finish screen. Press <kbd>Tab</kbd> to choose your decision, then <kbd>Enter</kbd> to send.
 
-Sometimes you need to know why the agent wrote something before you can judge it. In the terminal, start the review with questions turned on:
+=== "Browser"
 
-```text
-/r --allow-question plan.md
-```
+    Press **Finish review**, choose your decision, then **Send decision**.
 
-1. **Press <kbd>Q</kbd>** and type your question about the file.
-2. **Keep reviewing.** The agent answers from the same file you're reading, and the answer appears in Review.
+<a id="read-the-response"></a>
+<a id="review-the-revision"></a>
 
-> **[Screenshot to take:** a question and the agent's answer, shown in the Review pane.**]**
+Your agent receives your comments and decision automatically.
 
-> **Draft note, not page copy:** asking the agent works in the terminal only today. The browser viewer (subspace-web v0.2.6) handles comments, with nothing for questions. Question for Kent Chen below.
+<a id="review-in-the-terminal"></a>
+<a id="review-in-the-browser"></a>
+<a id="what-a-colleague-sees"></a>
 
-## Ask for a second opinion
+**Related guides**
 
-Some calls need someone who knows the area better than you do. Send the review to a colleague, and their comments come back to your session next to your own. The call stays yours.
-
-> **Draft note, not page copy:** steps to come. Sharing depends on the relay reaching production, and the terminal side is an open PR, so the real steps aren't known yet. **Questions for Kent Chen:** on 10-15, (1) how does a user open a review in the browser, and how do they comment and finish there? (2) what exact steps does a user take to share a review, from the terminal and from the browser, and what does the colleague see and do? (3) will asking the agent a question work in the browser on 10-15, or is it terminal-only at launch?
-
-> **[Screenshot to take:** your session with a colleague's comments beside your own, each marked with who wrote it.**]**
-
-## Next
-
-- [What connects today](../workflow/index.md#next): decide a call [Workflow](../workflow/index.md) holds for you in Review, instead of in chat.
-- [Review reference](reference.md): every command and key.
+- [Comments and decisions](decisions.md): what happens after your decision.
+- [Terminal controls and approval requests](terminal.md)
+- [Browser review](browser.md)
+- [Sharing](sharing.md)

@@ -1,12 +1,7 @@
-# Bridge an external tracker
+# External trackers
 
-Your backlog may already live somewhere else: Linear, GitHub Issues, another ticket ledger. The bridge is asking, not configuring: tell the first officer to intake an external item ("intake GitHub PR #134") and it files an entity carrying the reference. The external system keeps owning intake, discussion, and assignment; Spacedock Workflow stays the execution workflow.
+Your backlog can stay in GitHub Issues, Linear or another tracker.
 
-Two frontmatter fields carry the reference:
+Ask your agent to create a workflow item from an external issue. For example: “Intake GitHub issue #134.”
 
-```yaml
-issue: ENG-123
-source: linear
-```
-
-`issue` is the human-facing external reference; `source` records where the entity came from. Keep the tracker out of Workflow's stage semantics: sync through entity creation, state changes, and stage reports, not tracker-specific stage rules.
+The workflow item keeps a reference to the source. The tracker remains the place for intake and discussion; Spacedock coordinates execution.

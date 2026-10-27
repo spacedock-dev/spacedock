@@ -102,6 +102,10 @@ Read it back and remove every word that survives removal. If a sentence sounds l
 
 ## Canonical terminology and capitalization
 
+For Review annotations, use "text" or "selected text", not "passage".
+
+Lead review procedures with the explicit skill invocation. Give the natural-language request as an alternative. Label slash commands for the harness that supports them.
+
 Pinned from how the README and skills actually use these forms, not an imposed guess. Use them consistently.
 
 | Term | Form | Notes (grounded in real usage) |
@@ -123,7 +127,8 @@ Rule of thumb: capitalize a **role** when you name it as a role (the roles table
 
 - **Commands and code.** Inline code font for commands, flags, filenames, and identifiers: `spacedock claude`, `--strict`, `mkdocs.yml`. Multi-line commands and config in fenced code blocks with a language tag (` ```bash `, ` ```yaml `).
 - **Show expected output when the reader must check it.** Name what a command prints when the reader acts on the result (e.g. `spacedock status --next` prints the dispatchable set). A well-named command needs neither caption nor sample output.
-- **Headings.** Sentence case ("Get started", "Your first workflow"), not Title Case. One `#` h1 per page (the page title); section headings start at `##`.
+- **Headings.** Use noun phrases for navigation labels and page titles ("Installation", "Terminal review", "Workflow design"). Use imperative headings for procedural steps ("Choose a file", "Start the review"). Keep sibling headings parallel. Use sentence case and no trailing periods. One `#` h1 per page; section headings start at `##`. Match the navigation label to the page title, shortening contextual labels when the parent section already names the product ("Terminal" under "Review").
+- **Page footers.** Put onward links under a bold "Related guides" label, not a heading. Navigation footers do not belong in the page outline.
 - **Links.** Descriptive link text, never "click here" / "this link". Internal links are relative so `mkdocs build --strict` can resolve them. GitHub links and install commands point at `main`, never a development branch.
 - **Lists and emphasis.** Bullets for parallel items; bold for the load-bearing claim of a bullet (the README pattern). Use emphasis sparingly; if everything is bold, nothing is.
 

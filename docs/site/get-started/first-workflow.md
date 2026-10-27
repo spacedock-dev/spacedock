@@ -1,101 +1,51 @@
 # Your first workflow
 
-Your first workflow comes from one of two places: [survey](survey.md) offers
-to build one from what it found in your project, or you describe one yourself
-to the `/spacedock:commission` skill. A workflow is your work moving through
-stages you define, pausing at the gates where you decide.
+[Install Spacedock](install.md), then describe a repeatable piece of work and decide where it needs your judgment.
 
-## Commission a workflow
-
-Describe the work in the launch line:
+## Describe the work
 
 ```bash
 spacedock claude "/spacedock:commission ship features through design, implementation, and review"
 ```
 
-Commission asks a few questions, one at a time: what each work item is, the
-stages it moves through, which stages pause for your decision, and the quality
-bar for each. You confirm or adjust each proposal, and it presents the design:
+The agent asks about your work and proposes a workflow. For example:
 
-> I'll call you Captain; let me know if you prefer something else.
+> Each task moves through design, implementation and review.
 >
-> For each run, we process tasks going through the following stages:
+> You approve the design before implementation. A separate agent reviews the result before your final decision.
 >
-> a. backlog  
-> new tasks wait here for triage
->
-> b. design  
-> the approach is worked out and written down
->
-> c. implementation  
-> the change is built on an isolated branch
->
-> d. review  
-> the result is checked against the design
->
-> e. done  
-> accepted and closed
->
-> If you reject at review, it goes back to implementation for revision.
->
-> Our pilot run will be with:
->
-> - Add rate limiting to the API
-> - Fix the flaky login test
->
-> Entity identity will use `sd-b32`.
->
-> All files will be created in `docs/ship-features/` for you to review.
->
-> Accept this design, or tell me what to change.
+> Requested changes return to implementation.
 
-## What gets generated
+## Set the standards
 
-Everything is plain text in your repo: a README that holds the workflow's
-rules (what each stage expects) and one file per work item. The generated
-rules are a starting point; tighten them before any work runs, because an
-agent working to a vague bar is expensive to correct. Learn more about every
-design decision in [Commission a workflow](../running-workflows/commission.md).
+Adjust the proposed stages, decision points and quality standards. Type `review stages` to walk through the standards with your agent.
 
-## The pilot run
+For each decision point, specify the context and evidence you need. This is the workflow's [gate content](../concepts/gates-and-decisions.md#gate-content).
 
-On accept, commission dispatches your seed items in parallel, each moving
-through the stages until everything is idle or waiting on you. When a work
-item reaches the `review` gate, you get a gate review:
+## Run the first tasks
 
-```text
-Capability/change: token-bucket limiter at the API middleware layer.
-Test and evidence: the sixth failed login returns 429, and a successful login resets the counter.
-Reviewed snapshot: Briefing `...` at compact digest `sha256:1a2b3c4d…`.
-Recommendation: approve the implementation.
-Decision ask: approve to close, revise with feedback, or hold at review.
-```
+Choose the first work items with your agent. After you accept the design and standards, the agent starts the work.
 
-You approve, send it back with feedback, or reject. Details:
-[gates and decisions](../concepts/gates-and-decisions.md).
+At a gate, the agent presents the evidence and asks for your decision. Approve, request changes or hold the work.
 
-## Operate the workflow
+## Resume later
 
-Every work item's state is stored and serialized in the
-[workflow](../concepts/workflows-and-entities.md), so you do not need to worry
-about context limits, resuming, or clearing. A typical session:
+Run [`/spacedock:debrief`](../running-workflows/debrief.md) before you end the session.
+
+To resume:
 
 ```bash
 spacedock claude
 ```
 
-It picks up whatever is ready to dispatch. Keep dispatching, approving,
-rejecting, steering. Before you stop, run
-[`/spacedock:debrief`](../running-workflows/debrief.md)
-to record what happened, update the learnings into the workflow, and file the
-follow-up items. The workflow self-improves.
-[Operate a workflow](../running-workflows/operating.md) covers the details.
+The agent reads the workflow records and picks up the work.
 
-A project can hold
-[multiple workflows](../advanced/multi-workflow.md); Spacedock Workflow finds them
-and drives them together.
-Since this runs in your existing coding agent, you can just ask the agent if
-anything is unclear.
+<a id="commission-a-workflow"></a>
+<a id="operate-the-workflow"></a>
+<a id="the-pilot-run"></a>
+<a id="what-gets-generated"></a>
 
-Now you have your first workflow: dispatch and let the agents
-work and hum when you stay calm!
+**Related guides**
+
+- [Workflow operation](../running-workflows/operating.md)
+- [Project survey](survey.md): start from your existing agent history.
