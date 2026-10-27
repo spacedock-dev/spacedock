@@ -32,3 +32,25 @@ func TestAssertClaudeFilingViaNewAcceptsRealPR399Attempt1Stream(t *testing.T) {
 		t.Errorf("assertClaudeFilingViaNew red the real PR #399 attempt-1 opus filing stream — want nil (the FO filed correctly via the var-capture launcher idiom): %v", err)
 	}
 }
+
+// TestCommandFilesViaNewSlugTerminators pins the direct-launcher slug boundary
+// against the recorded Haiku filing command (10-07 and 10-27 claude-live runs):
+// a shell separator or closing quote directly after the slug still names the
+// slug, while a longer slug sharing the prefix does not.
+func TestCommandFilesViaNewSlugTerminators(t *testing.T) {
+	for command, want := range map[string]bool{
+		`printf -- 'x' | ${SPACEDOCK_BIN:-spacedock} new wire-the-thing; echo "exit=$?"`: true,
+		`${SPACEDOCK_BIN:-spacedock} new wire-the-thing;echo`:                            true,
+		`${SPACEDOCK_BIN:-spacedock} new wire-the-thing&& git status`:                    true,
+		`${SPACEDOCK_BIN:-spacedock} new wire-the-thing|tee out`:                         true,
+		`(${SPACEDOCK_BIN:-spacedock} new wire-the-thing)`:                               true,
+		`bash -c "${SPACEDOCK_BIN:-spacedock} new wire-the-thing"`:                       true,
+		`${SPACEDOCK_BIN:-spacedock} new wire-the-thing --workflow-dir . ;`:              true,
+		`${SPACEDOCK_BIN:-spacedock} new wire-the-thing-two; echo`:                       false,
+		`${SPACEDOCK_BIN:-spacedock} new wire-the-thingy`:                                false,
+	} {
+		if got := commandFilesViaNew(command, filingSlug); got != want {
+			t.Errorf("commandFilesViaNew(%q) = %v, want %v", command, got, want)
+		}
+	}
+}
