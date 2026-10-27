@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -371,5 +372,48 @@ func TestFirstOutageCanonicalName(t *testing.T) {
 	status, err := exec.Command("git", "-C", root, "status", "--porcelain").CombinedOutput()
 	if err != nil || !bytes.Equal(before, after) || len(status) != 0 {
 		t.Fatal("query mutated entity or checkout")
+	}
+}
+
+// completionTarget matches a worker→lead completion call, both in its literal
+// form and in the escaped form inside the recovery template's prompt string.
+var completionTarget = regexp.MustCompile(`SendMessage\(to=\\?"([^"\\]+)\\?", message=\\?"Done: `)
+
+// TestCompletionTargetAgreesAcrossBuildAndContract keeps the three places that
+// name the worker→lead completion target in agreement: the build's completion
+// block, the Claude ensign runtime, and the break-glass team template. Each must
+// name exactly one target, and all must be the same. A drift of any one of them
+// back to the unreachable "team-lead" fails here.
+func TestCompletionTargetAgreesAcrossBuildAndContract(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "README.md"), strings.ReplaceAll(splitRootReadme, "state: state-checkout\n", ""))
+	ep := filepath.Join(root, "ci-duration-hints.md")
+	writeFile(t, ep, "---\ntitle: CI hints\nstatus: backlog\n---\n")
+	gitInitFixture(t, root)
+	sources := map[string]string{"dispatch build completion block": runBuild(t, root, ep, "backlog").body}
+	for _, path := range []string{"../ensign/references/claude-ensign-runtime.md", "../fo-dispatch-recovery/SKILL.md"} {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		sources[path] = string(data)
+	}
+	want := ""
+	for source, body := range sources {
+		targets := map[string]bool{}
+		for _, m := range completionTarget.FindAllStringSubmatch(body, -1) {
+			targets[m[1]] = true
+		}
+		if len(targets) != 1 {
+			t.Fatalf("%s names completion targets %v, want exactly one", source, targets)
+		}
+		for target := range targets {
+			if want == "" {
+				want = target
+			}
+			if target != want || target == "team-lead" {
+				t.Errorf("%s completion target = %q, want the shared reachable target %q", source, target, want)
+			}
+		}
 	}
 }

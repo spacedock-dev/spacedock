@@ -53,6 +53,6 @@ Read the entity file at <ROOT>/.worktrees/spacedock-ensign-thing/thing/index.md 
 
 When you finish (after all commits and stage report writes are done), your last action MUST be:
 
-    SendMessage(to="team-lead", message="Done: Thing completed implementation. Report written to <ROOT>/.worktrees/spacedock-ensign-thing/thing/index.md.")
+    SendMessage(to="main", message="Done: Thing completed implementation. Report written to <ROOT>/.worktrees/spacedock-ensign-thing/thing/index.md.")
 
-**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="team-lead", ...)` as "SendMessage with to='team-lead'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="main", ...)` as "SendMessage with to='main'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.

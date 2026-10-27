@@ -594,8 +594,9 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 	parts = append(parts, strings.Join(fetchLines, "\n"))
 
 	// 10. Completion signal (Claude merged mode or Codex named dispatch). The
-	// worker→lead completion target is pinned to the single name "team-lead"
-	// (AC-6), matching the ensign runtime's completion contract. Bare mode (no
+	// worker→lead completion target is pinned to the single name "main", the
+	// address the current Claude Code harness resolves for the lead (AC-6),
+	// matching the ensign runtime's completion contract. Bare mode (no
 	// name) still omits it; its dispatch blocks and returns inline.
 	if !bareMode && (mergedMode || host == "codex") {
 		entityFileRef := entityPath
@@ -841,12 +842,12 @@ func completionSignalBlock(host, entityTitle, stage, entityFileRef string) strin
 		"\n\n### Completion Signal\n\n"+
 			"When you finish (after all commits and stage report writes are done), "+
 			"your last action MUST be:\n\n"+
-			"    SendMessage(to=\"team-lead\", message=\"Done: %s completed "+
+			"    SendMessage(to=\"main\", message=\"Done: %s completed "+
 			"%s. Report written to %s.\")\n\n"+
 			"**If you are the first officer forwarding this prompt to Agent():** copy "+
 			"the entire block above into `Agent(prompt=...)` character-for-character. "+
-			"Do NOT paraphrase `SendMessage(to=\"team-lead\", ...)` as \"SendMessage with "+
-			"to='team-lead'\" or any other English rewrite — the parenthesis-equals "+
+			"Do NOT paraphrase `SendMessage(to=\"main\", ...)` as \"SendMessage with "+
+			"to='main'\" or any other English rewrite — the parenthesis-equals "+
 			"syntax is the literal call the ensign must emit, not a description of one.",
 		entityTitle, stage, entityFileRef)
 }

@@ -63,7 +63,8 @@ func TestBuildMergedModeEmission(t *testing.T) {
 
 // TestBuildMergedModeCompletionSignal is AC-6's fixture: the merged dispatch
 // body carries the completion-signal block pinned to the single worker→lead
-// target "team-lead" (matching the ensign runtime), not "main", and not absent.
+// target "main" (matching the ensign runtime), not the stale "team-lead" the
+// current Claude Code harness no longer resolves, and not absent.
 func TestBuildMergedModeCompletionSignal(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
@@ -80,11 +81,11 @@ func TestBuildMergedModeCompletionSignal(t *testing.T) {
 	if !strings.Contains(body, "### Completion Signal") {
 		t.Fatalf("merged dispatch body must carry a completion-signal block (the worker→lead signal):\n%s", body)
 	}
-	if !strings.Contains(body, `SendMessage(to="team-lead"`) {
-		t.Errorf("merged completion signal must target the pinned single reply name \"team-lead\":\n%s", body)
+	if !strings.Contains(body, `SendMessage(to="main"`) {
+		t.Errorf("merged completion signal must target the pinned single reply name \"main\":\n%s", body)
 	}
-	if strings.Contains(body, `SendMessage(to="main"`) {
-		t.Errorf("merged completion signal must pin ONE target — \"main\" must not appear alongside \"team-lead\":\n%s", body)
+	if strings.Contains(body, "team-lead") {
+		t.Errorf("merged completion signal must pin ONE target — the unreachable \"team-lead\" must not appear:\n%s", body)
 	}
 }
 
