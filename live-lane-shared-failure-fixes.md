@@ -7,7 +7,7 @@ started: 2026-10-27T04:56:52Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-live-lane-shared-failure-fixes
 issue:
 pr:
 mod-block:
