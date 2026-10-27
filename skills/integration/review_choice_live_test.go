@@ -691,8 +691,8 @@ func TestLiveReviewUnsupportedKeywordCombinations(t *testing.T) {
 			if strings.Contains(suffix, "questions") && !strings.Contains(l.text, "questions") {
 				t.Errorf("refusal dropped the questions intent: %s", l.text)
 			}
-			if !reviewCorrectionSupported(l.text) {
-				t.Errorf("refusal omitted a supported corrected request: %s", l.text)
+			if !reviewCorrectionsSupported(l.text) {
+				t.Errorf("refusal suggested an unsupported request or no correction: %s", l.text)
 			}
 			l.noPublish()
 		})
@@ -713,24 +713,30 @@ func TestLiveReviewUnrelatedSuffixRemainsAPrompt(t *testing.T) {
 	l.noPublish()
 }
 
-func reviewCorrectionSupported(text string) bool {
+func reviewCorrectionsSupported(text string) bool {
 	text = strings.ReplaceAll(text, "*", "")
 	requests := regexp.MustCompile("/spacedock:review[ \t]+(?:plan\\.md|\"plan\\.md\")[ \t]+([^`\r\n]+)").FindAllStringSubmatch(text, -1)
-	if len(requests) != 1 {
+	if len(requests) == 0 {
 		return false
 	}
-	switch strings.Trim(requests[0][1], " \t\"'.;:") {
-	case "terminal decision", "web decision", "decision", "terminal questions":
-		return true
+	for _, request := range requests {
+		switch strings.Trim(request[1], " \t\"'.;:") {
+		case "terminal decision", "web decision", "decision", "terminal questions":
+		default:
+			return false
+		}
 	}
-	return false
+	return true
 }
 
 func TestReviewRefusalCorrection(t *testing.T) {
 	for _, form := range []string{"terminal decision", "web decision", "decision", "terminal questions"} {
-		if !reviewCorrectionSupported("Try `/spacedock:review plan.md " + form + "`.") {
+		if !reviewCorrectionsSupported("Try `/spacedock:review plan.md " + form + "`.") {
 			t.Errorf("supported correction rejected: %s", form)
 		}
+	}
+	if !reviewCorrectionsSupported("Try `/spacedock:review plan.md terminal decision` or `/spacedock:review plan.md terminal questions`.") {
+		t.Error("supported halves of decision with questions were rejected")
 	}
 	for _, text := range []string{
 		"Try `/spacedock:review plan.md web`.",
@@ -738,8 +744,8 @@ func TestReviewRefusalCorrection(t *testing.T) {
 		"Try `/spacedock:review plan.md terminal decision questions`.",
 		"No corrected request.",
 	} {
-		if reviewCorrectionSupported(text) {
-			t.Errorf("unsupported or non-single correction accepted: %s", text)
+		if reviewCorrectionsSupported(text) {
+			t.Errorf("unsupported or missing correction accepted: %s", text)
 		}
 	}
 }
