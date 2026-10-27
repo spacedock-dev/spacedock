@@ -22,6 +22,17 @@ gates:
                 id: briefing:vtgw5b1ar42s6x807nfdzwb9:backlog:attempt-1:revision-1
                 digest: sha256:481cb8d061369714414c8a8464c4d84fb6dd9483d2bbb40976d16f250c72edff
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:vtgw5b1ar42s6x807nfdzwb9:backlog:1
+                briefing: briefing:vtgw5b1ar42s6x807nfdzwb9:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-10-27T04:56:38.965708Z"
+                decision: approve
+                reason: 'Captain directed in chat: ''File a task with those targeted fix, and get them passed locally'' — approves starting design on the three fixes.'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Fix three live-lane failures that hit Sonnet and Haiku alike, so live results show real model behavior and not harness or contract faults.
