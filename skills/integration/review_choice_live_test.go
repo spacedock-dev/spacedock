@@ -615,7 +615,7 @@ func TestLiveReviewProductNameUsesSavedChoice(t *testing.T) {
 }
 
 func TestLiveReviewProductNameAfterSimulatedHold(t *testing.T) {
-	for _, run := range []string{"run-1", "run-2", "run-3"} {
+	for _, run := range []string{"run-1", "run-2", "run-3", "run-4", "run-5", "run-6"} {
 		t.Run(run, func(t *testing.T) {
 			companion := t.TempDir()
 			for path, body := range map[string]string{
