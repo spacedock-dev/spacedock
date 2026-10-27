@@ -1,6 +1,6 @@
 # Spacedock Review
 
-Your agent brings you a plan, spec or draft. Review the work and decide what happens next.
+More agent work means more decisions for you. Review plans, drafts and reports, then decide what happens next.
 
 ## Your decision
 
@@ -51,4 +51,4 @@ When you finish, the result contains your decision, anchored comments and the do
 - [Your first review](use.md): send your own plan, leave feedback and read the agent’s response.
 - [Comments and decisions](decisions.md): what each decision means.
 - [Sharing](sharing.md): invite others before you make the call.
-- [Spacedock Workflow](../concepts/gates-and-decisions.md): configure gate content so each review brings you the evidence and context you need to decide.
+- [Spacedock Workflow](../concepts/gates-and-decisions.md): define what needs your judgement and what evidence each review presents.
