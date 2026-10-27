@@ -14,29 +14,29 @@ Start Compass from your agent session:
 
 In Codex, type `$compass`. You can also ask your agent to "open compass". Compass starts on your machine and gives you its address, `http://127.0.0.1:4553/` by default. It does not open a browser for you, so open the address yourself.
 
-![The Sessions screen with the sample session link, the Active now count and one active session row](img/sessions-screen.png)
+![The Sessions screen with the sample session link, the Active now and Working counts, and three active sessions](img/sessions-screen.png)
 
 *The Sessions screen opens with the link to the sample session, a count of active sessions, and one row for each active session showing its goal, what it is doing now, and whether it is blocked.*
 
-New to Intent and drift? Open **See a sample session (view only)** above the Sessions list. It is an anonymized session that drifted, with its reading and the correction Compass composed. Nothing in it is saved, sent or run.
+New to Intent and drift? Open **See a sample session (view only)** above the Sessions list. It is an anonymized Claude Code session that drifted, with a summary of what it did, its reading and the correction Compass composed. Nothing in it is saved, sent or run.
 
 ## Set the goal
 
-1. **Open the session.** On the Sessions screen, click the session's row. Its page opens with an **Intent** section at the top.
+1. **Open the session.** On the Sessions screen, click the session's row. Its page opens with an **Intent** card at the top.
 
-2. **Type the goal.** One line, up to 240 characters. If you typed nothing, Compass drafts one from your first prompt in a Claude Code or Codex session, tinted and marked "from your prompt". **Use your prompt** lists up to five of your prompts to choose from. A draft is not saved until you press Save intent or press Analyze drift, which adopts it.
+2. **Give it a goal.** Write what should be true when the work is done, in one box of up to 240 characters. There are four ways to fill it:
+    - **Type it.**
+    - **Set `/goal` in the session.** A `/goal` you set in Claude Code, Codex or Antigravity fills the box on its own, marked "From your /goal". A later `/goal` is offered beside your saved goal and never written over it.
+    - **Press Use your prompt** to choose from up to five of your prompts. With nothing typed, Compass drafts the goal from your first prompt in a Claude Code or Codex session.
+    - **Press Find goal** to have the model that runs Analyze drift look for a goal in the prompts you typed. It fills the box, marked **Goal detected**, only when your own words state a clear end state.
 
-3. **Add the expected outcome.** Up to six lines of up to 240 characters, one check per line. Press **Add a line** for each. This step is optional, but a drift level needs at least one line. Until then the level reads "Not enough recorded yet".
+3. **Add the expected outcome, if you want.** Open **Expected outcome (optional)** and add up to six lines of up to 240 characters, one check per line. With no lines, Compass reads the session against the goal's own end state.
 
-4. **Press Save intent.** Compass keeps the words you typed and shows them beside the session from now on. Nothing is sent to the agent.
+4. **Press Save intent.** Compass keeps the words and shows them beside the session from now on. Nothing is sent to the agent. A draft is not saved until you press Save intent, or until you press Analyze drift, which adopts it.
 
-![The sample session's Intent section with a goal and two outcome lines, beside a High drift analysis with Steer back](img/sample-session-intent-and-drift.png)
+![A session's Intent card holding the goal from its /goal, and the Drift card showing Claude Code's goal-met claim and a later message to settle](img/goal-from-slash-goal.png)
 
-*In the sample session, the Intent section holds a goal and two outcome lines, and the Drift section beside it shows a High level with Steer back.*
-
-![The sample session's analysis result, with each departure cited by entry number](img/sample-session-analysis-result.png)
-
-*The same analysis lists each departure against your intent and cites the session entries behind it.*
+*The goal came from the session's `/goal`. Below it, the Drift card shows that Claude Code marked the goal met, and asks about a later message that went beyond the goal.*
 
 ## Read the board
 
@@ -51,43 +51,75 @@ Sessions puts active work first. Each active session answers four questions: whe
 
 Press <kbd>Escape</kbd> in a session to go back.
 
+## See what the session has done
+
+Below Intent, **What the session has done** outlines a Claude Code or Codex session in short lines, one group per message you sent, naming its checks, failures and folders. The outline uses no model.
+
+On a Claude Code session the card also holds a summary written by a model: an opening paragraph on what the agent did, then phases you open one at a time. Each line cites the session entries it rests on, and a phase that holds evidence for a departure, or has failed tests, says so on its heading. A finished session is summarized when you open it. For a running one, press **Summarize** or **Update summary**.
+
+![The sample session's What the session has done card, with an opening paragraph, one phase open, and phases marked Departure and 2 test failures](img/sample-session-summary.png)
+
+*Each summary line cites the entries it rests on. Phase headings flag the departures and failed tests inside them.*
+
+**Turn off summaries** stops them. **Delete summary** removes one session's summary; it takes two presses.
+
 ## Check a session for drift
 
-1. **Press Analyze drift** on the session's page.
+1. **Press Analyze drift** on the session's **Drift** card. It runs on your press. The first time, Compass tells you what it sends and to which agent tool. A Claude Code session is read by Claude Code, or by Codex when `claude` is not installed. For a Claude Code session the analysis also sends the checks the session ran, the files it wrote and any pull request it created.
 
-2. **Read what it sends, then press Allow and analyze.** The first press shows what Compass will send, and to which agent tool. A Claude Code session is read by Claude Code, or by Codex when `claude` is not installed. Compass remembers your answer. **Turn off readings** on any session page takes it back.
+2. **Read the result.** The card gives the drift level and the departures it found, or says it can't tell. Each departure is a card: **What** quotes the entries behind it, each with its number, such as [41], and **Why Compass reads this as drift** explains it. Hover a number to see that entry, or open it in **Full activity** at the bottom of the page. **What the analysis read** shows the model, your intent, the part of the session it read, and what it did not read.
 
-3. **Read the result.** It says one of: "Departs from your intent", "Can't tell", "Not reached at this stop", or "Nothing found against what it read". A departure lists each line of your intent it contradicts, with the numbered session entries as evidence. **What the analysis read** shows the model, your intent, the part of the session it read, and what it did not read.
+![The sample session's Drift card: Medium, one departure from the goal citing entries 41, 79 and 80, and a contradicted claim of the agent's](img/sample-session-drift.png)
 
-> **[Screenshot to take:** a "Departs from your intent" result, with the cited entries numbered beside it.**]**
+*The departure quotes each cited entry with its number and time, then says why Compass reads it as drift. Below it, a claim of the agent's that the record contradicts.*
 
 A session with a departure on record gets a **Drift** mark on the Sessions screen and moves up the list, below any session blocked on you.
 
-For a Claude Code session, the analysis also sends the checks the session ran and the files it wrote, but only after you allow tool output for the destination the page names.
+When Claude Code or Codex says a `/goal` is met, the Drift card shows that as the harness's claim. Once you analyze, Compass says whether the session's record agrees with the claim, disputes it, or cannot confirm it. The claim never sets the drift level.
 
-Analyze drift reads the work of Claude Code and Pi sessions. On the other tools, the Drift section says "Compass can't read work or the agent's replies from this harness".
+If the goal is too vague to read the work against, Analyze says so under the Goal field and shows no level. Rewrite the goal with what should be true when the work is done.
 
-Each analysis uses model capacity from your Claude Code or Codex account. Compass allows 100 in a rolling twenty-four hours, shared across sessions and tools, and failed attempts count. When the limit is spent, a banner at the top of the session page says when you can analyze again.
+After a reading, the card offers **Check again** when new work or changed words came after it, and **Analyze again** when it is current.
 
-For a Claude Code session you can also turn on **Live monitor** in **More** on the session page. It is off by default. It re-estimates drift after every turn from the checks the session ran and the files it wrote, with no model call, and shows the result as None or low, Medium, High or Extreme. It never notifies you. The [levels](reference.md#drift-levels) are in the reference.
+Analyze drift reads the work of Claude Code and Pi sessions. On the other tools, the Drift card says Compass can't read work from that tool.
+
+Each analysis uses model capacity from your Claude Code or Codex account. Compass allows 100 in a rolling twenty-four hours, shared across sessions and tools, and Find goal and failed attempts count. When the limit is spent, a banner at the top of the session page says when you can analyze again.
+
+To stop model calls, press **Pause model calls** in **Drift settings** on the Drift card. It stops Analyze drift, summaries and Live monitor until you press **Resume model calls**.
+
+## Watch a session live
+
+For a Claude Code session, turn on **Live monitor** in **Drift settings**. While the page is open and its tab is visible, Compass asks Haiku through your Claude Code about once a minute where the latest turns are heading. It sends your saved goal and the recent turns, without tool output. The card and the page header show the level, None or low, Medium, High or Extreme, labelled **Live monitor · Haiku**, with one sentence on where the session is heading. Until a check returns, or while the monitor is paused or capped, they show an estimate from the session's checks and written files instead, with no model call.
+
+Live monitor never notifies you and never shows on the Sessions screen. After 20 minutes it asks whether you still want it, and turns itself off if nobody answers within 10. It is not remembered across reloads. The [levels](reference.md#drift-levels) are in the reference.
 
 ## Act on a departure
 
 Compass never writes into your session. You choose what happens next.
 
-1. **Press Steer back.** Compass composes a correction from your goal and the evidence, ready to copy. Steer back is available for Claude Code sessions.
+If you gave the agent a direction after your intent, the Drift card quotes it ("Your 12:59 message adds:") and asks what it means for your intent:
 
-2. **Paste it into the session.** Attention and the project view offer a command to copy that re-enters the session.
+- **Add as a line** makes it an expected outcome line.
+- **Make it the goal** replaces your goal with it.
+- **Leave it** keeps your intent as it was.
 
-If you gave the agent a later direction, Compass asks about it before you analyze again. Press **Add it to my intent** to make it a line of your intent, or **Keep my intent and analyze** to leave your intent as it was.
+Each choice waits for Save intent, except Leave it, which settles at once. Settle it before you analyze: while a later direction is unsettled, the reading may say it can't tell.
+
+To correct the agent:
+
+1. **Press Steer back.** Compass composes a correction from your saved intent and the reading, under **Correction to paste**. Steer back is offered with a departure from your intent, on Claude Code sessions.
+
+2. **Press Copy correction, and paste it into the session yourself.** Compass never sends it.
+
+![The sample session's Steer back section with the composed correction ready to copy](img/sample-session-steer-back.png)
+
+*The correction restates the goal, says where the session departed, and carries Compass's reason for each departure.*
 
 If a reading is wrong, press **Mark as inaccurate**. The analysis stops setting the drift level and Steer back, and nothing is sent or re-run. Press **Undo** to bring it back.
 
-> **[Screenshot to take:** a departure with Steer back open, showing the composed correction.**]**
-
 ## Let Compass check while you are away
 
-Compass can also check annotated sessions without being asked, and raise only the departures. It spends model capacity with nobody watching, so it is off until you turn it on. It needs your remembered Allow for Codex, reads your goal and not your outcome lines, and stops at a per-session and a per-day limit of its own (twelve a day). Start Compass with the option:
+Compass can also check sessions with a typed goal without being asked, and raise only the departures. It spends model capacity with nobody watching, so it is off until you start Compass with the option:
 
 ```text
 python3 "$SKILL/server.py" --daemon --unasked-readings
@@ -95,7 +127,7 @@ python3 "$SKILL/server.py" --daemon --unasked-readings
 
 > **[command may change with one install]**
 
-Finding `$SKILL` is in the [reference](reference.md#start-and-stop). What Compass raised shows on the session page under **Raised while you were away**, and in the Intent log.
+Claude Code checks Claude Code sessions with no further step. For a Codex session, turn on **Allow Codex to run unasked checks** in its Drift card; Attention points to it when sessions are waiting. A check reads your typed goal, not your outcome lines, and stops at three per session and twelve a day. Finding `$SKILL` is in the [reference](reference.md#start-and-stop). What Compass raised shows on the session page under **Raised while you were away**, and in the Intent log.
 
 ## Get alerted when work reaches a step
 
