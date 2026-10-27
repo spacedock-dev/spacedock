@@ -63,3 +63,21 @@ func TestDurableJourneyFailureConsultsGapBinding(t *testing.T) {
 			return errors.New("gate did not apply the feedback route")
 		})
 }
+
+// Withdrawn recovery grades through its gap: Haiku's blank-owner binding owns a red (XFAIL); unbound Sonnet still FAILs.
+func TestWithdrawnRecoveryGradesThroughGap(t *testing.T) {
+	crossed := withdrawnRecoveryBoundary("exit=0\tgate prepare recorded-gate-task --x\nexit=0\tstate commit recorded-gate-task\nexit=0\tgate record recorded-gate-task\n")
+	for target, want := range map[string]string{"claude-haiku": "xfail", "claude-sonnet": "fail"} {
+		scenario := sharedRuntimeScenario{name: "withdrawn-gate-recovery", gap: selectLiveGap(withdrawnGateRecoveryGaps, target)}
+		if got := liveScenarioGrade(scenario, crossed); got.status != want || len(got.codes) != 1 || got.codes[0] != "withdrawn-recovery-boundary" {
+			t.Errorf("%s boundary crossing graded %+v, want %s withdrawn-recovery-boundary", target, got, want)
+		}
+	}
+	if err := withdrawnRecoveryBoundary("exit=0\tgate prepare recorded-gate-task --x\nexit=0\tstate commit recorded-gate-task\n"); err != nil {
+		t.Errorf("clean prepare/commit log graded %v", err)
+	}
+	// End to end: the stub run leaves recovery red; under Haiku's binding the runner must not fatal.
+	runClaudeWithdrawnGateRecoveryScenario(t, stubLiveDriver{},
+		sharedRuntimeScenario{name: "withdrawn-gate-recovery", gap: selectLiveGap(withdrawnGateRecoveryGaps, "claude-haiku")},
+		writeWithdrawnGateFixture, assertWithdrawnGateRecovery)
+}

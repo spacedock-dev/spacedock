@@ -21,7 +21,7 @@ on:
   workflow_dispatch:
     inputs:
       live_cadence:
-        description: "Select routine Sonnet, Opus pre-release, or optional Pi evidence."
+        description: "Select model eligibility, approval environment, and runtime jobs; claude_model overrides the cadence default."
         required: true
         type: choice
         default: sonnet
@@ -29,6 +29,11 @@ on:
           - sonnet
           - opus-pre-release
           - pi
+      claude_model:
+        description: "Claude model key from live_models.txt (e.g. sonnet, opus, haiku). Empty uses the cadence default."
+        required: false
+        type: string
+        default: ""
       live_parallel:
         description: "go test -parallel for the Pi common journeys (positive integer; default 4, the standard runner core count)."
         required: false
@@ -65,6 +70,7 @@ jobs:
     # job reads that file directly so the matrix, shim, and summary below
     # consume outputs instead of carrying model literals.
     outputs:
+      claude_selected: ${{ steps.live_models.outputs.claude_selected }}
       claude_sonnet: ${{ steps.live_models.outputs.claude_sonnet }}
       claude_opus: ${{ steps.live_models.outputs.claude_opus }}
       codex_exec: ${{ steps.live_models.outputs.codex_exec }}
@@ -82,15 +88,74 @@ jobs:
 
       - name: Resolve live lane models
         id: live_models
+        env:
+          LIVE_EVENT: ${{ github.event_name }}
+          LIVE_CADENCE: ${{ inputs.live_cadence }}
+          CLAUDE_MODEL_KEY: ${{ inputs.claude_model }}
         run: |
           set -euo pipefail
-          # The Go harness embeds internal/release/live_models.txt; read the same
-          # file here rather than rebuilding a command or repeating a literal.
-          while IFS='=' read -r key id; do
-            if [ -n "$key" ]; then
-              echo "${key//[.-]/_}=$id"
-            fi
-          done < internal/release/live_models.txt >> "$GITHUB_OUTPUT"
+          awk -F= '
+          function fail(message) {
+            print "::error::" message > "/dev/stderr"
+            failed = 1
+            exit 1
+          }
+          {
+            if (NF != 2 || $1 == "" || $2 == "" || ($1 in records))
+              fail("Invalid or duplicate live model registry record at line " NR)
+            records[$1] = $2
+          }
+          END {
+            if (failed) exit 1
+            for (key in records) {
+              if (key ~ /^claude\.allowed\./) {
+                cadence = substr(key, 16)
+                if (cadence != "sonnet" && cadence != "opus-pre-release")
+                  fail("Unknown Claude policy cadence: " cadence)
+                count = split(records[key], members, ",")
+                for (i = 1; i <= count; i++) {
+                  member = members[i]
+                  if (member !~ /^[a-z][a-z0-9-]*$/ || !(("claude." member) in records))
+                    fail("Unknown Claude policy member: " member)
+                  if ((cadence SUBSEP member) in allowed) fail("Duplicate Claude policy member: " member)
+                  allowed[cadence, member] = 1
+                }
+              } else if (key ~ /^claude\./) {
+                if (substr(key, 8) !~ /^[a-z][a-z0-9-]*$/ || records[key] !~ /^[A-Za-z0-9][A-Za-z0-9._-]*$/)
+                  fail("Unsafe Claude registry key or model ID: " key)
+              }
+            }
+            if (!("sonnet" SUBSEP "sonnet" in allowed) || !("opus-pre-release" SUBSEP "opus" in allowed))
+              fail("Missing Claude cadence default or policy")
+            cadence = ENVIRON["LIVE_CADENCE"]
+            model = ENVIRON["CLAUDE_MODEL_KEY"]
+            if (ENVIRON["LIVE_EVENT"] == "pull_request") {
+              cadence = "sonnet"
+              model = "sonnet"
+            } else if (ENVIRON["LIVE_EVENT"] != "workflow_dispatch") fail("Unsupported live event")
+            if (cadence == "pi") {
+              if (model != "") fail("claude_model requires live_cadence=sonnet or live_cadence=opus-pre-release")
+            } else {
+              if (cadence != "sonnet" && cadence != "opus-pre-release") fail("Unknown live cadence: " cadence)
+              if (model == "") model = (cadence == "sonnet" ? "sonnet" : "opus")
+              if (model !~ /^[a-z][a-z0-9-]*$/ || !(("claude." model) in records))
+                fail("Unknown claude_model key; register it in internal/release/live_models.txt")
+              if (!((cadence SUBSEP model) in allowed)) {
+                if (("opus-pre-release" SUBSEP model) in allowed)
+                  fail("claude_model is not permitted; use live_cadence=opus-pre-release")
+                fail("claude_model is not permitted; update its registry cadence policy")
+              }
+              selected = records["claude." model]
+            }
+            # Emit only after validation; policy records are not model outputs.
+            for (key in records) {
+              if (key ~ /^claude\.allowed\./) continue
+              output = key
+              gsub(/[.-]/, "_", output)
+              print output "=" records[key]
+            }
+            if (selected != "") print "claude_selected=" selected
+          }' internal/release/live_models.txt >> "$GITHUB_OUTPUT"
 
       # The offline suite includes the AC tests that exercise the live steps'
       # clean-log + jsonl-archive shape over a fixture; they invoke the pinned
@@ -105,8 +170,8 @@ jobs:
       - name: Run deterministic live-harness controls offline
         run: go test ./internal/ensigncycle -count=1 -run 'TestCleanupKeepMovingRootRetainsOnlyFailures|TestCodexLiveRunnerExecArgvEnablesMultiAgentV2|TestCodexLiveRunnerUsesSpacedockFrontDoorBeforeHostArgs|TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle|TestShallowBootFixtureContainsOnlyHeldGate|TestPiLiveEnvDropsForeignRuntimeMarkers|TestPiLiveEnvScrubsAmbientPiSubagentMarkers|TestPiIntercomPackageRootDefaultsBesideSubagents'
 
-  # Pull requests normalize to one Sonnet 5.5 leg. Manual dispatches choose the
-  # routine Sonnet cadence or the separately approved Opus pre-release cadence.
+  # Model resolution is generic; cadence gates eligibility and approval.
+  # Pull requests use Sonnet; manual dispatches can override with a permitted key.
   claude-live:
     if: ${{ (github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet' || inputs.live_cadence == 'opus-pre-release') && github.event.action != 'labeled' }}
     needs: offline
@@ -118,7 +183,7 @@ jobs:
       matrix:
         include:
           - cadence: ${{ github.event_name == 'pull_request' && 'pull-request' || inputs.live_cadence }}
-            model: ${{ (github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet') && needs.offline.outputs.claude_sonnet || needs.offline.outputs.claude_opus }}
+            model: ${{ needs.offline.outputs.claude_selected }}
             effort: max
             environment: ${{ (github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet') && 'CI-E2E' || 'CI-E2E-OPUS' }}
     environment:

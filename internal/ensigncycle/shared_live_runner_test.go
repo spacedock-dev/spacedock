@@ -35,14 +35,9 @@ func liveJourney[Builder, Assertion any](t *testing.T, id, fixtureID string, bui
 	build, buildCalls := countedLiveFunction(t, builder)
 	assert, assertionCalls := countedLiveFunction(t, assertion)
 	newDriver, target := liveDriverForRuntime(t, id)
-	var selected liveJourneyGap
-	for _, gap := range gaps {
-		if gap.target == target {
-			selected = gap
-			if gap.kind == "todo" {
-				t.Skipf("TODO(%s): %s/%s lacks passing live evidence", gap.owner, target, id)
-			}
-		}
+	selected := selectLiveGap(gaps, target)
+	if selected.kind == "todo" {
+		t.Skipf("TODO(%s): %s/%s lacks passing live evidence", selected.owner, target, id)
 	}
 	if liveRuntimeRunsParallel(os.Getenv("SPACEDOCK_LIVE_RUNTIME")) && !strings.HasPrefix(t.Name(), "TestLiveScheduled/") {
 		t.Parallel()
@@ -52,6 +47,16 @@ func liveJourney[Builder, Assertion any](t *testing.T, id, fixtureID string, bui
 	if *buildCalls == 0 || *assertionCalls == 0 {
 		t.Fatalf("live journey %s executed builder/assertion %d/%d times", id, *buildCalls, *assertionCalls)
 	}
+}
+
+// selectLiveGap returns the gap bound to exactly this runtime target, or none.
+func selectLiveGap(gaps []liveJourneyGap, target string) (selected liveJourneyGap) {
+	for _, gap := range gaps {
+		if gap.target == target {
+			selected = gap
+		}
+	}
+	return selected
 }
 
 func countedLiveFunction[Function any](t *testing.T, function Function) (Function, *int) {
@@ -92,13 +97,34 @@ func liveDriverForRuntime(t *testing.T, id string) (func() liveDriver, string) {
 }
 
 func claudeLiveRole(model string) (string, error) {
-	switch model {
-	case "sonnet", release.LiveModels["claude.sonnet"]:
+	if model == "sonnet" {
 		return "claude-sonnet", nil
-	case release.LiveModels["claude.opus"]:
-		return "claude-opus", nil
-	default:
-		return "", fmt.Errorf("SPACEDOCK_LIVE_MODEL=%q, want sonnet, %s, or %s", model, release.LiveModels["claude.sonnet"], release.LiveModels["claude.opus"])
+	}
+	for key, id := range release.LiveModels {
+		if strings.HasPrefix(key, "claude.") && model == id {
+			return "claude-" + strings.TrimPrefix(key, "claude."), nil
+		}
+	}
+	return "", fmt.Errorf("SPACEDOCK_LIVE_MODEL=%q, want a registered Claude model ID or sonnet", model)
+}
+
+func TestClaudeLiveRole(t *testing.T) {
+	original := release.LiveModels
+	release.LiveModels = map[string]string{
+		"claude.sonnet": "fixture-sonnet", "claude.opus": "fixture-opus",
+		"claude.haiku": "fixture-haiku", "claude.future": "fixture-future", "codex.exec": "fixture-codex",
+	}
+	defer func() { release.LiveModels = original }()
+	for model, want := range map[string]string{
+		"sonnet": "claude-sonnet", "fixture-sonnet": "claude-sonnet", "fixture-opus": "claude-opus",
+		"fixture-haiku": "claude-haiku", "fixture-future": "claude-future", "fixture-codex": "", "unknown": "",
+	} {
+		t.Run(model, func(t *testing.T) {
+			got, err := claudeLiveRole(model)
+			if got != want || (err != nil) != (want == "") {
+				t.Fatalf("claudeLiveRole(%q) = %q, %v; want %q (error iff empty)", model, got, err, want)
+			}
+		})
 	}
 }
 
@@ -150,7 +176,7 @@ func TestLiveCommonAutoContinueAfterImplementation(t *testing.T) {
 //
 //spacedock:live-journey id=keep-moving-posture fixture=keep-moving/mixed-events
 func TestLiveCommonKeepMovingPosture(t *testing.T) {
-	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "060xp69y61yhrww23g3wvwqy"), liveXFail("pi", "psvqjf0w8xh2txp9604gsvmz")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
+	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "060xp69y61yhrww23g3wvwqy"), liveXFail("pi", "psvqjf0w8xh2txp9604gsvmz"), liveXFail("claude-haiku", "")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
 }
 
 // The claude-sonnet red is the completion-observation gap: run 37374064240's
@@ -166,7 +192,7 @@ func TestLiveCommonKeepMovingPosture(t *testing.T) {
 //
 //spacedock:live-journey id=default-headless-gate-stop fixture=recorded-gate/pre-gate
 func TestLiveCommonDefaultHeadlessGateStop(t *testing.T) {
-	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "jfdrr2dbdtt952s4cvvy74k8"), liveXFail("pi", "penfp034pt9s3cgwp7wg3ykk")}, runGateStopScenario, assertGateHeld)
+	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "jfdrr2dbdtt952s4cvvy74k8"), liveXFail("pi", "penfp034pt9s3cgwp7wg3ykk"), liveXFail("claude-haiku", "")}, runGateStopScenario, assertGateHeld)
 }
 
 // The claude-sonnet red is the completion-observation gap: run 37411324514's
@@ -204,9 +230,11 @@ func TestLiveCommonACValueReanchor(t *testing.T) {
 	liveJourney(t, "ac-value-reanchor", "ac-reanchor/means-pass-value-regressed", authorACReanchorScenario, []liveJourneyGap{liveXFail("pi", "psvqjf0w8xh2txp9604gsvmz")}, runACValueReanchorJourney, assertACReanchorScenario)
 }
 
+var withdrawnGateRecoveryGaps = []liveJourneyGap{liveXFail("claude-haiku", "")}
+
 //spacedock:live-journey id=withdrawn-gate-recovery fixture=recorded-gate/withdrawn
 func TestLiveCommonWithdrawnGateRecovery(t *testing.T) {
-	liveJourney(t, "withdrawn-gate-recovery", "recorded-gate/withdrawn", writeWithdrawnGateFixture, nil, runClaudeWithdrawnGateRecoveryScenario, assertWithdrawnGateRecovery)
+	liveJourney(t, "withdrawn-gate-recovery", "recorded-gate/withdrawn", writeWithdrawnGateFixture, withdrawnGateRecoveryGaps, runClaudeWithdrawnGateRecoveryScenario, assertWithdrawnGateRecovery)
 }
 
 //spacedock:live-journey id=gate-guardrail fixture=recorded-gate/held
@@ -237,7 +265,7 @@ func TestLiveCommonMergeHookGuardrail(t *testing.T) {
 
 //spacedock:live-journey id=filing fixture=filing/empty-workflow
 func TestLiveCommonFiling(t *testing.T) {
-	liveJourney(t, "filing", "filing/empty-workflow", writeFilingWorkflow, nil, runClaudeFilingScenario, assertFilingCommands)
+	liveJourney(t, "filing", "filing/empty-workflow", writeFilingWorkflow, []liveJourneyGap{liveXFail("claude-haiku", "")}, runClaudeFilingScenario, assertFilingCommands)
 }
 
 // AUDIT(2026-08-16): finding 6 — grades Bash commands only; Glob/Grep broad search
