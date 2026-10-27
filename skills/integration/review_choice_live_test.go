@@ -313,6 +313,20 @@ func (l *reviewLive) wantMenus(want ...string) {
 	}
 }
 
+func (l *reviewLive) wantFreshChoiceRead() {
+	l.t.Helper()
+	for _, tool := range l.tools {
+		if tool.Name == "Bash" && strings.Contains(tool.Input["command"].(string), "spacedock review-mode get --json") {
+			return
+		}
+		skill, _ := tool.Input["skill"].(string)
+		if tool.Name == "AskUserQuestion" || tool.Name == "Skill" && strings.HasPrefix(skill, "subspace:") {
+			break
+		}
+	}
+	l.t.Fatalf("request did not freshly read the choice before choosing a location: %s", l.flat())
+}
+
 func (l *reviewLive) handedTo(skill, file string) bool {
 	for _, tool := range l.tools {
 		if s, _ := tool.Input["skill"].(string); tool.Name == "Skill" && s == skill {
@@ -596,6 +610,7 @@ func TestLiveReviewProductNameUsesSavedChoice(t *testing.T) {
 					}
 					before := l.choiceBytes()
 					l.turn("Send plan.md to me in Spacedock Review for a decision.")
+					l.wantFreshChoiceRead()
 					l.wantMenus(tc.menus...)
 					l.wantHandoff(tc.skill, "plan.md", tc.flag)
 					if tc.saved == "" {
@@ -651,6 +666,7 @@ Run ` + "`simulated-terminal-review`" + ` using Bash, report the simulated Hold,
 			}
 			l.wantUnchangedChoice(before)
 			l.turn("Send plan.md to me in Spacedock Review for a decision.")
+			l.wantFreshChoiceRead()
 			l.wantMenus()
 			l.wantHandoff("subspace:r", "plan.md", "--mode binding")
 			l.wantUnchangedChoice(before)
