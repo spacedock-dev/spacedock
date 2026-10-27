@@ -571,6 +571,44 @@ func (l *reviewLive) wantHandoff(skill, file string, flags ...string) {
 	}
 }
 
+func TestLiveReviewProductNameUsesSavedChoice(t *testing.T) {
+	cases := []struct {
+		name, saved, skill, flag string
+		answers                  map[string]string
+		menus                    []string
+	}{
+		{"saved-terminal", "local", "subspace:r", "--mode binding", nil, nil},
+		{"nothing-saved", "", "subspace:r", "--mode binding", map[string]string{"choice": "Terminal"}, []string{"choice"}},
+		{"saved-web", "remote", "subspace:remote-review", "decision", nil, nil},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			for _, run := range []string{"run-1", "run-2", "run-3"} {
+				t.Run(run, func(t *testing.T) {
+					l := newReviewLive(t, tc.answers)
+					if tc.saved != "" {
+						l.spacedock("review-mode", "set", tc.saved)
+					}
+					before := l.choiceBytes()
+					l.turn("Send plan.md to me in Spacedock Review for a decision.")
+					l.wantMenus(tc.menus...)
+					l.wantHandoff(tc.skill, "plan.md", tc.flag)
+					if tc.saved == "" {
+						if l.mode() != "local" {
+							t.Error("natural-language review did not save the selected Terminal choice")
+						}
+					} else {
+						l.wantUnchangedChoice(before)
+					}
+					if tc.skill == "subspace:r" {
+						l.noPublish()
+					}
+				})
+			}
+		})
+	}
+}
+
 func TestLiveReviewKeywordForms(t *testing.T) {
 	cases := []struct {
 		name, request, saved, skill, flag string
