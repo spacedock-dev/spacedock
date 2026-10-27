@@ -68,9 +68,14 @@ Retain both requested intents in the explanation; do not drop one or substitute
 another location. Refuse any other suffix only when the first word after the file
 is a location or modifier word (`tui`, `terminal`, `local`, `web`, `webui`, `remote`,
 `decision`, `questions`) and the whole request is not one of the four forms.
-Give one corrected request, for example `/spacedock:review plan.md terminal decision`,
-using the actual path and quoting it if needed. Refusals open, upload and generate
-nothing. Every other text keeps the prompt branch, including
+The four suffixes in the table are exact: a location alone after the file
+(`terminal`, `tui`, `local`, `web`, `webui` or `remote`) is refused. Do not
+reinterpret it as a bare-file review or infer an omitted modifier.
+Give exactly one corrected request from the table on its own line, for example
+`/spacedock:review plan.md terminal decision`, using the actual path and quoting
+it if needed. Explain the refused words without repeating the refused command.
+Refusals open, upload and generate nothing. Every other text keeps the prompt
+branch, including
 `plan.md summarize this file into summary.md`.
 
 For a valid form, **Review the file** with its location and modifier. An explicit
