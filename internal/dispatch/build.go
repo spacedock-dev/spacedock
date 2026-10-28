@@ -84,6 +84,7 @@ type buildOutput struct {
 	DispatchFile    string   `json:"dispatch_file_path"`
 	Prompt          string   `json:"prompt"`
 	Model           *string  `json:"model"`
+	ReasoningEffort *string  `json:"reasoning_effort,omitempty"`
 	Name            *string  `json:"name,omitempty"`
 	RunInBackground *bool    `json:"run_in_background,omitempty"`
 	Agent           *string  `json:"agent,omitempty"`
@@ -389,7 +390,11 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 		} else if defaultsModelSet {
 			declaredModel, declared = defaultsModel, true
 		}
-		if declared {
+		if host == "codex" && opts.ModelSet {
+			m := opts.Model
+			effectiveModel = &m
+			fmt.Fprintf(stderr, "[build] explicit model=%s → spawn_agent model\n", m)
+		} else if declared {
 			fmt.Fprintf(stderr,
 				"[build] declared model '%s' ignored on host %s: outside %s's dispatch-settable model space; emitting model=null\n",
 				declaredModel, host, host)
@@ -677,6 +682,11 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 		DispatchFile:  dispatchFilePath,
 		Prompt:        prompt,
 		Model:         effectiveModel,
+	}
+	if host == "codex" && opts.ReasoningEffortSet {
+		effort := opts.ReasoningEffort
+		out.ReasoningEffort = &effort
+		fmt.Fprintf(stderr, "[build] explicit reasoning_effort=%s → spawn_agent reasoning_effort\n", effort)
 	}
 	if !bareMode {
 		out.Name = &derivedName
