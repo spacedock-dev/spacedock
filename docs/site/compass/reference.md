@@ -10,7 +10,8 @@ SKILL="$(dirname "$(find ~/.claude/plugins/cache ~/.codex/plugins/cache -name se
 
 | Command | What it does | Default |
 | --- | --- | --- |
-| `/compass:compass` | Starts Compass from Claude Code. In Codex, `$compass`. | Port 4553 |
+| `/compass:compass` | Starts Compass from Claude Code. | Port 4553 |
+| `$compass` | Starts Compass from Codex. | Port 4553 |
 | `python3 "$SKILL/server.py" --daemon` | Starts Compass in the background. Without `--daemon` it runs in the foreground. | Foreground |
 | `python3 "$SKILL/server.py" --status` | Says whether Compass is running on the port. | Port 4553 |
 | `python3 "$SKILL/server.py" --stop` | Stops Compass on the port. | Port 4553 |
@@ -71,6 +72,23 @@ python3 "$SKILL/server.py" --port 4581 --daemon --reach-url https://ntfy.sh/my-t
 | `COMPASS_HOME` | Moves Compass's own state, logs and stores. Default: `.compass` under your home directory. Use the same value for start, stop, status and forget. |
 | `COMPASS_REACH_URL` | Reach webhook when `--reach-url` is absent. |
 | `COMPASS_QUIET_HOURS` | Quiet-hours window when `--quiet-hours` is absent. |
+
+## What works on each tool
+
+Every session from the ten agent tools shows on the board. The rest depends on what each tool records.
+
+| Feature | Claude Code | Codex | Pi | Antigravity | Other tools |
+| --- | :-: | :-: | :-: | :-: | :-: |
+| Session on the board | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Goal filled from `/goal` | ✓ | ✓ | | ✓ | |
+| Goal drafted from your first prompt | ✓ | ✓ | | | |
+| Outline of what the session has done | ✓ | ✓ | | | |
+| Model-written summary | ✓ | | | | |
+| Drift level | ✓ | | ✓ | | |
+| Goal-met claim checked against the record | ✓ | ✓ | | | |
+| Live monitor | ✓ | | | | |
+| Steer back | ✓ | | | | |
+| Unasked checks | ✓ | With the Drift card toggle | | | |
 
 ## Drift levels
 

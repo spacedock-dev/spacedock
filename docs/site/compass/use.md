@@ -4,15 +4,35 @@ State an intent for a session, read the board, and act when an agent drifts from
 
 You need Spacedock installed with Compass enabled. See [Install Spacedock and enable Compass](../index.md#install).
 
-Start Compass from your agent session:
+## Start Compass
 
-```text
-/compass:compass
-```
+=== "Claude Code"
 
-In Codex, type `$compass`. You can also ask your agent to "open compass". Compass starts on your machine and gives you its address, `http://127.0.0.1:4553/` by default. It does not open a browser for you, so open the address yourself.
+    ```text
+    /compass:compass
+    ```
+
+=== "Codex"
+
+    ```text
+    $compass
+    ```
+
+=== "Other agents"
+
+    In Antigravity, ask your agent to "open compass". In any other tool, or with no agent at all, start Compass from a terminal:
+
+    ```bash
+    python3 "$SKILL/server.py" --daemon
+    ```
+
+    Finding `$SKILL` is in the [reference](reference.md#start-and-stop).
+
+In Claude Code and Codex you can also ask your agent to "open compass". Compass starts on your machine and gives you its address, `http://127.0.0.1:4553/` by default. It does not open a browser for you, so open the address yourself.
 
 New to Intent and drift? Open **See a sample session (view only)** above the Sessions list. It is an anonymized Claude Code session that drifted, with a summary of what it did, its reading and the correction Compass composed. Nothing in it is saved, sent or run.
+
+Some of what follows works on some agent tools only. [What works on each tool](reference.md#what-works-on-each-tool) lists which.
 
 ## Set the goal
 
