@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -86,7 +87,7 @@ func (l *reviewLive) kinds() []string {
 	return out
 }
 
-func newReviewLive(t *testing.T, answers map[string]string) *reviewLive {
+func newReviewLive(t *testing.T, answers map[string]string, companionPlugins ...string) *reviewLive {
 	t.Helper()
 	bin, cfg := os.Getenv("SPACEDOCK_BIN"), os.Getenv("SPACEDOCK_LIVE_CLAUDE_CONFIG_DIR")
 	if bin == "" || cfg == "" {
@@ -124,9 +125,14 @@ func newReviewLive(t *testing.T, answers map[string]string) *reviewLive {
 		"CLAUDE_CONFIG_DIR=" + cfg, "XDG_STATE_HOME=" + filepath.Join(root, "state"),
 		"XDG_DATA_HOME=" + filepath.Join(root, "data"), "TERM=dumb", "PATH=" + progs + ":/usr/bin:/bin",
 	}}
-	l.cmd = exec.Command(filepath.Join(progs, "claude"), "-p", "--input-format", "stream-json",
+	args := []string{"-p", "--input-format", "stream-json",
 		"--output-format", "stream-json", "--verbose", "--permission-prompt-tool", "stdio",
-		"--plugin-dir", repoRoot(t), "--allowedTools", "Bash,Read,Write,Skill", "--model", "sonnet")
+		"--plugin-dir", repoRoot(t)}
+	for _, plugin := range companionPlugins {
+		args = append(args, "--plugin-dir", plugin)
+	}
+	args = append(args, "--allowedTools", "Bash,Read,Write,Skill", "--model", "sonnet")
+	l.cmd = exec.Command(filepath.Join(progs, "claude"), args...)
 	l.cmd.Dir, l.cmd.Env = proj, l.env
 	if l.stdin, err = l.cmd.StdinPipe(); err != nil {
 		t.Fatal(err)
@@ -294,7 +300,7 @@ func (l *reviewLive) said(want string) bool {
 func (l *reviewLive) noPublish() {
 	l.t.Helper()
 	calls, _ := os.ReadFile(l.relay)
-	if strings.Contains(string(calls), "publish") {
+	if reviewPublishCount(calls) != 0 {
 		l.t.Errorf("subspace-relay-client was asked to publish: %q", calls)
 	}
 }
@@ -305,6 +311,20 @@ func (l *reviewLive) wantMenus(want ...string) {
 	if strings.Join(got, ",") != strings.Join(want, ",") {
 		l.t.Fatalf("AskUserQuestion menus = %v, want %v\ntools: %s\ntext:\n%s", got, want, l.flat(), l.text)
 	}
+}
+
+func (l *reviewLive) wantFreshChoiceRead() {
+	l.t.Helper()
+	for _, tool := range l.tools {
+		if tool.Name == "Bash" && strings.Contains(tool.Input["command"].(string), "spacedock review-mode get --json") {
+			return
+		}
+		skill, _ := tool.Input["skill"].(string)
+		if tool.Name == "AskUserQuestion" || tool.Name == "Skill" && strings.HasPrefix(skill, "subspace:") {
+			break
+		}
+	}
+	l.t.Fatalf("request did not freshly read the choice before choosing a location: %s", l.flat())
 }
 
 func (l *reviewLive) handedTo(skill, file string) bool {
@@ -500,4 +520,336 @@ func TestLiveReviewFreeTextWithoutAPathLeavesNoStrayFileInTheProject(t *testing.
 		t.Errorf("the project gained a file nobody asked for:\n%s", out)
 	}
 	l.noPublish()
+}
+
+func (l *reviewLive) choiceBytes() []byte {
+	l.t.Helper()
+	paths, err := filepath.Glob(filepath.Join(l.root, "state", "subspace", "review-mode", "*.json"))
+	if err != nil {
+		l.t.Fatal(err)
+	}
+	var snapshot []byte
+	for _, path := range paths {
+		body, err := os.ReadFile(path)
+		if err != nil {
+			l.t.Fatal(err)
+		}
+		snapshot = append(snapshot, body...)
+	}
+	return snapshot
+}
+
+func (l *reviewLive) wantUnchangedChoice(before []byte) {
+	l.t.Helper()
+	if !bytes.Equal(before, l.choiceBytes()) {
+		l.t.Error("one-off review changed the saved preference bytes")
+	}
+	for _, banned := range []string{"review-mode set", "review-mode clear"} {
+		if strings.Contains(l.flat(), banned) {
+			l.t.Errorf("one-off review attempted %s: %s", banned, l.flat())
+		}
+	}
+}
+
+func (l *reviewLive) wantHandoff(skill, file string, flags ...string) {
+	l.t.Helper()
+	var calls []string
+	for _, tool := range l.tools {
+		if s, _ := tool.Input["skill"].(string); tool.Name == "Skill" && strings.HasPrefix(s, "subspace:") {
+			if s != skill {
+				l.t.Errorf("handed to %s, want %s", s, skill)
+			}
+			args, _ := tool.Input["args"].(string)
+			calls = append(calls, args)
+		}
+		if tool.Name == "Write" || tool.Name == "Edit" {
+			l.t.Errorf("file review generated or edited an artifact: %v", tool.Input)
+		}
+	}
+	if len(calls) != 1 {
+		l.t.Fatalf("want exactly one companion handoff, got %v: %s", calls, l.flat())
+	}
+	args := calls[0]
+	if !strings.Contains(args, file) {
+		l.t.Errorf("handoff args %q do not contain the original file %q", args, file)
+	}
+	if strings.Contains(file, " ") && !strings.Contains(args, `"`+file+`"`) && !strings.Contains(args, "'"+file+"'") && !strings.Contains(args, strings.ReplaceAll(file, " ", `\ `)) {
+		l.t.Errorf("path with spaces was not kept as one locator: %q", args)
+	}
+	for _, flag := range flags {
+		if !strings.Contains(args, flag) {
+			l.t.Errorf("handoff args %q omit %q", args, flag)
+		}
+	}
+	if strings.Contains(args, "--allow-question") && strings.Contains(args, "--mode binding") {
+		l.t.Errorf("unsupported binding questions were launched: %q", args)
+	}
+	body, err := os.ReadFile(filepath.Join(l.proj, file))
+	if err != nil || string(body) != "# Plan\n\nShip the thing.\n" {
+		l.t.Errorf("original artifact changed: %v", err)
+	}
+}
+
+func TestLiveReviewProductNameUsesSavedChoice(t *testing.T) {
+	cases := []struct {
+		name, saved, skill, flag string
+		answers                  map[string]string
+		menus                    []string
+	}{
+		{"saved-terminal", "local", "subspace:r", "--mode binding", nil, nil},
+		{"nothing-saved", "", "subspace:r", "--mode binding", map[string]string{"choice": "Terminal"}, []string{"choice"}},
+		{"saved-web", "remote", "subspace:remote-review", "decision", nil, nil},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			for _, run := range []string{"run-1", "run-2", "run-3"} {
+				t.Run(run, func(t *testing.T) {
+					l := newReviewLive(t, tc.answers)
+					if tc.saved != "" {
+						l.spacedock("review-mode", "set", tc.saved)
+					}
+					before := l.choiceBytes()
+					l.turn("Send plan.md to me in Spacedock Review for a decision.")
+					l.wantFreshChoiceRead()
+					l.wantMenus(tc.menus...)
+					l.wantHandoff(tc.skill, "plan.md", tc.flag)
+					if tc.saved == "" {
+						if l.mode() != "local" {
+							t.Error("natural-language review did not save the selected Terminal choice")
+						}
+					} else {
+						l.wantUnchangedChoice(before)
+					}
+					if tc.skill == "subspace:r" {
+						l.noPublish()
+					}
+				})
+			}
+		})
+	}
+}
+
+func TestLiveReviewProductNameAfterSimulatedHold(t *testing.T) {
+	for _, run := range []string{"run-1", "run-2", "run-3", "run-4", "run-5", "run-6"} {
+		t.Run(run, func(t *testing.T) {
+			companion := t.TempDir()
+			for path, body := range map[string]string{
+				".claude-plugin/plugin.json": `{"name":"subspace","description":"Test-only simulated review history"}`,
+				"skills/r/SKILL.md": `---
+name: r
+description: Test-only simulated Terminal binding review.
+---
+This fixture simulates a Terminal binding review returning Hold; no real review occurs.
+Run ` + "`simulated-terminal-review`" + ` using Bash, report the simulated Hold, and stop.
+`,
+			} {
+				file := filepath.Join(companion, path)
+				if err := os.MkdirAll(filepath.Dir(file), 0o755); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.WriteFile(file, []byte(body), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			l := newReviewLive(t, nil, companion)
+			simulated := filepath.Join(l.root, "bin", "simulated-terminal-review")
+			if err := os.WriteFile(simulated, []byte("#!/bin/sh\nprintf 'hold\\n' > \"$0.result\"\nprintf '%s\\n' 'SIMULATED Hold: pause dependent work; no real human outcome.'\n"), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			l.spacedock("review-mode", "set", "local")
+			before := l.choiceBytes()
+			l.turn("/spacedock:review plan.md terminal decision")
+			l.wantMenus()
+			l.wantHandoff("subspace:r", "plan.md", "--mode binding")
+			if result, err := os.ReadFile(simulated + ".result"); err != nil || string(result) != "hold\n" {
+				t.Fatalf("prior Terminal review did not complete its simulated Hold: %q, %v", result, err)
+			}
+			l.wantUnchangedChoice(before)
+			l.turn("Send plan.md to me in Spacedock Review for a decision.")
+			l.wantFreshChoiceRead()
+			l.wantMenus()
+			l.wantHandoff("subspace:r", "plan.md", "--mode binding")
+			l.wantUnchangedChoice(before)
+			l.noPublish()
+		})
+	}
+}
+
+func TestLiveReviewKeywordForms(t *testing.T) {
+	cases := []struct {
+		name, request, saved, skill, flag string
+		answers                           map[string]string
+		menus                             []string
+	}{
+		{"terminal-unset", "plan.md terminal decision", "", "subspace:r", "--mode binding", nil, nil},
+		{"terminal-matching", "plan.md terminal decision", "local", "subspace:r", "--mode binding", nil, nil},
+		{"terminal-conflicting", "plan.md terminal decision", "remote", "subspace:r", "--mode binding", nil, nil},
+		{"web-unset-yes", "plan.md web decision", "", "subspace:remote-review", "decision", map[string]string{"agree": "Yes"}, []string{"agree"}},
+		{"web-conflicting-yes", "plan.md web decision", "local", "subspace:remote-review", "decision", map[string]string{"agree": "Yes"}, []string{"agree"}},
+		{"web-matching", "plan.md web decision", "remote", "subspace:remote-review", "decision", nil, nil},
+		{"decision-local", "plan.md decision", "local", "subspace:r", "--mode binding", nil, nil},
+		{"decision-remote", "plan.md decision", "remote", "subspace:remote-review", "decision", nil, nil},
+		{"decision-unset", "plan.md decision", "", "subspace:r", "--mode binding", map[string]string{"choice": "Terminal"}, []string{"choice"}},
+		{"questions-unset", "plan.md terminal questions", "", "subspace:r", "--allow-question", nil, nil},
+		{"questions-matching", "plan.md terminal questions", "local", "subspace:r", "--allow-question", nil, nil},
+		{"questions-conflicting", "plan.md terminal questions", "remote", "subspace:r", "--allow-question", nil, nil},
+		{"quoted-spaces", `"launch plan.md" terminal decision`, "remote", "subspace:r", "--mode binding", nil, nil},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			l := newReviewLive(t, tc.answers)
+			if tc.saved != "" {
+				l.spacedock("review-mode", "set", tc.saved)
+			}
+			file := "plan.md"
+			if tc.name == "quoted-spaces" {
+				file = "launch plan.md"
+				if err := os.WriteFile(filepath.Join(l.proj, file), []byte("# Plan\n\nShip the thing.\n"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			before := l.choiceBytes()
+			l.turn("/spacedock:review " + tc.request)
+			l.wantMenus(tc.menus...)
+			if tc.flag == "" {
+				l.wantHandoff(tc.skill, file)
+			} else {
+				l.wantHandoff(tc.skill, file, tc.flag)
+			}
+			if tc.name == "decision-unset" {
+				if l.mode() != "local" {
+					t.Error("omitted location did not save the selected Terminal choice")
+				}
+			} else {
+				l.wantUnchangedChoice(before)
+			}
+			if tc.skill == "subspace:r" {
+				l.noPublish()
+			}
+			if len(tc.menus) == 1 && tc.menus[0] == "agree" {
+				q := l.asked[0]
+				for _, term := range []string{"review.spacedock.md", "Anyone with the link", "seven days"} {
+					if !strings.Contains(q.Question, term) {
+						t.Errorf("upload agreement omitted %q: %s", term, q.Question)
+					}
+				}
+				menu, handoff := -1, -1
+				for i, tool := range l.tools {
+					if tool.Name == "AskUserQuestion" && menu < 0 {
+						menu = i
+					}
+					if skill, _ := tool.Input["skill"].(string); tool.Name == "Skill" && skill == "subspace:remote-review" {
+						handoff = i
+					}
+				}
+				if menu < 0 || handoff <= menu {
+					t.Errorf("Web handoff preceded upload agreement: %s", l.flat())
+				}
+			}
+		})
+	}
+}
+
+func TestLiveReviewOneOffWebDeclined(t *testing.T) {
+	for _, saved := range []string{"", "local"} {
+		t.Run("saved-"+saved, func(t *testing.T) {
+			l := newReviewLive(t, map[string]string{"agree": "No"})
+			if saved != "" {
+				l.spacedock("review-mode", "set", saved)
+			}
+			before := l.choiceBytes()
+			l.turn("/spacedock:review plan.md web decision")
+			l.wantMenus("agree")
+			q := l.asked[0]
+			for _, term := range []string{"review.spacedock.md", "Anyone with the link", "seven days"} {
+				if !strings.Contains(q.Question, term) {
+					t.Errorf("upload agreement omitted %q: %s", term, q.Question)
+				}
+			}
+			l.wantUnchangedChoice(before)
+			if strings.Contains(l.flat(), "subspace:") {
+				t.Errorf("declined upload still handed off the file: %s", l.flat())
+			}
+			l.noPublish()
+		})
+	}
+}
+
+func TestLiveReviewUnsupportedKeywordCombinations(t *testing.T) {
+	for _, suffix := range []string{"terminal decision questions", "terminal questions decision", "web questions", "web decision questions", "terminal maybe", "web", "terminal", "tui", "local", "webui", "remote", "questions"} {
+		t.Run(strings.ReplaceAll(suffix, " ", "-"), func(t *testing.T) {
+			l := newReviewLive(t, nil)
+			l.spacedock("review-mode", "set", "remote")
+			before := l.choiceBytes()
+			l.turn("/spacedock:review plan.md " + suffix)
+			l.wantMenus()
+			l.wantUnchangedChoice(before)
+			if strings.Contains(l.flat(), "subspace:") {
+				t.Errorf("unsupported request was handed off: %s", l.flat())
+			}
+			for _, tool := range l.tools {
+				if tool.Name == "Write" || tool.Name == "Edit" {
+					t.Errorf("unsupported request generated an artifact: %v", tool.Input)
+				}
+			}
+			if strings.Contains(suffix, "questions") && !strings.Contains(l.text, "questions") {
+				t.Errorf("refusal dropped the questions intent: %s", l.text)
+			}
+			if !reviewCorrectionsSupported(l.text) {
+				t.Errorf("refusal suggested an unsupported request or no correction: %s", l.text)
+			}
+			l.noPublish()
+		})
+	}
+}
+
+func TestLiveReviewUnrelatedSuffixRemainsAPrompt(t *testing.T) {
+	l := newReviewLive(t, nil)
+	l.spacedock("review-mode", "set", "local")
+	l.turn("/spacedock:review plan.md summarize this file into summary.md")
+	l.wantMenus()
+	if body, err := os.ReadFile(filepath.Join(l.proj, "summary.md")); err != nil || len(strings.TrimSpace(string(body))) == 0 {
+		t.Errorf("unrelated suffix was not carried out as a prompt: %v", err)
+	}
+	if !l.handedTo("subspace:r", "summary.md") {
+		t.Errorf("prompt output was not reviewed: %s", l.flat())
+	}
+	l.noPublish()
+}
+
+func reviewCorrectionsSupported(text string) bool {
+	text = strings.ReplaceAll(text, "*", "")
+	requests := regexp.MustCompile("/spacedock:review[ \t]+(?:plan\\.md|\"plan\\.md\")[ \t]+([^`\r\n]+)").FindAllStringSubmatch(text, -1)
+	if len(requests) == 0 {
+		return false
+	}
+	for _, request := range requests {
+		switch strings.Trim(request[1], " \t\"'.;:") {
+		case "terminal decision", "web decision", "decision", "terminal questions":
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+func TestReviewRefusalCorrection(t *testing.T) {
+	for _, form := range []string{"terminal decision", "web decision", "decision", "terminal questions"} {
+		if !reviewCorrectionsSupported("Try `/spacedock:review plan.md " + form + "`.") {
+			t.Errorf("supported correction rejected: %s", form)
+		}
+	}
+	if !reviewCorrectionsSupported("Try `/spacedock:review plan.md terminal decision` or `/spacedock:review plan.md terminal questions`.") {
+		t.Error("supported halves of decision with questions were rejected")
+	}
+	for _, text := range []string{
+		"Try `/spacedock:review plan.md web`.",
+		"Try `/spacedock:review plan.md terminal decision` or `/spacedock:review plan.md web`.",
+		"Try `/spacedock:review plan.md terminal decision questions`.",
+		"No corrected request.",
+	} {
+		if reviewCorrectionsSupported(text) {
+			t.Errorf("unsupported or missing correction accepted: %s", text)
+		}
+	}
 }

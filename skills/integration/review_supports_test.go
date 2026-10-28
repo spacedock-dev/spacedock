@@ -87,3 +87,39 @@ func TestReviewSupportCheckReportsUnsupportedWithoutCallingPublish(t *testing.T)
 		})
 	}
 }
+
+func TestReviewPublishCount(t *testing.T) {
+	dir, log := t.TempDir(), filepath.Join(t.TempDir(), "calls")
+	stubProgram(t, dir, "subspace-relay-client", "test", "relay-publish-v1", log)
+	program := filepath.Join(dir, "subspace-relay-client")
+	if out, err := exec.Command(program, "--supports", "relay-publish-v1").CombinedOutput(); err != nil {
+		t.Fatalf("capability check: %v\n%s", err, out)
+	}
+	calls, err := os.ReadFile(log)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := reviewPublishCount(calls); got != 0 {
+		t.Errorf("capability check counted as %d publishes", got)
+	}
+	if out, err := exec.Command(program, "publish", "plan.md").CombinedOutput(); err == nil {
+		t.Fatalf("stub unexpectedly accepted publication: %s", out)
+	}
+	calls, err = os.ReadFile(log)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := reviewPublishCount(calls); got != 1 {
+		t.Errorf("publish attempt counted as %d publishes, want 1", got)
+	}
+}
+
+func reviewPublishCount(calls []byte) int {
+	count := 0
+	for _, line := range strings.Split(string(calls), "\n") {
+		if args := strings.Fields(line); len(args) > 0 && args[0] == "publish" {
+			count++
+		}
+	}
+	return count
+}

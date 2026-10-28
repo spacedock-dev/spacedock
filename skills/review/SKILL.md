@@ -33,6 +33,16 @@ never your guess.
 
 ## Pick the branch from the argument
 
+For every natural-language review request, first run
+`spacedock review-mode get --json`, including same-conversation follow-ups; a
+previous turn's read does not satisfy this step. "Spacedock Review" names the
+product, never Web. Saved Terminal uses Terminal, saved Web uses Web, and nothing
+saved runs **Ask for the choice**. Only explicit Web words (`web`,
+`browser`, `upload`, `share link`, `review.spacedock.md`) select Web for one review.
+Review the named existing file with the requested modifier, such as `decision`;
+do not generate a replacement artifact. This does not change the argument branches
+below or the four file review keyword forms.
+
 Take the first branch that fits. Compare the reserved words as the whole argument,
 ignoring case.
 
@@ -42,8 +52,46 @@ ignoring case.
    changing it (**Ask for the choice**, step 4). Open and upload nothing.
 3. `web`, `webui` or `remote`: do **Ask for the choice** from step 3. Open and upload
    nothing.
-4. An argument that names an existing file (`test -f`): do **Review the file**.
-5. Any other text is a prompt: do **Carry out the prompt, then review**.
+4. An argument that names an existing file (`test -f`), removing enclosing quotes
+   if present: do **Review the file**. Test the whole path before parsing keywords.
+5. An existing file followed by review keywords: do **File review keywords**.
+6. Any other text is a prompt: do **Carry out the prompt, then review**.
+
+## File review keywords
+
+Recognize these four forms before treating text as a prompt. Read trailing keywords
+from the right; the remainder is the existing file path. Keywords ignore case;
+preserve the path exactly. Quoted paths such as `"plans/launch plan.md"` are one
+locator: quote the path when testing it and handing it on, never evaluate it as code.
+
+| Argument | Hand-off |
+|---|---|
+| `<file> terminal decision` | Terminal once, `subspace:r` with `--mode binding` |
+| `<file> web decision` | Web once, `subspace:remote-review`, wait for the owner's decision |
+| `<file> decision` | Saved choice or the existing ask-and-save flow; binding on Terminal, owner's decision on Web |
+| `<file> terminal questions` | Terminal once, `subspace:r` with `--allow-question` |
+
+Refuse `decision` together with `questions`, in either order: the installed
+Subspace supports questions only for feedback, not binding decisions. Refuse Web
+with `questions`, with or without `decision`: Web questions are unsupported.
+Retain both requested intents in the explanation; do not drop one or substitute
+another location. Refuse any other suffix only when the first word after the file
+is a location or modifier word (`tui`, `terminal`, `local`, `web`, `webui`, `remote`,
+`decision`, `questions`) and the whole request is not one of the four forms.
+The four suffixes in the table are exact: a location alone after the file
+(`terminal`, `tui`, `local`, `web`, `webui` or `remote`) is refused. Do not
+reinterpret it as a bare-file review or infer an omitted modifier.
+Give corrected requests only from the table, one per retained intent (so
+`decision` with `questions` may offer both halves), each on its own line; use the
+actual path, quoting it if needed, for example
+`/spacedock:review plan.md terminal decision`. Explain the refused words without repeating the refused command.
+Refusals open, upload and generate nothing. Every other text keeps the prompt
+branch, including
+`plan.md summarize this file into summary.md`.
+
+For a valid form, **Review the file** with its location and modifier. An explicit
+location applies only to this review: never set, clear, or temporarily change the
+saved choice. An omitted location keeps the existing ask-and-save flow.
 
 ## Ask for the choice
 
@@ -109,11 +157,17 @@ file, say so and stop.
    choice is unreadable. Tell the user to run `spacedock review-mode clear`, then
    ask again. Stop.
 
-2. If `mode` is empty, run **Ask for the choice** before anything else. If the user
-   declines the Web and does not accept the Terminal (TUI), stop and publish nothing.
+2. Without an explicit location, if `mode` is empty, run **Ask for the choice**
+   before anything else. If the user declines, stop and publish nothing.
+   With an explicit location, use that location once regardless of the saved mode.
+   For explicit Web, unless saved `mode` is already `remote`, ask the seven-day
+   upload agreement from **Ask for the choice**, step 3, for this review only.
+   Yes authorizes this upload without recording a choice; No stops without opening
+   or uploading anything. Never run `review-mode set` or `clear` for a one-off
+   location. An unreadable saved choice still stops at step 1.
 
 3. Ask the program that will do the work if it supports the hand-off. Run the line
-   for the recorded mode.
+   for the selected location.
 
    Local:
 
@@ -132,11 +186,20 @@ file, say so and stop.
    a terminal, then restart Claude Code or run `/reload-plugins`, or in Codex start
    a new session, then ask again.
 
-4. Local: invoke the `subspace:r` skill on the file.
+4. Local: invoke the `subspace:r` skill on the file, adding `--mode binding` for
+   `decision` or `--allow-question` for `questions`. Let Subspace own its question
+   receiver and capability checks; if it cannot keep a receiver active, stop with
+   its remedy rather than opening a review without questions.
 
 5. Remote: invoke the `subspace:remote-review` skill to publish the file. The
-   user has already asked for remote review of this project's artifacts, so that
-   recorded choice is the user's request to share it.
+   recorded Web agreement or this review's explicit upload agreement authorizes
+   sharing. For `decision`, include "wait for the owner's decision" in the handoff;
+   the companion owns owner pairing and returning the verified decision and its
+   selected comments. Keep its destination disclosure and wait behavior.
+
+For decisions, follow the companion's trusted result: Hold pauses dependent work
+and leaves the file unchanged. Comments, question answers, advisory feedback or
+successful publication alone never approve dependent work.
 
 If the `subspace:r` or `subspace:remote-review` skill is not available, the Subspace
 plugin is missing or too old. Give the same remedy as step 3, and stop.
