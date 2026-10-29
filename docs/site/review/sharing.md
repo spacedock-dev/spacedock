@@ -1,6 +1,6 @@
 # Shared reviews
 
-Invite others to comment before you decide. Send the **share link** from your browser review; keep the **owner link** for yourself.
+Invite others to comment before you decide. Send them the **share link** from your browser review; they comment, and only you decide.
 
 <a id="what-reviewers-see"></a>
 
@@ -14,7 +14,7 @@ You see everyone’s comments. Each reviewer sees only their own. A reviewer can
 
 ## Make the call
 
-On your owner page, select **Include** beside the comments you want your agent to receive. Then [send your decision](browser.md#comment-and-decide).
+Signed in as the owner, select **Include** beside the comments you want your agent to receive. Then [send your decision](browser.md#comment-and-decide).
 
 Only the owner decides. Finishing with a decision closes the review to further comments.
 

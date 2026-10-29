@@ -19,9 +19,9 @@ Or ask your agent:
 
 > Send plan.md to me in Spacedock Review in the browser for a decision.
 
-Agree to the upload. Your agent opens your owner link. Press **Sign in as owner** so you can make the decision.
+Agree to the upload. The first time, your agent pairs this computer with your account: sign in and approve in the browser page it opens. Over SSH, your terminal shows a code to enter instead. You pair once per computer.
 
-Keep the owner link for yourself. The separate share link is for [inviting others](sharing.md).
+Your agent then opens the review. Signed in, you are the owner and make the decision. Send the same share link to [invite others](sharing.md); they comment, and only you decide.
 
 <a id="comment-and-decide"></a>
 

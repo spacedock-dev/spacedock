@@ -65,24 +65,26 @@ Decision values are `approve`, `revise` and `hold`. See [Comments and decisions]
 
 | Command | Action |
 | --- | --- |
-| `rr publish <file> --open-owner-link` | Upload the file, print its share link and open the owner link |
+| `rr pair` | Pair this computer with your account, once; you sign in and approve in your browser |
+| `rr publish <file> --open` | Upload the file, print its share link and open it in your browser |
 | `rr decision <share-url> --with-included` | Wait for the owner's decision and included comments |
 | `rr feedback <share-url>` | Read the review's comments and decisions from the publishing machine |
 | `rr revoke <share-url>` | Revoke access through the share link |
-| `rr device` | Check whether this machine is paired with an account |
-| `rr unbind` | Unpair this machine and remove the account's owner access to its reviews |
+| `rr device` | Check whether this computer is paired with an account |
+| `rr unpair` | Unpair this computer. Share links keep working; you decide on its reviews again after pairing |
 
 Use `--timeout` with `rr decision` to set the wait duration, for example `--timeout 110m`.
+
+Your paired computers are listed at `review.spacedock.md/account/computers`, where you can remove one.
 
 ## Limits
 
 | Limit | Value |
 | --- | --- |
 | Share link | Seven days from sharing by default |
-| Owner link | One use; expiry shown by your agent |
 | Automatic wait in Claude Code | Up to 110 minutes |
 | Automatic wait in Codex | Up to 12 hours |
-| Shares per day, unpaired machine | 5 |
-| Shares per day, paired machine | 100 per machine and 100 across the account's machines |
+| Shares per day, unpaired computer | 5 |
+| Shares per day, paired computer | 100 per computer and 100 across the account's computers |
 | File size | 1 MB per share |
 | Feedback sends | 100 per reviewer session, 200 per review |
