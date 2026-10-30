@@ -19,7 +19,9 @@ Or ask your agent:
 
 > Send plan.md to me in Spacedock Review in the browser for a decision.
 
-Agree to the upload. The first time, your agent pairs this computer with your account: sign in and approve in the browser page it opens. Over SSH, your terminal shows a code to enter instead. You pair once per computer.
+Agree to the upload. The first time, your agent runs `rr pair` for you to pair this computer with your account: sign in and approve in the browser page it opens. You pair once per computer.
+
+Over SSH, the terminal shows a link and a code instead. Open the link in a browser on any device, sign in, enter the code and approve. Then answer `y` in the terminal.
 
 Your agent then opens the review. Signed in, you are the owner and make the decision. Send the same share link to [invite others](sharing.md); they comment, and only you decide.
 
