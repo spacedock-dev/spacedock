@@ -18,7 +18,7 @@ Use `/spacedock:review` in Claude Code or `$spacedock:review` in Codex. Both use
 | `terminal` | Save Terminal as this project's preference |
 | `web` | Save Web as this project's preference, after agreeing to uploads |
 | No arguments | View or change this project's preference |
-| A prompt | Ask the agent to carry it out, then review the resulting file |
+| A prompt, such as `draft release notes for v2` | Ask the agent to carry it out, then review the resulting file |
 
 A location supplied with a file applies to that review only. Without a saved preference, your agent asks where to review.
 
@@ -50,18 +50,17 @@ Or ask your agent:
 | Mode | Result |
 | --- | --- |
 | `feedback` | Comments |
-| `advisory` | Comments and a recommendation |
 | `binding` | Comments and the owner's decision |
 
-A plain terminal file review defaults to `feedback`. The `decision` keyword requests `binding` mode. An advisory recommendation does not authorize work to proceed.
+A plain terminal file review defaults to `feedback`. The `decision` keyword requests `binding` mode.
 
-Decision values are `approve`, `revise` and `hold`. See [Comments and decisions](decisions.md) for what each means.
+Your agent receives `approve`, `revise` or `hold` for Approve, Request changes and Hold decision. See [Comments and decisions](decisions.md) for what each means.
 
 <a id="commands-your-agent-runs-for-web-reviews"></a>
 
 ## Agent commands
 
-`rr` is short for `subspace-relay-client`.
+Installing Spacedock adds `subspace-relay-client`; a Homebrew install also names it `rr`. Your agent runs these for you.
 
 | Command | Action |
 | --- | --- |
