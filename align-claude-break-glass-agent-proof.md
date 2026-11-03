@@ -15,6 +15,17 @@ gates:
                 id: briefing:s2atxdv146qknetdjvx0xer6:backlog:attempt-1:revision-1
                 digest: sha256:0d8a3a8721fadf9acfb0dce2f6399acbcb123bafc947928ea80a03cd21299c62
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:s2atxdv146qknetdjvx0xer6:backlog:1
+                briefing: briefing:s2atxdv146qknetdjvx0xer6:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-11-03T18:27:44.543208Z"
+                decision: approve
+                reason: 'Captain directed in chat on 2026-11-03: ''for those 2, do we know how to fix it? if not dispatch local probe on top of the worktree.'''
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Restore a truthful break-glass substrate proof for the current Claude Agent tool surface.
