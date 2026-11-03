@@ -148,3 +148,32 @@ Selected-bare fails because its prompt deliberately carries no bare selector (si
 ### Summary
 
 The selected-bare arm now uses the `/spacedock bare` captain selector. The recovery template and the bare oracle now require an explicit `run_in_background=false`, because Claude Code 2.1.303 starts an omitted-key call in the background. The team oracle is unchanged and now has a named negative for an Agent-delivered shutdown. Live Sonnet passes both arms with a host-reported foreground spawn, so the Sonnet 060xp selected-bare binding is removed. The Haiku blank-owner binding stays. Code is committed locally on `align-claude-break-glass-agent-proof` and is not pushed.
+
+## Stage Report: validation
+
+- DONE: On a throwaway checkout of 616c1c9fe, run the detached audit for this stacked layer (shipped contract): make each falsifying edit named for AC-2 to AC-4 and show the offline test goes red; flag any check that reads instruction-file prose or asserts a value against a copy of itself.
+  The audit used a `git clone --shared` of 616c1c9fe in /tmp. The clone is now deleted, and neither worktree changed. Each edit below turned the named test red:
+  AC-2: revert the predicate to accept an omitted key: `selected_bare_rejects_omitted_run_in_background`. Drop `!hasName`, `!hasTeamName` or `!runInBackground`: the name, team_name and background-true negatives go red.
+  AC-3: count only `spacedock:ensign` Agent calls, or relax `agentCount != 1` to `< 1`: the `Agent()`-delivered shutdown negative goes red. A replay of the six downloaded CI streams (artifacts 9159859622, 9249931449, 9250257670) through the candidate oracle gave the same verdicts as CI: pr680 bare FAIL, team FAIL ("observed 2 Agent() calls"); attempt 1 bare FAIL, team PASS; attempt 2 bare PASS, team PASS.
+  AC-4: drop the bare selector, add it to the team prompt, or name `widget-task` in the bare prompt: each turns `TestDispatchRecoveryPromptsSelectIntendedDispatchModes` red.
+  Flag 1: AC-4's offline half only checks that the test-fixture prompt contains a substring. It does not read instruction prose and it can go red. The behavioral proof that the prompt selects bare is the live `--bare-mode` evidence below.
+  Flag 2: `TestBreakGlassSelectedBareGapBindsPerTarget` compares the binding with a copy of itself. The independent check is contractlint. Adding back only the registry row, or only the Sonnet binding, turns `runtime_live_lane_test.go` red (lines 195 and 190).
+  No check reads `skills/` prose. The template's `run_in_background=false` is proven only by AC-5's live stream.
+- DONE: Reproduce AC-1 and AC-5 independently with a local live Sonnet TestLiveBreakGlassShimRecovery run (both arms PASS, selected-bare with host foreground=1 and started_in_background=0), and judge whether one live XPASS plus the offline proofs is enough to remove the Sonnet 060xp selected-bare binding, given the cause is now a deterministic selector rather than a flake.
+  Run conditions: `claude-sonnet-5-5`, Claude Code 2.1.303, unbound candidate, keychain seed, no 401. Both arms PASS: bare 61.89s, team 72.74s, total 135.4s.
+  Bare stream: `dispatch build ... --bare-mode --stamp` exits 1, then `Skill(fo-dispatch-recovery)`, then one `Agent(subagent_type=spacedock:ensign, description, run_in_background:false)`. Stats: `spawned=1, foreground=1, unset=0, started_in_background=0`.
+  Team stream: no `--bare-mode`, one named `run_in_background:true` call, background=1.
+  Judgment: removing the binding is enough. The registry rule is "remove the binding, run the unchanged candidate, require PASS". This run did exactly that, and it is a plain PASS, not an XPASS. The new selector picked bare in 4 of 4 runs: 2 spike, 1 implementation, 1 here. The fixture guard keeps the selector in place. If CI regresses, it should go red without a binding.
+- DONE: Confirm the surface (net +14 across 6 files vs 64274cef5, within +0..+25 plus the binding removal), gofmt, and per-package -race and non-race results; then recommend PASSED or REJECTED with material findings separated from deferred risks.
+  Surface: `git diff --numstat 64274cef5 616c1c9fe` gives +37/-23 = net +14 over 6 files. The 5 core files are net +15 and the binding plus registry removal is net -1. Both are within tolerance.
+  gofmt: the changed files are clean. The one `gofmt -l` hit, `internal/release/runtime_live_evidence_workflow_test.go`, is also unformatted on 64274cef5 and on main, and this layer does not touch it.
+  Tests: `go test -p 1 ./...` passes 21/21 packages, and `go test -race -p 1 ./...` passes 21/21.
+  Material findings: none.
+  Deferred risk 1: the bare oracle treats any `run_in_background` value that is present and not a JSON boolean as bare. A probe showed that `"true"`, `null` and `0` all pass. Trigger: the model emits a non-boolean literal. This was never seen, and the host validates tool input against the schema. Fix: `string(runRaw) == "false"`. Promote to material if a retained stream shows a non-boolean value.
+  Deferred risk 2, follow-up already recorded in ideation and outside this scope: normal `dispatch build --bare-mode` omits the key (`dispatch.go:300`), `claude-fo-dispatch.md` says "omit when field absent", and `assertBareReachableObservables` still accepts an omitted key. On 2.1.303 a verbatim mapping starts a background worker. No value AC of this task covers it, and Sonnet added `false` itself in every retained run. Promote to material, as its own task, when a normal bare run shows `unset=1` or `started_in_background=1`.
+  AC-5 note: the live `false` matches the template, but Sonnet sometimes passed `false` before the template change, so the cause cannot be isolated. AC-5 is a means AC paired with AC-1, so this is acceptable.
+  Recommendation: PASSED.
+
+### Summary
+
+Detached audit of 64274cef5..616c1c9fe. Every named falsifying edit for AC-2 to AC-4 turned its test red, and the six-stream CI replay reproduced. An independent unbound live Sonnet run passed both arms, with a host-reported foreground bare spawn and `--bare-mode` before recovery. That supports removing the Sonnet 060xp binding. Surface, gofmt, and race and non-race suites are all clean. Recommend PASSED with two deferred risks: the oracle accepts non-boolean values, and normal bare dispatch still omits the key (a follow-up).
