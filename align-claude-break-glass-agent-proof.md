@@ -1,6 +1,6 @@
 ---
 title: Align Claude break-glass recovery proof with the current Agent tool
-status: ideation
+status: implementation
 source: "PR #680 run 31640122346, Sonnet job 94260537662, artifact 9159859622: TestLiveBreakGlassShimRecovery rejected selected-bare after a successful worker completion because the Agent call lacked the expected bare marker, and rejected selected-team after observing two Agent calls."
 score: 0.90
 id: s2atxdv146qknetdjvx0xer6
@@ -44,7 +44,7 @@ gates:
                 reason: 'Captain approved the ideation design (+12 net, 5 files). Per the FO recommendation presented with the gate, the selected-bare half of repair-sonnet-live-flakes (060xp) moves into this task: implementation removes the Sonnet 060xp selected-bare binding after its live pass.'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-11-03T18:29:08Z
 ---
 
