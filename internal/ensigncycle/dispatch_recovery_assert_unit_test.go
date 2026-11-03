@@ -13,8 +13,13 @@ func TestDispatchRecoveryPromptsSelectIntendedDispatchModes(t *testing.T) {
 	if !strings.Contains(bareReachablePrompt(), "`widget-task`") {
 		t.Fatal("bare prompt must name its single entity to select blocking bare dispatch")
 	}
-	if strings.Contains(breakGlassShimPrompt(), "`widget-task`") {
-		t.Fatal("break-glass prompt must not name one entity and accidentally select blocking bare dispatch")
+	for _, p := range []string{breakGlassShimBarePrompt(), breakGlassShimTeamPrompt()} {
+		if strings.Contains(p, "`widget-task`") {
+			t.Fatal("break-glass prompts must not name one entity; the mode selector is explicit")
+		}
+	}
+	if !strings.Contains(breakGlassShimBarePrompt(), "/spacedock bare") || strings.Contains(breakGlassShimTeamPrompt(), "/spacedock bare") {
+		t.Fatal("only the selected-bare break-glass prompt may carry the /spacedock bare selector")
 	}
 }
 
@@ -92,27 +97,22 @@ func TestAssertBareReachableObservablesCatchesNoBareAgent(t *testing.T) {
 // the oracle grades only the typed Agent transport and its durable result.
 const breakGlassBareGoodStream = `{"type":"assistant","message":{"id":"msg1","content":[{"type":"text","text":"spacedock dispatch build exited non-zero (exit 1); reporting the helper failure before proceeding."}]}}
 {"type":"assistant","message":{"id":"msg2","content":[{"type":"tool_use","id":"t1","name":"Skill","input":{"skill":"spacedock:fo-dispatch-recovery"}}]}}
-{"type":"assistant","message":{"id":"msg3","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","description":"Widget Task: implementation","prompt":"## First action\n\nSkill(skill=\"spacedock:ensign\")\n\n### Stage definition:\n\nAppend a one-line marker to ` + "`widget-task.md`" + ` proving the worker ran.\n\n- **Outputs:** An implementation stage report.\n\n### Stage report"}}]}}`
+{"type":"assistant","message":{"id":"msg3","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","description":"Widget Task: implementation","run_in_background":false,"prompt":"## First action\n\nSkill(skill=\"spacedock:ensign\")\n\n### Stage definition:\n\nAppend a one-line marker to ` + "`widget-task.md`" + ` proving the worker ran.\n\n- **Outputs:** An implementation stage report.\n\n### Stage report"}}]}}`
 
 const breakGlassTeamGoodStream = `{"type":"assistant","message":{"id":"msg1","content":[{"type":"text","text":"spacedock dispatch build exited non-zero (exit 1); reporting the helper failure before proceeding."}]}}
 {"type":"assistant","message":{"id":"msg2","content":[{"type":"tool_use","id":"t1","name":"Skill","input":{"skill":"spacedock:fo-dispatch-recovery"}}]}}
 {"type":"assistant","message":{"id":"msg3","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"ensign-widget-implementation","run_in_background":true,"description":"Widget Task: implementation","prompt":"## First action\n\nSkill(skill=\"spacedock:ensign\")\n\n### Stage definition:\n\nAppend a one-line marker to ` + "`widget-task.md`" + ` proving the worker ran.\n\n- **Outputs:** An implementation stage report.\n\n### Stage report\n\nAppend the report.\n\n### Completion Signal\n\nSendMessage(to=\"team-lead\", message=\"Done\")"}}]}}`
 
 func TestAssertBreakGlassObservablesOffline(t *testing.T) {
-	explicitFalseBareStream := strings.Replace(
-		breakGlassBareGoodStream,
-		`"description":"Widget Task: implementation"`,
-		`"description":"Widget Task: implementation","run_in_background":false`,
-		1,
-	)
+	teamShutdown := `{"type":"assistant","message":{"id":"msg4","content":[{"type":"tool_use","id":"t3","name":"SendMessage","input":{"to":"ensign-widget-implementation","message":"{\"type\":\"shutdown_request\"}"}}]}}`
 	for _, tc := range []struct {
 		name   string
 		mode   dispatchMode
 		stream string
 	}{
-		{"selected bare omits run_in_background", dispatchModeBare, breakGlassBareGoodStream},
-		{"selected bare serializes run_in_background false", dispatchModeBare, explicitFalseBareStream},
+		{"selected bare passes run_in_background false", dispatchModeBare, breakGlassBareGoodStream},
 		{"selected team uses team call", dispatchModeTeam, breakGlassTeamGoodStream},
+		{"selected team shuts down with SendMessage", dispatchModeTeam, breakGlassTeamGoodStream + "\n" + teamShutdown},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if err := assertBreakGlassObservables(tc.stream, tc.mode); err != nil {
@@ -129,17 +129,26 @@ func TestAssertBreakGlassObservablesOffline(t *testing.T) {
 	if err := assertBreakGlassObservables(breakGlassBareGoodStream+"\n"+breakGlassBareGoodStream, dispatchModeBare); err == nil {
 		t.Fatal("multiple workers must fail")
 	}
+	// PR #680: an Agent()-delivered shutdown_request is a second spawn, not a message.
+	agentShutdown := `{"type":"assistant","message":{"id":"msg4","content":[{"type":"tool_use","id":"t3","name":"Agent","input":{"name":"ensign-widget-implementation","description":"Shut down implementation worker","prompt":"{\"type\":\"shutdown_request\"}"}}]}}`
+	if err := assertBreakGlassObservables(breakGlassTeamGoodStream+"\n"+agentShutdown, dispatchModeTeam); err == nil || !strings.Contains(err.Error(), "observed 2 Agent() calls") {
+		t.Fatalf("an Agent()-delivered shutdown must count as a second spawn; err = %v", err)
+	}
 	for _, mutation := range []struct {
 		name string
 		old  string
 		new  string
 	}{
-		{"background true", `"description":"Widget Task: implementation"`, `"description":"Widget Task: implementation","run_in_background":true`},
+		{"omitted run_in_background", `,"run_in_background":false`, ``},
+		{"background true", `"run_in_background":false`, `"run_in_background":true`},
 		{"name present", `"description":"Widget Task: implementation"`, `"description":"Widget Task: implementation","name":"ensign-widget-implementation"`},
 		{"team_name present", `"description":"Widget Task: implementation"`, `"description":"Widget Task: implementation","team_name":"legacy"`},
 	} {
 		t.Run("selected bare rejects "+mutation.name, func(t *testing.T) {
 			stream := strings.Replace(breakGlassBareGoodStream, mutation.old, mutation.new, 1)
+			if stream == breakGlassBareGoodStream {
+				t.Fatalf("mutation %s did not change the fixture", mutation.name)
+			}
 			if err := assertBreakGlassObservables(stream, dispatchModeBare); err == nil {
 				t.Fatalf("selected bare must reject %s", mutation.name)
 			}

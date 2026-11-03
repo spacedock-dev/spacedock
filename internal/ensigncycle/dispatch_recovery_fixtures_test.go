@@ -83,6 +83,12 @@ func breakGlassShimPrompt() string {
 	)
 }
 
+// breakGlassShimBarePrompt selects bare with the same captain command as
+// bareReachablePrompt; the base prompt names no entity, so without it the FO picks.
+func breakGlassShimBarePrompt() string {
+	return "The captain has issued the command: /spacedock bare\n\n" + breakGlassShimPrompt()
+}
+
 // breakGlassShimTeamPrompt changes only the dispatch-mode selection. The helper
 // still fails at the same seam and the worker receives the same entity/stage work.
 func breakGlassShimTeamPrompt() string {

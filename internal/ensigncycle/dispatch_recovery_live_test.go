@@ -104,7 +104,7 @@ func TestLiveBreakGlassShimRecovery(t *testing.T) {
 		mode   dispatchMode
 		prompt string
 	}{
-		{"selected-bare", dispatchModeBare, breakGlassShimPrompt()},
+		{"selected-bare", dispatchModeBare, breakGlassShimBarePrompt()},
 		{"selected-team", dispatchModeTeam, breakGlassShimTeamPrompt()},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

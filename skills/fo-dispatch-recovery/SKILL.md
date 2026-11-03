@@ -12,11 +12,12 @@ The two Claude dispatch exception bodies, each read only at its own failure trig
 
 The resident trigger line already covers the first action (report the helper failure — command, exit code, stderr — to the captain before proceeding). The dispatch mode selected before `dispatch build` remains authoritative: do not probe another transport, retry in the other mode, or turn a selected bare dispatch into a named worker. Populate `{numbered checklist}` with the output of `«dispatch.checklist»(entity, stage)`; do not rebuild its rules here. In either arm, include `model="{effective_model}"` only when an effective model is set.
 
-For selected bare mode, use this blocking call. Omit `name`, `team_name`, and `run_in_background` entirely; Claude's observable tool stream may preserve that omission or normalize it to `run_in_background=false`, and both mean blocking bare dispatch. Never pass or accept `run_in_background=true`. Omit the completion-message block because the blocking return is the completion signal:
+For selected bare mode, use this blocking call. Omit `name` and `team_name`, and pass `run_in_background=false`: the Agent tool starts a call without that key in the background. Omit the completion-message block because the blocking return is the completion signal:
 ```
 Agent(
     subagent_type="spacedock:ensign",  // override with the stage's agent: field when the workflow README names one
     description="{entity title}: {stage}",
+    run_in_background=false,
     model="{effective_model}",
     prompt="## First action\n\nBefore anything else, invoke your operating contract:\n\n    Skill(skill=\"spacedock:ensign\")\n\nThis loads the shared ensign discipline (stage-report format, background-task polling, worktree ownership, completion signal protocol). Do not paraphrase; call the tool.\n\nYou are working on: {entity title}\n\nStage: {stage}\n\n### Stage definition:\n\n{copy stage subsection from README verbatim}\n\nRead the entity file at {entity_file_path}.\n\n### Completion checklist\n\n{numbered checklist}\n\n### Summary\n{brief description of what was accomplished}\n\n### Stage report\n\nAppend a Stage Report section at the end of the entity file (per the shared-core Stage Report Protocol). Use the title `Stage Report: {stage}`. Account for every checklist item above with a `- DONE:` / `- SKIPPED:` / `- FAILED:` entry, then end the section with a `### Summary` subsection. Use the checklist item text verbatim when possible.\n\n### Commit\n\nBefore you finish, commit your work path-scoped: `git -C \"$(dirname {entity_file_path})\" add -- {entity_file_path} && git -C \"$(dirname {entity_file_path})\" commit -m \"{entity title}: {stage} report\" -- {entity_file_path}`."
 )
