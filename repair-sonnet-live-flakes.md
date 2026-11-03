@@ -8,8 +8,16 @@ sprint-readiness: ready
 group: common-evidence
 id: 060xp69y61yhrww23g3wvwqy
 gates:
-  version: 1
-  records: []
+    version: 1
+    records:
+        - id: gate:060xp69y61yhrww23g3wvwqy:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:060xp69y61yhrww23g3wvwqy-backlog-1
+              briefing:
+                id: briefing:060xp69y61yhrww23g3wvwqy:backlog:attempt-1:revision-1
+                digest: sha256:09c57e5fa0e468308825f688c19ec7539dc7e75e89e655d69e0a5f1416aa6012
+                room-ref: '@review/backlog/briefing-1'
 started:
 worktree:
 mod-block:

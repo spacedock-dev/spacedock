@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:060xp69y61yhrww23g3wvwqy:backlog:attempt-1:revision-1",
+  "question": "Start design for repair-sonnet-live-flakes with a local probe on top of the live-lane-shared-failure-fixes candidate?",
+  "artifacts": [
+    {
+      "id": "artifact:060xp69y61yhrww23g3wvwqy:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/437c269dcdf0696da4f4f80534a4db856221aa26/repair-sonnet-live-flakes.md",
+      "rev": "sha256:a9e9170c97b457ac3f9ce88afeb73c6b47925d1aeb99cb4178249447ad025d7f",
+      "mediaType": "text/markdown",
+      "summary": "Captain directed a local probe: the cause and fix are not known. Probe on a throwaway checkout of the active live-lane-shared-failure-fixes branch head."
+    }
+  ]
+}
