@@ -46,6 +46,7 @@ gates:
                 target-stage: implementation
                 state: consumed
 started: 2026-11-03T18:29:08Z
+worktree: .worktrees/spacedock-ensign-align-claude-break-glass-agent-proof
 ---
 
 Restore a truthful break-glass substrate proof for the current Claude Agent tool surface.
