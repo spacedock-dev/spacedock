@@ -29,7 +29,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
-started:
+started: 2026-11-03T18:28:41Z
 worktree:
 mod-block:
 pr:
