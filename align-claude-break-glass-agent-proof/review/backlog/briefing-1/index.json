@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:s2atxdv146qknetdjvx0xer6:backlog:attempt-1:revision-1",
+  "question": "Start design for align-claude-break-glass-agent-proof with a local probe on top of the live-lane-shared-failure-fixes candidate?",
+  "artifacts": [
+    {
+      "id": "artifact:s2atxdv146qknetdjvx0xer6:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/b88da4a04cfdebfde70e34a534c1da46b11d2beb/align-claude-break-glass-agent-proof.md",
+      "rev": "sha256:3d14ced20eb5d87241a8577d1f97b9d7e47df402bcf11a79e48044b57922c3a0",
+      "mediaType": "text/markdown",
+      "summary": "Captain directed a local probe: the cause and fix are not known. Probe on a throwaway checkout of the active live-lane-shared-failure-fixes branch head."
+    }
+  ]
+}

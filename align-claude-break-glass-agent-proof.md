@@ -4,6 +4,17 @@ status: backlog
 source: "PR #680 run 31640122346, Sonnet job 94260537662, artifact 9159859622: TestLiveBreakGlassShimRecovery rejected selected-bare after a successful worker completion because the Agent call lacked the expected bare marker, and rejected selected-team after observing two Agent calls."
 score: 0.90
 id: s2atxdv146qknetdjvx0xer6
+gates:
+    version: 1
+    records:
+        - id: gate:s2atxdv146qknetdjvx0xer6:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:s2atxdv146qknetdjvx0xer6-backlog-1
+              briefing:
+                id: briefing:s2atxdv146qknetdjvx0xer6:backlog:attempt-1:revision-1
+                digest: sha256:0d8a3a8721fadf9acfb0dce2f6399acbcb123bafc947928ea80a03cd21299c62
+                room-ref: '@review/backlog/briefing-1'
 ---
 
 Restore a truthful break-glass substrate proof for the current Claude Agent tool surface.
