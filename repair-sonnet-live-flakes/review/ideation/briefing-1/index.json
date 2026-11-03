@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:060xp69y61yhrww23g3wvwqy:ideation:attempt-1:revision-1",
+  "question": "Approve the keep-moving fix (drop started from the non-gated advance in fo-dispatch-core step 5, plus a replay test; +89 net, 4 files) and start implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:060xp69y61yhrww23g3wvwqy:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/9ffbb0ce5b89395e3ac12480fca620e66cf62c94/repair-sonnet-live-flakes.md",
+      "rev": "sha256:1940092eec78f26eee868e69db661fb0f02d393acb3b7589197d119e014c050d",
+      "mediaType": "text/markdown",
+      "summary": "Keep-moving flake: in CI attempt 2 the FO hand-committed a batch (git add -A) after writing started and before --stamp, so --stamp had nothing to commit and the path-scoped dispatch commit never existed. Deterministic replay with the real binary and live oracle reproduces the CI red; control and the started-free advance both pass. Root cause: fo-dispatch-core step 5 tells the FO to write started before --stamp. Retirement evidence for the 060xp keep-moving binding is still open: 4 local live runs, 0 graded (3 quiet-budget kills, 1 auth 401)."
+    }
+  ]
+}
