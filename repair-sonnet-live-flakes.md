@@ -58,7 +58,7 @@ gates:
                 target-stage: implementation
                 state: consumed
 started: 2026-11-03T18:28:41Z
-worktree:
+worktree: .worktrees/spacedock-ensign-repair-sonnet-live-flakes
 mod-block:
 pr:
 ---
