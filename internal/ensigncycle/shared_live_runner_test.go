@@ -137,12 +137,6 @@ func TestLiveCommonOwnedConflictOwnerHandoff(t *testing.T) {
 	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyGap{liveXFail("pi", "psvqjf0w8xh2txp9604gsvmz")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
 }
 
-// The claude-sonnet red is the completion-observation gap: run 37374064240's
-// claude-live leg recorded `rejection-worker-topology` — the position-6
-// reuse/validation dispatch was never observed complete — while the final
-// message presented the cycle-2 validation gate review. Owner:
-// jfdrr2dbdtt952s4cvvy74k8 (claude-live-completion-observation-gap).
-//
 // The pi XFAIL below is registered for the Pi rejection-worker topology fault,
 // a separate semantic from the timeout repair that archived
 // finish-pi-rejection-flow already passed (registered owner
@@ -152,7 +146,7 @@ func TestLiveCommonOwnedConflictOwnerHandoff(t *testing.T) {
 //
 //spacedock:live-journey id=rejection-flow fixture=rejection/before-validation-1
 func TestLiveCommonRejectionFlow(t *testing.T) {
-	liveJourney(t, "rejection-flow", "rejection/before-validation-1", writeRejectionWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "jfdrr2dbdtt952s4cvvy74k8"), liveXFail("pi", "6h3teccccn3qh71yqcmjbjx4")}, runClaudeRejectionFlowScenario, assertRejectionFlow)
+	liveJourney(t, "rejection-flow", "rejection/before-validation-1", writeRejectionWorkflow, []liveJourneyGap{liveXFail("pi", "6h3teccccn3qh71yqcmjbjx4")}, runClaudeRejectionFlowScenario, assertRejectionFlow)
 }
 
 // The claude-sonnet red is the completion-observation gap: run 37421110550's
@@ -179,12 +173,6 @@ func TestLiveCommonKeepMovingPosture(t *testing.T) {
 	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveXFail("pi", "psvqjf0w8xh2txp9604gsvmz")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
 }
 
-// The claude-sonnet red is the completion-observation gap: run 37374064240's
-// claude-live leg recorded `implementation-worker-not-dispatched`
-// (spawns=1 completed=95 validation=117 report=<nil>) while the final message
-// presented a completed validation gate review. Owner:
-// jfdrr2dbdtt952s4cvvy74k8 (claude-live-completion-observation-gap).
-//
 // The Pi red on this journey mixes the shared gate assertion failing
 // (`gate-hold-violation` and `gate-not-held`) with the worker-lifecycle
 // observation defect `implementation-worker-not-dispatched`. Sole owner:
@@ -192,20 +180,12 @@ func TestLiveCommonKeepMovingPosture(t *testing.T) {
 //
 //spacedock:live-journey id=default-headless-gate-stop fixture=recorded-gate/pre-gate
 func TestLiveCommonDefaultHeadlessGateStop(t *testing.T) {
-	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "jfdrr2dbdtt952s4cvvy74k8"), liveXFail("pi", "penfp034pt9s3cgwp7wg3ykk"), liveXFail("claude-haiku", "")}, runGateStopScenario, assertGateHeld)
+	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyGap{liveXFail("pi", "penfp034pt9s3cgwp7wg3ykk"), liveXFail("claude-haiku", "")}, runGateStopScenario, assertGateHeld)
 }
 
-// The claude-sonnet red is the completion-observation gap: run 37411324514's
-// claude-live leg recorded `smallest-mechanism-violation` (durable commissioned
-// journeys = 1/2; ready-one missing a path-scoped dispatch entry with stage and
-// started) while the final message reported both entities dispatched, verified,
-// and archived. This run's failure is NOT the uncommitted-entity-state one that
-// y5hde203rm3ga4s6mm30yv0r owns (that appears on the break-glass journey), so
-// the gap owner jfdrr2dbdtt952s4cvvy74k8 binds here.
-//
 //spacedock:live-journey id=smallest-sufficient-mechanism fixture=mechanism-choice/mixed-authority
 func TestLiveCommonSmallestSufficientMechanism(t *testing.T) {
-	liveJourney(t, "smallest-sufficient-mechanism", "mechanism-choice/mixed-authority", writeSmallestMechanismWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "jfdrr2dbdtt952s4cvvy74k8")}, runClaudeSmallestSufficientMechanismScenario, assertDurableSmallestMechanism)
+	liveJourney(t, "smallest-sufficient-mechanism", "mechanism-choice/mixed-authority", writeSmallestMechanismWorkflow, nil, runClaudeSmallestSufficientMechanismScenario, assertDurableSmallestMechanism)
 }
 
 //spacedock:live-journey id=recorded-gate-lifecycle fixture=recorded-gate/prepared
