@@ -215,3 +215,7 @@ All three failures are shared defects, not model faults. Item 1 is a grader rege
 ### Summary
 
 All five approved fixes are in the worktree branch, each with a red-first deterministic test that a specific code change makes fail. The local live Sonnet journeys run from this worktree all pass: filing 1/1, keep-moving 3/3 and break-glass 2/2 (both subtests). They show none of the three failure signatures. The diff measured +138 at first, so I made the tests smaller to reach net +112 across 37 files, inside tolerance. The `go test ./... -race` item is still open because the disk is full (under 200Mi free). It is not caused by a code fault. My SendMessage to `team-lead` from this session failed and the send to `main` worked, which confirms fix 3a.
+
+### Dispatch Retries
+
+- Retry 1: implementation — no-completion-signal (host OAuth session expired mid-run, 2026-11-03); nudged
