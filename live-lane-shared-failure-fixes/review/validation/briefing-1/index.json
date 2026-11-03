@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:vtgw5b1ar42s6x807nfdzwb9:validation:attempt-1:revision-1",
+  "question": "Approve validation (PASSED) for 64274cef5, or send it back for the split-root break-glass commit line?",
+  "artifacts": [
+    {
+      "id": "artifact:vtgw5b1ar42s6x807nfdzwb9:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/d9fd8680b7b22f7e5eb402938738ba95ee1af013/live-lane-shared-failure-fixes.md",
+      "rev": "sha256:7ff8a260e1228323bb014894fe72f4f81e84b7649b5fd290e20cf0b290901a82",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED, no material findings: detached audit reddens fixes 1, 2a, 3a and the contractlint registry check under claim-breaking edits; independent live Sonnet runs (27 streams) show 0 team-lead-unreachable, 0 ineligible, 0 --verdict errors; 21/21 packages pass with and without -race; +175 net, 36 files. Findings: FO record gap for the 2026-11-03 scope change; 2b and 3b have no committed test that reddens while the 060xp bindings stay; the new break-glass commit line fails on split-root workflows (dry run on docs/dev exits 1); four merge.go mutants survive; base status --set skips a gated stage."
+    }
+  ]
+}
