@@ -25,5 +25,4 @@ that runtime target. Removing a binding claims the journey is green there.
 | keep-moving-posture | claude-haiku | unowned (blank; pending analysis) | claude-haiku red `keep-moving-violation`; the host can also stop a background worker 600 s after a headless FO ends its turn (any model) |
 | default-headless-gate-stop | claude-haiku | unowned (blank; pending analysis) | claude-haiku reds `gate-hold-violation`, `gate-not-held`, `implementation-worker-not-dispatched` |
 | withdrawn-gate-recovery | claude-haiku | unowned (blank; pending analysis) | claude-haiku red `withdrawn-recovery-boundary` |
-| `breakGlassSelectedBareGap` (break-glass selected-bare, `dispatch_recovery_live_test.go`) | claude-sonnet | 060xp69y61yhrww23g3wvwqy | claude-sonnet flake: the `Agent` call does not stay in bare mode |
 | `breakGlassSelectedBareGap` (break-glass selected-bare, `dispatch_recovery_live_test.go`) | claude-haiku | unowned (blank; pending analysis) | claude-haiku red `break-glass-observables` |
