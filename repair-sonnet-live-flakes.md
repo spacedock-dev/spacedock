@@ -18,6 +18,17 @@ gates:
                 id: briefing:060xp69y61yhrww23g3wvwqy:backlog:attempt-1:revision-1
                 digest: sha256:09c57e5fa0e468308825f688c19ec7539dc7e75e89e655d69e0a5f1416aa6012
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:060xp69y61yhrww23g3wvwqy:backlog:1
+                briefing: briefing:060xp69y61yhrww23g3wvwqy:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-11-03T18:26:25.611996Z"
+                decision: approve
+                reason: 'Captain directed in chat on 2026-11-03: ''for those 2, do we know how to fix it? if not dispatch local probe on top of the worktree.'''
+              application:
+                target-stage: ideation
+                state: pending
 started:
 worktree:
 mod-block:
