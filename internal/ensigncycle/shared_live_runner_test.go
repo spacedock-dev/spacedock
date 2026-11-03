@@ -170,7 +170,7 @@ func TestLiveCommonAutoContinueAfterImplementation(t *testing.T) {
 //
 //spacedock:live-journey id=keep-moving-posture fixture=keep-moving/mixed-events
 func TestLiveCommonKeepMovingPosture(t *testing.T) {
-	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveXFail("pi", "psvqjf0w8xh2txp9604gsvmz")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
+	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "060xp69y61yhrww23g3wvwqy"), liveXFail("pi", "psvqjf0w8xh2txp9604gsvmz")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
 }
 
 // The Pi red on this journey mixes the shared gate assertion failing

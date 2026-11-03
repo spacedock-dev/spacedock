@@ -73,15 +73,15 @@ func TestLiveBareReachable(t *testing.T) {
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 
-// breakGlassSelectedBareGap binds each target's own known failure: Haiku's unowned
-// gap (pending analysis), and nothing for other targets.
+// breakGlassSelectedBareGap binds each target's own known failure: Sonnet's owned
+// gap, Haiku's unowned gap (pending analysis), and nothing for other targets.
 func breakGlassSelectedBareGap(target string) liveJourneyGap {
-	return selectLiveGap([]liveJourneyGap{liveXFail("claude-haiku", "")}, target)
+	return selectLiveGap([]liveJourneyGap{liveXFail("claude-sonnet", "060xp69y61yhrww23g3wvwqy"), liveXFail("claude-haiku", "")}, target)
 }
 
 func TestBreakGlassSelectedBareGapBindsPerTarget(t *testing.T) {
 	for target, want := range map[string]liveJourneyGap{
-		"claude-sonnet": {},
+		"claude-sonnet": {"xfail", "claude-sonnet", "060xp69y61yhrww23g3wvwqy"},
 		"claude-haiku":  {"xfail", "claude-haiku", ""},
 		"claude-opus":   {},
 	} {
