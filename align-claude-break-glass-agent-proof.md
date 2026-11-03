@@ -26,6 +26,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-11-03T18:29:08Z
 ---
 
 Restore a truthful break-glass substrate proof for the current Claude Agent tool surface.
