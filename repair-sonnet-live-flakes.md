@@ -62,3 +62,7 @@ Product repair per mechanism, both already named in the evidence (captain ruling
 
 - Run `31894934349`, attempt 1: common keep-moving PASS; selected-bare FAIL.
 - Run `31894934349`, attempt 2: keep-moving FAIL; selected-bare PASS.
+
+### Dispatch Retries
+
+- Retry 1: ideation — no-completion-signal (host OAuth session expired mid-run, 2026-11-03); nudged
