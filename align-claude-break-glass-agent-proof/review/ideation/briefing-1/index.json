@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:s2atxdv146qknetdjvx0xer6:ideation:attempt-1:revision-1",
+  "question": "Approve the break-glass oracle and fixture correction (+12 net, 5 files) and start implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:s2atxdv146qknetdjvx0xer6:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/ab527786d9dac7b479f3b9cbcd85e275548acfbe/align-claude-break-glass-agent-proof.md",
+      "rev": "sha256:796b7592f551d1604cf436e408924fd325bd155c539e2467c1ea860c86de655b",
+      "mediaType": "text/markdown",
+      "summary": "Selected-bare arm never selects bare (prompt has no selector since 4cc0d890d), so Sonnet picks team or bare by chance; same root cause as 060xp's selected-bare half. Template and oracle treat an omitted run_in_background as blocking; a Claude Code 2.1.303 probe shows it runs in the background. Fix: /spacedock bare prompt for the bare arm, explicit false in template and oracle; team oracle unchanged. Replay reproduces six CI verdicts; live selected-bare 2/2 PASS on the proposed bytes."
+    }
+  ]
+}
