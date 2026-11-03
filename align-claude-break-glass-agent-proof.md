@@ -45,6 +45,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:s2atxdv146qknetdjvx0xer6:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:s2atxdv146qknetdjvx0xer6-validation-1
+              briefing:
+                id: briefing:s2atxdv146qknetdjvx0xer6:validation:attempt-1:revision-1
+                digest: sha256:b39e64d97accf3eeecc22ba6cd647fb6d38d31d78e29c48c7926913f09ffa743
+                room-ref: '@review/validation/briefing-1'
 started: 2026-11-03T18:29:08Z
 worktree: .worktrees/spacedock-ensign-align-claude-break-glass-agent-proof
 ---

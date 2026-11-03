@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:s2atxdv146qknetdjvx0xer6:validation:attempt-1:revision-1",
+  "question": "Approve validation (PASSED) for the stacked break-glass layer 616c1c9fe and advance to done, merging after its parent live-lane-shared-failure-fixes?",
+  "artifacts": [
+    {
+      "id": "artifact:s2atxdv146qknetdjvx0xer6:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/20b0d229bb58813a639aa5a6bf7ad709e9618f43/align-claude-break-glass-agent-proof.md",
+      "rev": "sha256:573b6a2950e1ace9efd24f1ecf316e2d14e67f1fcfa64df79654ddfc868e1128",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED: every AC-2..AC-4 falsifying edit turns its test red; six-stream CI replay reproduces; independent unbound live Sonnet run passes both arms with --bare-mode and a host foreground bare spawn, supporting removal of the Sonnet 060xp selected-bare binding (4 of 4 runs selected bare). Net +14 across 6 files; 21/21 packages pass with and without -race. Deferred: oracle accepts non-boolean run_in_background; normal dispatch build --bare-mode still omits the key. Flag: TestBreakGlassSelectedBareGapBindsPerTarget compares a binding with a copy of itself; contractlint is the independent check."
+    }
+  ]
+}
