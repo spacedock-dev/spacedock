@@ -46,6 +46,17 @@ gates:
                 id: briefing:060xp69y61yhrww23g3wvwqy:ideation:attempt-2:revision-1
                 digest: sha256:fa1131626a16070e5ff32a62db21822f57cffdf92afcc1c842f8c749212dff77
                 room-ref: '@review/ideation/briefing-2'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:060xp69y61yhrww23g3wvwqy:ideation:2
+                briefing: briefing:060xp69y61yhrww23g3wvwqy:ideation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-11-03T23:57:36.952597Z"
+                decision: approve
+                reason: 'Captain approves the step-5 fix with the smaller test: hardcode the advance sequence and exercise only the binary path; the test does not read fo-dispatch-core.md. The 060xp keep-moving binding stays until retirement evidence exists. The background-worker stop and the quiet-budget kill are routed outside this task.'
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-11-03T18:28:41Z
 worktree:
 mod-block:
