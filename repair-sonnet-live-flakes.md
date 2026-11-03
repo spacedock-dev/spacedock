@@ -1,6 +1,6 @@
 ---
 title: Repair Sonnet keep-moving and selected-bare live flakes
-status: ideation
+status: implementation
 score: "0.95"
 source: "Exact-main Runtime Live E2E run 31894934349 attempts 1 and 2"
 sprint: test-behavior-completeness
@@ -56,7 +56,7 @@ gates:
                 reason: 'Captain approves the step-5 fix with the smaller test: hardcode the advance sequence and exercise only the binary path; the test does not read fo-dispatch-core.md. The 060xp keep-moving binding stays until retirement evidence exists. The background-worker stop and the quiet-budget kill are routed outside this task.'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-11-03T18:28:41Z
 worktree:
 mod-block:
