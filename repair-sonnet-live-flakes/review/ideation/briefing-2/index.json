@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:060xp69y61yhrww23g3wvwqy:ideation:attempt-2:revision-1",
+  "question": "Approve the step-5 started fix (keeping the 060xp keep-moving binding) and route the two new findings for decision?",
+  "artifacts": [
+    {
+      "id": "artifact:060xp69y61yhrww23g3wvwqy:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/4cd443b10a80288af2e8b9231a01c00b3b765955/repair-sonnet-live-flakes.md",
+      "rev": "sha256:d6f7209843f5764d51740f4e1f5c03aa8def8280364b8e6ed034bd2591d0f375",
+      "mediaType": "text/markdown",
+      "summary": "Keep-moving: the CI Sonnet 5 red was a hand batch commit before --stamp; replay reproduces it and the one-sentence step-5 fix removes the window. On Sonnet 5.5 the hand commit did not occur in 10 head runs. Unchanged-byte runs: 8, 0 graded (7 quiet-budget kills, 1 auth). 180 s behavior runs: b1 XPASS, b2 XFAIL because the host stopped the background questioned worker 600 s after the FO's last turn, before it committed. Findings: quiet budget (harness, deferred, new owner); background worker stopped (Material, route for decision: headless FO wait posture or ensign stage proportionality)."
+    }
+  ]
+}

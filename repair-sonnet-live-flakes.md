@@ -41,6 +41,11 @@ gates:
                 by: agent:first-officer
                 at: "2026-11-03T21:36:51.86205Z"
                 reason: 'New probe evidence after the briefing: 4 unchanged-byte runs killed by the quiet budget, and a second keep-moving cause (host stopped the background worker 600 s after the FO''s last turn).'
+            - id: gate-attempt:060xp69y61yhrww23g3wvwqy-ideation-2
+              briefing:
+                id: briefing:060xp69y61yhrww23g3wvwqy:ideation:attempt-2:revision-1
+                digest: sha256:fa1131626a16070e5ff32a62db21822f57cffdf92afcc1c842f8c749212dff77
+                room-ref: '@review/ideation/briefing-2'
 started: 2026-11-03T18:28:41Z
 worktree:
 mod-block:
