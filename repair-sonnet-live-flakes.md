@@ -1,6 +1,6 @@
 ---
 title: Repair Sonnet keep-moving and selected-bare live flakes
-status: backlog
+status: ideation
 score: "0.95"
 source: "Exact-main Runtime Live E2E run 31894934349 attempts 1 and 2"
 sprint: test-behavior-completeness
@@ -28,7 +28,7 @@ gates:
                 reason: 'Captain directed in chat on 2026-11-03: ''for those 2, do we know how to fix it? if not dispatch local probe on top of the worktree.'''
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 started:
 worktree:
 mod-block:
