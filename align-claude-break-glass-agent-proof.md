@@ -1,6 +1,6 @@
 ---
 title: Align Claude break-glass recovery proof with the current Agent tool
-status: backlog
+status: ideation
 source: "PR #680 run 31640122346, Sonnet job 94260537662, artifact 9159859622: TestLiveBreakGlassShimRecovery rejected selected-bare after a successful worker completion because the Agent call lacked the expected bare marker, and rejected selected-team after observing two Agent calls."
 score: 0.90
 id: s2atxdv146qknetdjvx0xer6
@@ -25,7 +25,7 @@ gates:
                 reason: 'Captain directed in chat on 2026-11-03: ''for those 2, do we know how to fix it? if not dispatch local probe on top of the worktree.'''
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Restore a truthful break-glass substrate proof for the current Claude Agent tool surface.
