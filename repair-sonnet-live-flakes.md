@@ -37,6 +37,10 @@ gates:
                 id: briefing:060xp69y61yhrww23g3wvwqy:ideation:attempt-1:revision-1
                 digest: sha256:8d5375fc28e2403f34f93c4a2f7bd822c14c174b27b3c834b95cb5087aaf7c6e
                 room-ref: '@review/ideation/briefing-1'
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-11-03T21:36:51.86205Z"
+                reason: 'New probe evidence after the briefing: 4 unchanged-byte runs killed by the quiet budget, and a second keep-moving cause (host stopped the background worker 600 s after the FO''s last turn).'
 started: 2026-11-03T18:28:41Z
 worktree:
 mod-block:
