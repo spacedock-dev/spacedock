@@ -34,6 +34,17 @@ gates:
                 id: briefing:s2atxdv146qknetdjvx0xer6:ideation:attempt-1:revision-1
                 digest: sha256:78fef8b36b99112c5b01923a6afb00b91b3d16a91612e3ecd1ce58826af7f869
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:s2atxdv146qknetdjvx0xer6:ideation:1
+                briefing: briefing:s2atxdv146qknetdjvx0xer6:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-11-03T19:20:54.240728Z"
+                decision: approve
+                reason: 'Captain approved the ideation design (+12 net, 5 files). Per the FO recommendation presented with the gate, the selected-bare half of repair-sonnet-live-flakes (060xp) moves into this task: implementation removes the Sonnet 060xp selected-bare binding after its live pass.'
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-11-03T18:29:08Z
 ---
 
