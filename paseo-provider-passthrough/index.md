@@ -64,6 +64,21 @@ In passthrough mode:
 - `SPACEDOCK_BIN`, Safehouse selection, `--trust-workdir-config`, terminal allowances, and existing directory/profile flags retain their behavior.
   Pi retains its fnm path resolution and the matching sandbox grant for code and dependencies.
   A selected sandbox with no Safehouse executable still fails before launch.
+- A wrapped passthrough launch preserves the selected host's explicit canonical settings through Safehouse's existing named environment allowance.
+  Presence selects `--env-pass` for each applicable name, including an empty value.
+  The child receives the exact parent value, including `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=0`.
+  Absent variables receive no allowance or synthesized value.
+
+| Selected host | Canonical variables preserved through Safehouse in passthrough |
+|---|---|
+| Claude | `CLAUDE_CONFIG_DIR`, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` |
+| Codex | `CODEX_HOME` |
+| Pi | `PI_CODING_AGENT_DIR` |
+
+The launcher adds allowances only for the selected host's present canonical variables.
+Caller-provided native Safehouse environment controls retain their existing behavior.
+This correction adds no filesystem grant, general environment forwarding, caller setup requirement, or ordinary-mode behavior change.
+Safehouse's existing filesystem rules still determine access to the selected settings path.
 
 Passthrough rejects task text and Spacedock's `--plugin-dir` before `--`, with a stderr diagnostic before host or plugin activity.
 All native prompts and plugin arguments belong after `--` in this mode.
@@ -90,6 +105,8 @@ Explicit pre-fence flags take precedence over their corresponding environment se
 | `SPACEDOCK_SAFEHOUSE_ENABLE=ssh,docker` | Supplies the capability list only if no `--safehouse-enable` flag occurs. A nonempty list also selects Safehouse. |
 | Repeated `--safehouse-enable` flags | Replace the environment list as one group and retain their existing order and comma splitting. |
 | `.safehouse`, directory grants, or profile flags | Still select Safehouse independently. Neither `SPACEDOCK_SAFEHOUSE=0` nor `--safehouse=false` disables these triggers. |
+| A present canonical variable for the selected host | In wrapped passthrough only, adds a named allowance and preserves the exact value, including empty or `0`. |
+| An absent canonical variable or another host's variable | Adds no automatic allowance or value. Other explicit Safehouse controls retain their behavior. |
 
 An explicit empty capability flag retains its current native validation behavior.
 Capability names and profile content still use Safehouse's existing validation.
@@ -103,6 +120,7 @@ This task adds no environment settings for directory grants or extra profiles.
 | Skip Codex collaboration injection and its override rejection in this mode | AC-1, AC-2 | Retaining the layer still replaces caller configuration and requires support for Spacedock's selected table. |
 | Suppress Pi launch markers and explicit resources | AC-1, AC-2 | Removing only argv prompts leaves the extension free to send a first-officer user message. |
 | One small helper for environment fallback and flag presence | AC-3 | Fixed provider argv cannot vary sandbox capabilities per session. Three separate parsers can disagree on precedence. |
+| Presence-filtered allowance for selected-host canonical settings | AC-2 | Requiring caller-managed allowances adds setup and loses the promised settings by default. The existing bounded allowance supplies the missing transport. |
 | Reject interactive task/provider flags in the new mode | AC-1, AC-2 | Ignoring them loses caller intent. Reinterpreting them recreates prompt assembly or persistent plugin setup. |
 
 Keep the host functions and existing wrapper calls.
@@ -151,6 +169,31 @@ Reproduction inputs for implementation and validation:
 
 The final candidate must repeat protocol startup through `spacedock <host> --passthrough`, rather than claiming native startup alone proves the change.
 
+### R1: wrapped caller settings
+
+The [independent review](ideation-review.md) at state commit `68bc1d8574158c35919f69f41272e70b805d3eed` supplies the following accepted observations.
+The First Officer classified R1 as owned Material under `value-ac[AC-2]` and authorized the bounded allowance correction.
+These observations were not repeated during this revision.
+
+With identical isolated filesystem access, real Safehouse and Codex `config/read` returned two different effective settings:
+
+| Named allowance | Effective model | Effective approval policy |
+|---|---|---|
+| Absent | `review-default` | `never` |
+| Present for `CODEX_HOME` | `review-selected` | `on-request` |
+
+Both runs supplied `CODEX_HOME` for the selected settings directory.
+Only the named allowance differed.
+The review also observed all four explicit canonical values disappear under the default wrapper and survive exactly with their named allowances.
+The explicit Claude teams value remained `0`, and both sentinel observations reported `APP_SANDBOX_CONTAINER_ID=agent-safehouse`.
+The common fixture grant held filesystem access constant. It is a probe input, not a proposed product grant.
+
+This establishes environment transport and an independently changed effective Codex permission setting.
+It does not establish effective Claude or Pi settings.
+Implementation must exercise the candidate through the same real wrapper and native settings boundaries.
+The existing protocol startup checks will also observe each host's selected native configuration.
+No new mechanism spike is needed: the independent wrapper and Codex settings observations prove the reused allowance.
+
 ### Baseline check outcomes
 
 These checks used the unchanged detached `15e0baea3` checkout, separate from the one-off failing spike.
@@ -195,21 +238,27 @@ A change outside these semantics requires a design decision even if the line cou
 
 | Files | Intended change |
 |---|---|
-| `internal/cli/frontdoor.go` | Parse the mode, record explicit sandbox flag presence, and guard Claude/Codex interactive additions and side effects. |
-| `internal/cli/launch_options.go` (new) | Resolve the two environment fallbacks through the existing sandbox representation. |
-| `internal/cli/pi.go` | Parse the common flags, guard interactive readiness/resources/markers, and preserve Pi path and wrapper behavior. |
-| `internal/cli/help.go` | Describe the mode, the two environment settings, and the Pi compatibility alias. |
+| `internal/cli/frontdoor.go` | Parse the mode, guard interactive additions, and compose the selected canonical allowances into the existing Claude/Codex wrapper. |
+| `internal/cli/launch_options.go` (new) | Resolve sandbox environment fallbacks and presence-filtered canonical allowances for the selected host. |
+| `internal/cli/pi.go` | Guard interactive readiness/resources/markers, compose the Pi canonical allowance, and preserve path resolution and other wrapper behavior. |
+| `internal/cli/help.go` | Describe provider mode, explicit canonical settings, the sandbox environment settings, and the Pi compatibility alias. |
 | `internal/cli/frontdoor_parse_test.go` | Exercise the mode/fence grammar and invalid interactive combinations. |
 | `internal/cli/frontdoor_test.go` | Exercise literal Claude/Codex provider argv, plugin inactivity, child environment, quiet launch output, and host exit codes. |
 | `internal/cli/codex_multi_agent_test.go` | Exercise caller collaboration overrides in passthrough while retaining ordinary collaboration checks. |
 | `internal/cli/pi_frontdoor_test.go` | Exercise native provider argv, absent inherited markers, readiness independence, wrapping, and common flags. |
-| `internal/cli/launch_parity_test.go` | Exercise environment fallback and explicit flag precedence for all hosts and both modes. |
+| `internal/cli/launch_parity_test.go` | Exercise sandbox precedence and canonical allowance presence, exact values, host selection, and ordinary-mode stability. |
 | `internal/cli/help_test.go` | Extend existing help coverage for the new mode and settings. |
 | `docs/site/reference/command-reference.md` | Document provider mode and qualify interactive collaboration/permission behavior. |
-| `docs/site/reference/sandbox.md` | Document the two environment settings and precedence. |
+| `docs/site/reference/sandbox.md` | Document sandbox precedence and the exact canonical variables preserved in wrapped provider mode. |
 | `docs/site/contributing/adding-a-runtime.md` | Qualify the existing Pi marker claim as interactive behavior and link to provider mode. |
 
+R1 uses these same helper, host, environment-matrix, and documentation files.
+The estimate remains +400 net LOC across 13 files, with the same insertion/deletion estimate and tolerance.
+No product file or standing mechanism is added by this correction. Implementation must count the actual diff.
+
 Permitted semantics: new pre-fence launch grammar, sandbox environment fallback, passthrough ownership of host arguments and child environment, and skipped interactive setup.
+Wrapped passthrough preserves only the selected host's present canonical variables through the existing bounded allowance.
+This adds no filesystem access or caller setup requirement.
 Stored formats, workflow authority, host permission defaults, ordinary launch behavior without these new inputs, and process supervision remain unchanged.
 
 ## Acceptance criteria
@@ -218,7 +267,10 @@ Stored formats, workflow authority, host permission defaults, ordinary launch be
 Verified by: literal argv cases in the existing launcher fixtures and candidate protocol startup with the reproduction inputs above. Adding a bootstrap prompt or banner to stdout must fail.
 
 **AC-2**: The orchestrator retains agent identity, prompting, and permission settings in wrapped and unwrapped passthrough launches.
-Verified by: recorded argv/environment fixtures, caller Codex overrides, and candidate Claude stream init with `permissionMode: default` under Safehouse. Injecting a first-officer marker, identity, resource, collaboration value, or permission override must fail.
+Verified by: recorded argv/environment fixtures, caller Codex overrides, candidate Claude init, Pi state, and Codex `config/read` under the real wrapper.
+The canonical-variable matrix asserts presence-filtered allowances and exact values, including empty values and Claude's explicit `0`.
+Candidate observations must retain the selected native settings and Claude's `permissionMode: default`.
+Injecting a first-officer override or omitting a selected canonical allowance must fail, even with exact inner argv.
 
 **AC-3**: Passthrough keeps sandbox wrapping, capability selection, and SPACEDOCK_BIN propagation, including per-session SPACEDOCK_SAFEHOUSE and SPACEDOCK_SAFEHOUSE_ENABLE settings.
 Verified by: the cross-host environment/argv matrix, existing scrubbing-wrapper environment proof, and Pi's stable-path fixtures. Losing wrapping, capability propagation, flag precedence, or the selected binary must fail.
@@ -241,21 +293,39 @@ Literal expected provider argv must not come from production constants or assemb
 | `frontdoor_test.go`, deterministic | Claude/Codex inner argv exactly matches caller protocol arguments in both wrap branches. Host exit 7 survives. No plugin work or launch text occurs. Restoring any interactive injection or gate call breaks it. | Seconds. Extend existing fake seams. |
 | `codex_multi_agent_test.go`, deterministic | Explicit caller collaboration settings reach app-server unchanged. Leaving the reserved-key rejection active breaks this case while plain app-server fixtures can still pass. | Seconds. Extend the current override owner. |
 | `pi_frontdoor_test.go`, deterministic | Pi starts without FO prerequisites and emits no launch-owned resources or inherited FO markers. Removing only argv additions while keeping an inherited marker breaks this proof. | Seconds. Reuse the Pi fake and healthy/bare fixtures. |
-| `launch_parity_test.go`, deterministic | Both environment settings select the expected wrapper/capabilities, and explicit false/list flags replace environment values across hosts and modes. Appending both capability sources or letting false disable a profile breaks this proof. | Seconds. One shared input table. |
+| `launch_parity_test.go`, deterministic | Sandbox environment precedence remains exact. Wrapped passthrough adds only present canonical names for the selected host and preserves value bytes. Omitting an allowance, filtering out empty/`0`, adding an absent value, or changing ordinary allowances breaks this proof. | Seconds. Extend the existing environment matrix. |
 | Existing `TestSafehouseEnvPassForwardsSpacedockBin` and Pi stable-path tests, deterministic | A scrubbing wrapper still resolves the launched binary. Pi code/dependencies remain visible under fnm. Removing the env-pass allowance or stable-path grant breaks these owners. | Seconds. Unchanged tests. |
 | Existing permission, banner, collaboration, host launch, and PTY tests, deterministic | Ordinary launches retain their identity, defaults, terminal behavior, signals, and exit codes. Broadly disabling their defaults or changing the supervisor breaks existing owners. | Seconds to minutes. Unchanged tests. |
 | Existing help tests plus documentation review | Help exposes the supported mode and Pi alias. Examples agree with the host commands. Removing registration or documenting additive capability precedence breaks the check. | Seconds plus review. |
-| One-off candidate protocol startup, real local hosts | Codex returns initialize id 1. Claude reports `default` under Safehouse. Pi returns successful `get_state`. Stdout contains only native protocol records. Adding an app-server prompt or wrapped permission bypass breaks this proof. | Under one minute for startup after local host setup. No model response or full workflow needed. |
+| One-off candidate protocol startup, real local hosts | Protocol startup remains clean. The real wrapper preserves canonical sentinels, and native responses reflect the selected settings. Omitting `CODEX_HOME` changes Codex `config/read` from selected `on-request` to fallback `never`, even with exact argv. | Startup observations only. Reuse the existing plan and independent fixture shape. |
 
 The environment matrix covers unset/empty values, force-on, false, invalid Boolean input, an explicit Boolean override, capability fallback, repeated explicit capabilities, profile-only wrapping, and missing Safehouse.
+The canonical-variable matrix covers every selected host, wrapped/unwrapped passthrough, and ordinary mode.
+Cases cover present, absent, empty, explicit `0`, and values with spaces or `=`.
+Expected variable names and values are literals, independent of production lists.
+A different host's variable must not cause an automatic allowance.
+Absent Claude teams settings must not become `1`.
+These cases extend `launch_parity_test.go`; they require no additional fixture file.
 Marker cases begin with both Pi markers already set in the parent.
 Plugin cases place a valid checkout beside the selected launcher and record zero discovery/install calls and unchanged isolated host settings.
+
+Candidate observations reuse the independent review's isolated fallback and selected settings directories.
+Keep any probe-only fixture grant identical in both observations.
+Run the candidate with explicit canonical variables, without caller-supplied environment allowances.
+For Codex, send `initialize`, `initialized`, and `config/read` with `{"includeLayers":false}` while stdin remains open.
+The selected file contains model `review-selected` and approval policy `on-request`.
+The fallback file contains model `review-default` and approval policy `never`.
+The candidate must return the selected pair under Safehouse.
+For Claude and Pi, use distinct native-supported settings in the selected and fallback directories.
+The Claude init and Pi `get_state` responses must reflect the selected configuration.
+A real-wrapper sentinel observation must also retain every canonical value exactly, including explicit Claude teams `0`.
+All observations retain the existing no-bootstrap and clean-protocol requirements.
 
 Run `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal` on the implementation worktree.
 Run the full suites sequentially because dispatch fixtures share a fixed artifact directory.
 Use the documented runtime-support prompt to resolve harness setup friction before declaring a runtime blocker.
 Validation must run the existing detached adversarial audit for launcher changes.
-Useful adversarial edits restore one bootstrap prompt, one wrapped bypass flag, one Pi marker, or one reversed precedence branch.
+Useful adversarial edits restore a bootstrap prompt, wrapped bypass flag, Pi marker, reversed precedence branch, or omitted canonical allowance.
 The primary owner for that failure must reject each edit.
 The First Officer must arrange an independent read-only ideation review before the gate, with necessity reviewed before soundness.
 
@@ -281,6 +351,7 @@ Spacedock adds no agent, prompt, permission flag, collaboration setting, or firs
 It skips plugin setup and compatibility checks.
 Pi also receives no launch-owned extension, skill, or first-officer markers.
 Native host discovery and caller configuration still apply.
+Safehouse preserves the selected host's explicit [canonical settings](sandbox.md#caller-settings-in-provider-mode).
 Stdout carries host output only, and the launcher returns the host exit code.
 
 Task text and Spacedock's `--plugin-dir` before `--` are invalid in this mode.
@@ -316,7 +387,27 @@ A false Boolean value does not disable those triggers or an existing parent sand
 Invalid Boolean values fail before launch unless an explicit flag replaces them.
 
 `SPACEDOCK_SAFEHOUSE_ENABLE=ssh spacedock pi --passthrough -- --mode rpc` requests the `ssh` capability for that session.
+
+### Caller settings in provider mode
+
+With `--passthrough`, Safehouse preserves explicitly supplied values for the selected host:
+
+| Host | Canonical variables |
+|---|---|
+| Claude | `CLAUDE_CONFIG_DIR`, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` |
+| Codex | `CODEX_HOME` |
+| Pi | `PI_CODING_AGENT_DIR` |
+
+Presence selects the allowance, including an empty value.
+Values pass unchanged, so an explicit Claude teams value of `0` stays `0`.
+Absent variables receive no synthesized value.
+Preserving these variables adds no filesystem grant or general environment forwarding.
+Existing Safehouse filesystem rules still control access to the selected settings path.
+Ordinary launch behavior remains unchanged.
 ```
+
+In `internal/cli/help.go`, the `--passthrough` description includes this exact behavior:
+`Pass host arguments without interactive additions. Preserve explicit canonical host settings through Safehouse.`
 
 In `docs/site/contributing/adding-a-runtime.md`, replace `the marker it sets on every launch` with `the marker it sets on every interactive launch`.
 Replace `For Pi, spacedock pi launches the front door through the registered Spacedock package` with `For Pi, an ordinary spacedock pi launch uses the registered Spacedock package` (preserve existing inline code).
@@ -355,3 +446,19 @@ Baseline suite failures limit full regression proof, and the First Officer owns 
 The proposed mode needs its existing guards and wrapper, with no additional process or enforcement mechanism.
 The first officer classified R1 as owned Material and directed bounded forwarding of explicit host settings through the existing Safehouse allowlist.
 The recommendation is revise, with the original design and value criteria unchanged.
+
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Fold the FO-authorized R1 correction into the design: presence-filtered selected-host config forwarding through the existing Safehouse allowlist, with unchanged ordinary mode and filesystem grants.
+  The design preserves the four canonical values by presence, including empty and explicit `0`, through the existing selected-host allowance.
+- DONE: Update the environment proof plan and concrete documentation diff while preserving all five seed value AC statements, frontmatter, and the declared mechanism/value boundary.
+  AC-1, AC-2, AC-3, AC-4, and AC-5 retain their seed statements. The matrix and docs now include canonical transport and native settings observations.
+- DONE: Commit and send an exact-stage ideation report of the revision with all three checklist outcomes, the independent review reference, counted surface, and unchanged scope.
+  This revision cites `ideation-review.md` at `68bc1d8574158c35919f69f41272e70b805d3eed`. The path-scoped state commit is the First Officer's delivery artifact.
+
+### Summary
+
+R1 now specifies canonical settings preservation through the existing Safehouse allowance, with unchanged ordinary behavior and filesystem grants.
+Accepted independent observations prove the reused allowance and Codex permission effect, while implementation still owes candidate observations through those real boundaries.
+The estimate remains +400 net LOC across 13 files, with 470 insertions, 70 deletions, and the same tolerance.
