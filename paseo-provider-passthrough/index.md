@@ -505,11 +505,11 @@ Implementation and validation still owe candidate behavior, full regression evid
 ## Stage Report: implementation
 
 - DONE: Deliver the approved behavior and documentation with focused red-first evidence for every value acceptance criterion.
-  AC-1, AC-2, AC-3, AC-4, AC-5: provider guards, sandbox fallback, canonical allowances, and product documentation ship on `paseo-provider-passthrough`.
+  AC-1, AC-2: literal argv cases and six native startup/settings observations pass. AC-3: sandbox matrix and nine real wrapper sentinels pass. AC-4: ordinary launch regressions pass. AC-5: rendered help and provider examples pass.
 - DONE: Commit the scoped candidate after formatting and the complete Go and race suites pass; report denominators and unchanged approved semantics.
   AC-1, AC-2, AC-3, AC-4, AC-5: candidate `2f99a397a36ea77addc69e6481f98777d584f440`. Normal `exit 0, 21/21 test packages passed, 2 no-test packages`. Race `exit 0, 21/21 test packages passed, 2 no-test packages (1533 root passes and 1946 subtest passes)`. Both commands use the assigned environment and a serialized window.
 - DONE: Commit and send a complete implementation Stage Report with candidate identity, three checklist outcomes, AC evidence, surface actuals, and any finding proposals.
-  AC-1, AC-2, AC-3, AC-4, AC-5: this report records evidence, surface counts, finding dispositions, and candidate identity. The state commit and canonical path form the delivery.
+  AC-1, AC-2, AC-3, AC-4, AC-5: `status --read` returns three DONE items and citations for all five criteria. The state commit and canonical path form the delivery.
 
 ### Evidence
 
