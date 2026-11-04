@@ -66,6 +66,11 @@ gates:
                 by: agent:first-officer
                 at: "2026-11-04T13:30:31.671248Z"
                 reason: Dispositions recorded after the briefing; re-preparing on the updated entity.
+            - id: gate-attempt:s2atxdv146qknetdjvx0xer6-validation-3
+              briefing:
+                id: briefing:s2atxdv146qknetdjvx0xer6:validation:attempt-3:revision-1
+                digest: sha256:45091035181fd55833e057f17801c0624b20015f5c848e692fc2eb1005b4968e
+                room-ref: '@review/validation/briefing-3'
 started: 2026-11-03T18:29:08Z
 worktree: .worktrees/spacedock-ensign-align-claude-break-glass-agent-proof
 ---

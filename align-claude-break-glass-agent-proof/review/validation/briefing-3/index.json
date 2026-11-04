@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:s2atxdv146qknetdjvx0xer6:validation:attempt-3:revision-1",
+  "question": "Approve validation (PASSED) for the rebased break-glass layer 08582eae2?",
+  "artifacts": [
+    {
+      "id": "artifact:s2atxdv146qknetdjvx0xer6:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/e1dcad857c69723311ca9fd1f128669fb921dc3a/align-claude-break-glass-agent-proof.md",
+      "rev": "sha256:75c2fdf44e6952a710493f832034736f02d468b0c0c2f5feba9f1c9762c1c0a0",
+      "mediaType": "text/markdown",
+      "summary": "Validator recommends PASSED, no material findings: rebased diff identical in substance; AC-2..AC-4 falsifying edits red; unbound live Sonnet run passed both arms with a host foreground bare spawn and committed reports; net +14, 6 files; suites pass. The cycle-2 live run lacked --bare-mode before the helper (AC-4 live clause, 1 of 5 runs); recorded as a deferred evidence risk and accepted on the 4 earlier runs."
+    }
+  ]
+}
