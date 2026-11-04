@@ -1,11 +1,11 @@
 ---
 id: vtgw5b1ar42s6x807nfdzwb9
 title: Three shared live-lane failures that are not model faults
-status: validation
+status: done
 source: "Captain, 2026-10-27: Haiku analysis after PR #853 (runs 37703335512, 40448057053, 40447244422) found four of nine Haiku journey failures are grader bugs or cross-model failures. Captain: file the targeted fixes and get them passing locally."
 started: 2026-10-27T04:56:52Z
-completed:
-verdict:
+completed: 2026-11-04T16:41:38Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-live-lane-shared-failure-fixes
 issue:
@@ -86,7 +86,7 @@ gates:
                     source: 'captain /goal command in FO session a91fcb1a (2026-11-03 PST), granting option 1 of the FO overnight plan: the FO can approve the validation gates of live-lane-shared-failure-fixes, align-claude-break-glass-agent-proof and repair-sonnet-live-flakes if the fresh validator recommends PASSED with no material findings and the diff stays within its ceiling; the FO opens the stacked PRs and runs CI including claude-live, but does not merge'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 review-round:
     id: round:vtgw5b1ar42s6x807nfdzwb9:validation:1
     stage: validation
@@ -95,6 +95,7 @@ review-round:
         id: briefing:vtgw5b1ar42s6x807nfdzwb9:validation:round-1
         digest: sha256:a2a2f1c5c5ea2fe19b1d1affbd2424ae5654b7631dd9b3a81a257685e3a39d00
         room-ref: '@review/validation/round-1'
+archived: 2026-11-04T16:41:38Z
 ---
 
 Fix three live-lane failures that hit Sonnet and Haiku alike, so live results show real model behavior and not harness or contract faults.
