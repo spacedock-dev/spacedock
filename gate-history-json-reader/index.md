@@ -1,6 +1,6 @@
 ---
 title: Expose complete gate history as machine-readable JSON
-status: implementation
+status: validation
 source: "Captain authorized issue 814 on 2026-11-03: Proceed with the 3. You have the conn to approve gate and open pr"
 issue: spacedock-dev/spacedock#814
 sprint: paseo-integration
