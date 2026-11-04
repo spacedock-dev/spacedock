@@ -186,17 +186,20 @@ func newRootCommand(ctx context.Context, rawArgs []string, env []string, dir str
 // CAS values, and durable ids belong to the recorder.
 func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 	return &cobra.Command{
-		Use:                "gate prepare|withdraw|record|consume <entity>",
-		Short:              "Prepare, withdraw, record, or consume durable gate resolutions",
+		Use:                "gate prepare|withdraw|record|read|consume <entity>",
+		Short:              "Read or update durable gate history",
 		GroupID:            "workflow",
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if wantsHelp(args) {
-				fmt.Fprintln(stdout, "Usage: spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]\n       spacedock gate withdraw <entity> --reason TEXT [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--conn-quote TEXT --conn-source TEXT] [--consume] [--workflow-dir DIR]\n       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]\n\nOn an approval whose target stage is terminal, consume spends nothing: it leaves the\napplication pending and reports route=approved-awaiting-merge. The terminal merge\nceremony (`spacedock merge guard <slug> --verdict passed|rejected`) is the sole terminal\nconsumer; `merge guard --rework` sends a failed delivery back through the declared\nfeedback-to (pending -> superseded, delivery state cleared).\n\n`gate record --consume` is the captain-approve fast path: close, sync, consume, sync\nin one call. `--consume` requires --decision approve and is rejected as a usage error\nwith --decision revise|hold. A delegated `--actor agent:first-officer` decision requires\n`--conn-quote` (the grant verbatim) and `--conn-source` (where it was given); those flags\nare refused with `--actor person:captain` or with `--round`. In a split-root workflow, a\nsuccessful close or consume ends with a machine-parseable `sync=.../phase=...` line;\nbranch on that final line plus the exit code, never on which prose lines printed.")
+				fmt.Fprintln(stdout, "Usage: spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]\n       spacedock gate withdraw <entity> --reason TEXT [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--conn-quote TEXT --conn-source TEXT] [--consume] [--workflow-dir DIR]\n       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--workflow-dir DIR]\n       spacedock gate read <ref-or-path> --json [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]\n\nRead complete gate history as one JSON document. The reader changes no files.\n\nOn an approval whose target stage is terminal, consume spends nothing: it leaves the\napplication pending and reports route=approved-awaiting-merge. The terminal merge\nceremony (`spacedock merge guard <slug> --verdict passed|rejected`) is the sole terminal\nconsumer; `merge guard --rework` sends a failed delivery back through the declared\nfeedback-to (pending -> superseded, delivery state cleared).\n\n`gate record --consume` is the captain-approve fast path: close, sync, consume, sync\nin one call. `--consume` requires --decision approve and is rejected as a usage error\nwith --decision revise|hold. A delegated `--actor agent:first-officer` decision requires\n`--conn-quote` (the grant verbatim) and `--conn-source` (where it was given); those flags\nare refused with `--actor person:captain` or with `--round`. In a split-root workflow, a\nsuccessful close or consume ends with a machine-parseable `sync=.../phase=...` line;\nbranch on that final line plus the exit code, never on which prose lines printed.")
 				return nil
 			}
+			if len(args) > 0 && args[0] == "read" {
+				return runGateRead(args[1:], dir, stdout, stderr)
+			}
 			if len(args) < 2 || (args[0] != "prepare" && args[0] != "withdraw" && args[0] != "record" && args[0] != "consume") {
-				fmt.Fprintln(stderr, "spacedock gate: unknown subcommand (want: prepare|withdraw|record|consume)")
+				fmt.Fprintln(stderr, "spacedock gate: unknown subcommand (want: prepare|withdraw|record|read|consume)")
 				return exitCodeError{2}
 			}
 			workflowDir := ""
