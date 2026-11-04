@@ -68,3 +68,17 @@ func TestInstallHelpDocumentsHostAndCheck(t *testing.T) {
 		}
 	}
 }
+
+func TestProviderHelp(t *testing.T) {
+	for _, host := range []string{"claude", "codex", "pi"} {
+		var stdout, stderr bytes.Buffer
+		if code := Run([]string{host, "--help"}, &stdout, &stderr); code != 0 {
+			t.Fatal(stderr.String())
+		}
+		for _, want := range []string{"--passthrough", "Pass host arguments without interactive additions. Preserve explicit canonical host settings through Safehouse.", "--skip-compat-check", "SPACEDOCK_SAFEHOUSE", "SPACEDOCK_SAFEHOUSE_ENABLE"} {
+			if !strings.Contains(stdout.String(), want) {
+				t.Errorf("%s help missing %q", host, want)
+			}
+		}
+	}
+}

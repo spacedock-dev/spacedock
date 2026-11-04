@@ -3,6 +3,7 @@
 package cli
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -174,5 +175,37 @@ func TestBareValuelessPluginDirErrors(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "--plugin-dir") {
 		t.Fatalf("error %q does not name --plugin-dir; the loud-error property must be specific", err.Error())
+	}
+}
+
+func TestProviderGrammar(t *testing.T) {
+	for _, pi := range []bool{false, true} {
+		for _, tc := range []struct {
+			name       string
+			args, want []string
+			err        string
+		}{
+			{"provider", []string{"--passthrough", "--skip-compat-check", "--", "--mode", "", "--mode=rpc"}, []string{"--mode", "", "--mode=rpc"}, ""},
+			{"native flag", []string{"--", "--passthrough"}, []string{"--passthrough"}, ""},
+			{"false", []string{"--passthrough=false", "task"}, nil, ""},
+			{"task", []string{"--passthrough", "task", "--"}, nil, "task text"},
+			{"empty task", []string{"", "--passthrough"}, nil, "task text"},
+			{"plugin", []string{"--passthrough", "--plugin-dir=/checkout"}, nil, "--plugin-dir"},
+			{"empty plugin", []string{"--passthrough", "--plugin-dir="}, nil, "--plugin-dir"},
+		} {
+			t.Run(fmt.Sprintf("pi=%t/%s", pi, tc.name), func(t *testing.T) {
+				fd, err := parseFrontDoorArgs(tc.args)
+				if pi {
+					fd, _, err = parsePiFrontDoorArgs(tc.args)
+				}
+				if tc.err != "" {
+					if err == nil || !strings.Contains(err.Error(), tc.err) {
+						t.Fatalf("error=%v, want %q", err, tc.err)
+					}
+				} else if err != nil || !equalArgv(fd.passthrough, tc.want) {
+					t.Fatalf("argv=%q error=%v, want %q", fd.passthrough, err, tc.want)
+				}
+			})
+		}
 	}
 }

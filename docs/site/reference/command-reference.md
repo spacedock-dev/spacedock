@@ -74,11 +74,57 @@ adjacent Spacedock provider is still gated normally. Codex has no native
 session-local flag: a post-`--` `--plugin-dir` is rejected, and additional Codex
 plugins must be installed persistently with `codex plugin add`.
 
-Every Codex launch, including local-plugin, Safehouse, and `resume`, puts one Spacedock-owned collaboration layer immediately after the inner `codex` token: `-c agents.enabled=true`, `-c features.multi_agent=true`, and `-c 'features.multi_agent_v2={max_concurrent_threads_per_session=16,tool_namespace="agents",hide_spawn_agent_metadata=false}'`. The first two settings are Codex's supported enablement controls; the exact v2 table pins the requested thread limit, tool namespace, and visible spawn metadata. A `multi_agent_v2=false` feature-list label does not disprove that table or replace an observed spawn/follow-up/list/wait lifecycle proof.
+Every interactive Codex launch receives one Spacedock-owned collaboration layer immediately after the inner `codex` token.
+This includes local-plugin, Safehouse, and `resume` launches.
+The layer contains `-c agents.enabled=true`, `-c features.multi_agent=true`, and `-c 'features.multi_agent_v2={max_concurrent_threads_per_session=16,tool_namespace="agents",hide_spawn_agent_metadata=false}'`.
+The first two settings are Codex's supported enablement controls.
+The v2 table specifies the thread limit, tool namespace, and visible spawn metadata.
+A `multi_agent_v2=false` feature-list label does not disprove that table or replace an observed spawn/follow-up/list/wait lifecycle proof.
 
-Spacedock reserves `agents.enabled`, `features.multi_agent`, and the complete `features.multi_agent_v2` path. Forwarding any of them with `-c`, `--config`, `--enable`, or `--disable` fails before plugin installation or host launch. Hosts that do not accept the owned settings exit nonzero from their native config parser before a first-officer session opens; Spacedock does not fall back to a prompt-only or downgraded collaboration mode.
+In interactive mode, Spacedock reserves `agents.enabled`, `features.multi_agent`, and the complete `features.multi_agent_v2` path. Forwarding any of them with `-c`, `--config`, `--enable`, or `--disable` fails before plugin installation or host launch. Hosts that reject the owned settings exit nonzero from their native config parser before a first-officer session opens.
+Spacedock does not fall back to a prompt-only or downgraded collaboration mode.
 
-An unsandboxed bootstrap launch carries no safehouse isolation, so per-action permission prompting is friction without a matching safety gain: `spacedock claude` starts in `--permission-mode auto` and Codex starts in `--ask-for-approval on-request` unless you supply an approval mode. A sandboxed bootstrap launch instead skips/bypasses approvals (`--dangerously-skip-permissions` for claude, `--dangerously-bypass-approvals-and-sandbox` for codex) since the sandbox is the gate. Claude suppresses its defaults when you pass your own mode or a resume. Codex suppresses its banner and bootstrap prompt only when its forwarded argv contains the exact `resume` token; an explicit approval mode prevents only a duplicate automatic approval flag.
+These defaults apply to interactive launches.
+An unsandboxed bootstrap launch carries no Safehouse isolation, so per-action permission prompts add friction without a matching safety gain.
+`spacedock claude` starts in `--permission-mode auto`.
+Codex starts in `--ask-for-approval on-request` unless you supply an approval mode.
+
+A sandboxed bootstrap launch skips approvals with `--dangerously-skip-permissions` for Claude or `--dangerously-bypass-approvals-and-sandbox` for Codex.
+Safehouse provides the isolation boundary.
+
+When you pass your own mode or a resume, Claude suppresses its defaults.
+When its forwarded argv contains the exact `resume` token, Codex suppresses its banner and bootstrap prompt.
+Other forwarded arguments retain the banner and bootstrap prompt.
+An explicit approval mode prevents only a duplicate automatic approval flag.
+
+### Provider commands
+
+`--passthrough` keeps the sandbox wrapper while your orchestrator controls the host session.
+Place the flag before `--` and all native host arguments after it.
+
+| Host | Provider command |
+|---|---|
+| Claude | `spacedock claude --passthrough --` |
+| Codex | `spacedock codex --passthrough --` |
+| Pi | `spacedock pi --passthrough --` |
+
+The orchestrator appends its stream-json, `app-server`, or RPC arguments to that command.
+For example, `spacedock codex --passthrough -- app-server` serves Codex JSON-RPC on stdio.
+
+Spacedock adds no agent, prompt, permission flag, collaboration setting, or first-officer banner.
+It skips plugin setup and compatibility checks.
+Pi also receives no launch-owned extension, skill, or first-officer markers.
+Native host discovery and caller configuration still apply.
+
+Safehouse preserves the selected host's explicit [canonical settings](sandbox.md#caller-settings-in-provider-mode).
+Stdout carries host output only, and the launcher returns the host exit code.
+
+Task text and Spacedock's `--plugin-dir` before `--` are invalid in this mode.
+For Claude, native additional plugin arguments can follow `--`.
+All three hosts accept `--skip-compat-check`. The flag has no additional effect in passthrough.
+On an ordinary Pi launch, it leaves the existing readiness checks active.
+
+Sandbox flags and [per-session environment settings](sandbox.md#per-session-settings) apply in both launch modes.
 
 ## Setup
 

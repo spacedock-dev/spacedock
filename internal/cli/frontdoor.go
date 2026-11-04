@@ -410,27 +410,16 @@ func printHealableRemedy(host string, res contract.Result, stderr io.Writer) {
 	fmt.Fprintln(stderr, res.Message)
 }
 
-// runClaude is the `spacedock claude` front door: version-gate, then launch the
-// first officer. The gate fails fast on a too-old-binary mismatch, but the two
-// healable verdicts (NoPluginFound, TooOldPlugin) auto-install the plugin and
-// proceed to launch so the single command the user typed yields a working session
-// (D6) — `--no-install` opts out,
-// preserving the refuse-and-instruct behavior. The launch is interposed through
-// `safehouse --trust-workdir-config [extra] -- claude --dangerously-skip-permissions …`
-// when ANY of {a `.safehouse` profile in dir, the bare `--safehouse` flag, a
-// `--safehouse-*` knob} is given; otherwise it is plain `claude --agent
-// spacedock:first-officer …` (no skip-permissions in an unsandboxed launch). The
-// `--safehouse-*` knobs translate into the safehouse `extra` slot. The bootstrap
-// prompt is appended last (base, or base + " " + task when a task is fenced after
-// `--`) unless a resume is forwarded. The gate is bypassed by an explicit
-// `--skip-compat-check`, by a declared pre-fence `--plugin-dir`, or by a valid
-// host-specific plugin checkout adjacent to the resolved launcher. Post-fence
-// plugin directories remain native Claude additions and do not affect provider
-// selection or gating. `lookPath` resolves the safehouse binary (default
-// exec.LookPath; injected so tests pin not-found).
+// runClaude preserves the caller's host arguments in provider mode.
+// Interactive launches select the first officer and install or check its plugin.
+// Both modes retain Safehouse wrapping and the resident child process.
 func runClaude(ctx context.Context, args []string, dir string, ops hostOps, lookPath func(string) (string, error), stdout, stderr io.Writer) int {
 	fd, err := parseFrontDoorArgs(args)
 	if err != nil {
+		fmt.Fprintf(stderr, "spacedock claude: %v\n", err)
+		return 1
+	}
+	if err := applySandboxEnv(&fd, os.Environ()); err != nil {
 		fmt.Fprintf(stderr, "spacedock claude: %v\n", err)
 		return 1
 	}
@@ -439,46 +428,41 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 		fmt.Fprintf(stderr, "spacedock claude: %v\n", err)
 		return 1
 	}
-	// A declared pre-fence plugin directory is the compatibility-preserving local
-	// Spacedock override. Without one, a valid checkout beside the resolved
-	// launcher supplies the same session-local provider automatically. Native
-	// post-fence Claude plugin directories are additions only: they neither select
-	// Spacedock nor suppress the installed compatibility gate.
-	localSpacedock := fd.pluginDirPairs > 0
-	if !localSpacedock {
-		if adjacent, ok := adjacentSpacedockPluginRoot("claude"); ok {
-			fd.passthrough = append([]string{"--plugin-dir", adjacent}, fd.passthrough...)
-			localSpacedock = true
+	if !fd.passthroughMode {
+		// Explicit checkout selection takes precedence over adjacent checkout selection.
+		// Native plugin directories after -- do not select the Spacedock provider.
+		localSpacedock := fd.pluginDirPairs > 0
+		if !localSpacedock {
+			if adjacent, ok := adjacentSpacedockPluginRoot("claude"); ok {
+				fd.passthrough = append([]string{"--plugin-dir", adjacent}, fd.passthrough...)
+				localSpacedock = true
+			}
 		}
-	}
-	if !fd.skipCheck && !localSpacedock {
-		if !resolveHealableGate(ops, "claude", fd.noInstall, stderr) {
-			return 1
+		if !fd.skipCheck && !localSpacedock {
+			if !resolveHealableGate(ops, "claude", fd.noInstall, stderr) {
+				return 1
+			}
 		}
+		warnStrayPromptAfterDash(fd, "spacedock claude", stderr)
 	}
-	warnStrayPromptAfterDash(fd, "spacedock claude", stderr)
 
 	wrap := safehouse.Present(dir) || fd.forceSafehouse || len(fd.safehouseFlags) > 0
 	resume := containsResume(fd.passthrough)
-	if !resume {
+	if !fd.passthroughMode && !resume {
 		launchBanner("claude", dir, wrap, os.Getenv, lookPath, stderr)
 	}
 	inner := []string{"claude"}
-	if wrap {
-		inner = append(inner, "--dangerously-skip-permissions")
-	}
-	inner = append(inner, "--agent", "spacedock:first-officer")
-	// An unsandboxed launch has no safehouse isolation, so per-action permission
-	// prompting is friction without a matching safety gain: start the first officer
-	// in auto permission-mode. Suppressed when the operator already chose a mode and
-	// on a resume (which rides its own session intent, like the bootstrap prompt).
-	// The sandboxed arm's --dangerously-skip-permissions above already covers its
-	// posture, so this is the !wrap counterpart, not a replacement.
-	if !wrap && !resume && !passthroughHasFlag(fd.passthrough, "--permission-mode") {
-		inner = append(inner, "--permission-mode", "auto")
+	if !fd.passthroughMode {
+		if wrap {
+			inner = append(inner, "--dangerously-skip-permissions")
+		}
+		inner = append(inner, "--agent", "spacedock:first-officer")
+		if !wrap && !resume && !passthroughHasFlag(fd.passthrough, "--permission-mode") {
+			inner = append(inner, "--permission-mode", "auto")
+		}
 	}
 	inner = append(inner, fd.passthrough...)
-	if !resume {
+	if !fd.passthroughMode && !resume {
 		inner = append(inner, launchPrompt(bootstrapPrompt, fd))
 	}
 
@@ -493,10 +477,15 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 		// it into the sandbox. It rides the safehouse flags (before `--`), so the
 		// inner program stays `claude` and safehouse's program-keyed profile
 		// auto-detection still fires. Omitted when the bin cannot be resolved.
+		extra = append(canonicalHostEnvPassFlags("claude", fd.passthroughMode, os.Environ()), extra...)
 		argv = safehouse.Wrap(inner, append(launcherBinEnvPassFlags(), extra...))
 	}
 
-	code, err := ops.Launch(argv, withAgentTeams(launchEnv(os.Environ())))
+	env := launchEnv(os.Environ())
+	if !fd.passthroughMode {
+		env = withAgentTeams(env)
+	}
+	code, err := ops.Launch(argv, env)
 	if err != nil {
 		fmt.Fprintf(stderr, "spacedock claude: launch failed: %v\n", err)
 		return 1
@@ -669,29 +658,16 @@ func reservedCodexFeature(feature string) bool {
 	return feature == "multi_agent" || feature == "multi_agent_v2"
 }
 
-// runCodex is the `spacedock codex` front door: version-gate, then launch the
-// first officer. The gate fails fast on a too-old-binary mismatch, but the two
-// healable verdicts (NoPluginFound, TooOldPlugin) auto-install the plugin and
-// proceed to launch so the single command the user typed yields a working session
-// (D6) — `--no-install` opts out,
-// preserving the refuse-and-instruct behavior. The launch is interposed through
-// `safehouse --trust-workdir-config [extra] -- codex --dangerously-bypass-approvals-and-sandbox …`
-// when ANY of {a `.safehouse` profile in dir, the bare `--safehouse` flag, a
-// `--safehouse-*` knob} is given — safehouse is the sandbox, so codex's own
-// sandbox is bypassed. Otherwise the launch is plain `codex …` keeping codex's own
-// sandbox (the bypass flag is omitted: it is safe only when safehouse provides the
-// sandbox). After Spacedock consumes its own pre-fence flags, an exact `resume`
-// token in Codex's forwarded argv suppresses the banner, default approval mode,
-// and bootstrap prompt; every other forwarded argv retains the normal fresh-launch
-// posture. A declared pre-fence `--plugin-dir`, or a valid host-specific plugin
-// checkout adjacent to the resolved launcher when no explicit override exists,
-// installs the local checkout before the normal gate. Forwarded post-fence
-// `--plugin-dir` is rejected because Codex has no such native session flag.
-// `--skip-compat-check` alone bypasses the gate. `lookPath` resolves the safehouse
-// binary (default exec.LookPath; injected so tests pin not-found).
+// runCodex preserves the caller's host arguments and configuration in provider mode.
+// Interactive launches retain plugin setup, collaboration settings, and permission defaults.
+// Both modes retain Safehouse wrapping and the resident child process.
 func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookPath func(string) (string, error), stdout, stderr io.Writer) int {
 	fd, err := parseFrontDoorArgs(args)
 	if err != nil {
+		fmt.Fprintf(stderr, "spacedock codex: %v\n", err)
+		return 1
+	}
+	if err := applySandboxEnv(&fd, os.Environ()); err != nil {
 		fmt.Fprintf(stderr, "spacedock codex: %v\n", err)
 		return 1
 	}
@@ -700,66 +676,55 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 		fmt.Fprintf(stderr, "spacedock codex: %v\n", err)
 		return 1
 	}
-	// Codex has no native session-local plugin flag. Consume only Spacedock's
-	// declared pre-fence override; reject a post-fence occurrence truthfully before
-	// any persistent work. When there is no explicit override, use a qualified
-	// checkout beside the resolved launcher. Explicit selection always wins.
-	pluginDir, rest, explicitPluginDir := takeCodexPluginDir(fd.passthrough, fd.pluginDirPairs)
-	fd.passthrough = rest
-	if hasCodexCollaborationOverride(fd.passthrough) {
-		fmt.Fprintln(stderr, "spacedock codex: collaboration settings are managed by Spacedock; remove the forwarded override")
-		return 1
-	}
-	if hasPluginDir(fd.passthrough) {
-		fmt.Fprintln(stderr, "spacedock codex: Codex does not accept forwarded --plugin-dir; place the Spacedock checkout flag before `--`, or install additional Codex plugins with `codex plugin add`")
-		return 1
-	}
-	if explicitPluginDir && pluginDir == "" {
-		fmt.Fprintln(stderr, "spacedock codex: --plugin-dir requires a checkout path")
-		return 1
-	}
-	if !explicitPluginDir {
-		pluginDir, _ = adjacentSpacedockPluginRoot("codex")
-	}
-	if pluginDir != "" {
-		if err := installCodexLocalPluginDir(ops, pluginDir, stderr); err != nil {
-			fmt.Fprintf(stderr, "spacedock codex: %v\n", err)
+	if !fd.passthroughMode {
+		// Interactive launches consume only Spacedock's plugin selection before --.
+		pluginDir, rest, explicitPluginDir := takeCodexPluginDir(fd.passthrough, fd.pluginDirPairs)
+		fd.passthrough = rest
+		if hasCodexCollaborationOverride(fd.passthrough) {
+			fmt.Fprintln(stderr, "spacedock codex: collaboration settings are managed by Spacedock; remove the forwarded override")
 			return 1
 		}
+		if hasPluginDir(fd.passthrough) {
+			fmt.Fprintln(stderr, "spacedock codex: Codex does not accept forwarded --plugin-dir; place the Spacedock checkout flag before `--`, or install additional Codex plugins with `codex plugin add`")
+			return 1
+		}
+		if explicitPluginDir && pluginDir == "" {
+			fmt.Fprintln(stderr, "spacedock codex: --plugin-dir requires a checkout path")
+			return 1
+		}
+		if !explicitPluginDir {
+			pluginDir, _ = adjacentSpacedockPluginRoot("codex")
+		}
+		if pluginDir != "" {
+			if err := installCodexLocalPluginDir(ops, pluginDir, stderr); err != nil {
+				fmt.Fprintf(stderr, "spacedock codex: %v\n", err)
+				return 1
+			}
+		}
+		// Interactive launches retain the installed-plugin compatibility gate.
+		if !fd.skipCheck {
+			if !resolveHealableGate(ops, "codex", fd.noInstall, stderr) {
+				return 1
+			}
+		}
 	}
-	// Once Spacedock-owned plugin-dir handling has been consumed, suppress the
-	// bootstrap posture only for Codex's exact resume command token. This is
-	// deliberately not an option parser or command grammar.
 	resume := slices.Contains(fd.passthrough, "resume")
-	// The gate fails fast on too-old-binary, but the two healable verdicts
-	// (NoPluginFound, TooOldPlugin) auto-install the codex plugin and proceed to
-	// launch so the single command the user typed yields a working session —
-	// `--no-install` opts out, preserving the refuse-and-instruct behavior. This
-	// mirrors runClaude.
-	if !fd.skipCheck {
-		if !resolveHealableGate(ops, "codex", fd.noInstall, stderr) {
-			return 1
-		}
-	}
 	wrap := safehouse.Present(dir) || fd.forceSafehouse || len(fd.safehouseFlags) > 0
-	if !resume {
+	if !fd.passthroughMode && !resume {
 		launchBanner("codex", dir, wrap, os.Getenv, lookPath, stderr)
 	}
-	inner := append([]string{"codex"}, codexCollaborationLayer...)
-	if wrap {
-		inner = append(inner, "--dangerously-bypass-approvals-and-sandbox")
-	}
-	// An unsandboxed launch has no safehouse isolation; codex has no single
-	// auto-mode flag, so its nearest analog to claude's auto permission-mode is
-	// `--ask-for-approval on-request` (the model decides when to escalate).
-	// The sandboxed arm's bypass flag above already covers its posture, so this is
-	// the !wrap counterpart. An exact resume keeps its established prompt-free
-	// posture, and an operator-provided approval mode always wins.
-	if !wrap && !resume && !passthroughHasFlag(fd.passthrough, "--ask-for-approval", "-a") {
-		inner = append(inner, "--ask-for-approval", "on-request")
+	inner := []string{"codex"}
+	if !fd.passthroughMode {
+		inner = append(inner, codexCollaborationLayer...)
+		if wrap {
+			inner = append(inner, "--dangerously-bypass-approvals-and-sandbox")
+		}
+		if !wrap && !resume && !passthroughHasFlag(fd.passthrough, "--ask-for-approval", "-a") {
+			inner = append(inner, "--ask-for-approval", "on-request")
+		}
 	}
 	inner = append(inner, fd.passthrough...)
-	if !resume {
+	if !fd.passthroughMode && !resume {
 		inner = append(inner, launchPrompt(codexBootstrapPrompt, fd))
 	}
 
@@ -774,6 +739,7 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 		// it into the sandbox. It rides the safehouse flags (before `--`), so the
 		// inner program stays `codex` and safehouse's program-keyed profile
 		// auto-detection still fires. Omitted when the bin cannot be resolved.
+		extra = append(canonicalHostEnvPassFlags("codex", fd.passthroughMode, os.Environ()), extra...)
 		argv = safehouse.Wrap(inner, append(launcherBinEnvPassFlags(), extra...))
 	}
 
@@ -868,6 +834,9 @@ func strayPromptAfterDash(fd frontDoorArgs) (positional string, ok bool) {
 // frontDoorArgs is the parsed front-door grammar. The launchers read it to
 // assemble the inner host argv and decide the safehouse wrap.
 type frontDoorArgs struct {
+	passthroughMode   bool
+	safehouseExplicit bool
+	enableExplicit    bool
 	// passthrough is the host-only argv (claude/codex flags), in operator order.
 	passthrough []string
 	// pluginDirPairs counts the pre-fence --plugin-dir pairs re-injected at the
@@ -898,6 +867,7 @@ type frontDoorArgs struct {
 // binding feeds the per-command cobra help (AC-4), so the help and the parser
 // never drift.
 type frontDoorFlags struct {
+	passthrough   *bool
 	safehouse     *bool
 	skipCheck     *bool
 	noInstall     *bool
@@ -910,6 +880,7 @@ type frontDoorFlags struct {
 
 func bindFrontDoorFlags(fs *pflag.FlagSet) frontDoorFlags {
 	return frontDoorFlags{
+		passthrough: fs.Bool("passthrough", false, passthroughHelp),
 		safehouse: fs.Bool("safehouse", false,
 			"Force the safehouse sandbox wrap even without a .safehouse profile in the directory"),
 		skipCheck: fs.Bool("skip-compat-check", false,
@@ -948,6 +919,9 @@ func parseFrontDoorArgs(args []string) (fd frontDoorArgs, err error) {
 		return frontDoorArgs{}, err
 	}
 
+	fd.passthroughMode = *flags.passthrough
+	fd.safehouseExplicit = fs.Changed("safehouse")
+	fd.enableExplicit = fs.Changed("safehouse-enable")
 	fd.forceSafehouse = *flags.safehouse
 	fd.skipCheck = *flags.skipCheck
 	fd.noInstall = *flags.noInstall
@@ -997,5 +971,5 @@ func parseFrontDoorArgs(args []string) (fd frontDoorArgs, err error) {
 		}
 		fd.passthrough = append(front, fd.passthrough...)
 	}
-	return fd, nil
+	return fd, validatePassthrough(fd, fd.pluginDirPairs > 0)
 }

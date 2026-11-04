@@ -171,7 +171,28 @@ After subagent(...) returns, you as first officer must verify the entity file co
 
 ### First-officer contract bootstrap (Pi)
 
-The FO contract has one owner on Pi: the Spacedock extension. The frontdoor launch prompt carries no contract sentence — it passes the operator task and suppresses the launch prompt on resume. On a taskless launch the extension delivers the contract as a REAL first-turn user message via `pi.sendUserMessage()` at `session_start` — `spacedock pi` with no operator task and no resume passthrough sets `PI_SPACEDOCK_LAUNCH_TASKLESS=1` alongside the `PI_SPACEDOCK_LAUNCH=1` marker it sets on every launch, and the send boots the FO greet with no operator input and persists the bootstrap in the session transcript. On a launch WITH an operator task (or a resume) the extension sends nothing — the task itself is the first request. If the send fails, the launch continues without a bootstrap (caught, named diagnostic; there is no context-hook bootstrap fallback). Both markers are env-only; the frontdoor never carries launch text (AC-3), and a plain `pi` session for unrelated work receives no bootstrap. The bootstrap names the resolvable trigger: the `first-officer` entry of the session's `<available_skills>` listing, whose location pi resolves from the registered package root regardless of cwd (`/skill:first-officer` remains the human-invocable form in interactive input; the model loads the skill by reading the listed location).
+The Spacedock extension owns the FO contract on Pi.
+The launch prompt passes the operator task and contains no contract sentence.
+A resume suppresses that launch prompt.
+
+On a taskless launch, the extension sends the contract as a first-turn user message through `pi.sendUserMessage()` at `session_start`.
+An ordinary `spacedock pi` launch sets `PI_SPACEDOCK_LAUNCH=1` on every interactive launch.
+Without an operator task or resume, it also sets `PI_SPACEDOCK_LAUNCH_TASKLESS=1`.
+The extension then starts the FO greet without operator input and records the bootstrap in the session transcript.
+With an operator task or resume, the extension sends nothing.
+The task itself is the first request.
+
+If the send fails, the launch continues with a named diagnostic and no bootstrap.
+There is no context-hook bootstrap fallback.
+Both markers exist only in the environment, and the launch command carries no contract text (AC-3).
+A plain `pi` session for unrelated work receives no bootstrap.
+
+The bootstrap names the `first-officer` entry from the session's `<available_skills>` listing.
+Pi resolves that skill from the registered package root regardless of cwd.
+`/skill:first-officer` remains the human command in interactive input.
+The model loads the skill from its listed location.
+
+Provider mode suppresses these launch markers and explicit resources. See [Provider commands](../reference/command-reference.md#provider-commands).
 
 Three facts about this surface that session evidence cannot show directly:
 
@@ -184,7 +205,11 @@ Three facts about this surface that session evidence cannot show directly:
 
 ### Skill install and load paths
 
-For Pi, `spacedock pi` launches the front door through the registered Spacedock package: the package's `.pi/extensions/spacedock.ts` discovers the Spacedock skills (`first-officer`, `ensign`, …) from the package's own `skills/` directory via pi's `resources_discover`, and delivers the FO contract as a real first-turn user message on taskless launches (send-only; no context-hook bootstrap fallback), gated on the `PI_SPACEDOCK_LAUNCH=1` / `PI_SPACEDOCK_LAUNCH_TASKLESS=1` markers the frontdoor sets:
+For Pi, an ordinary `spacedock pi` launch uses the registered Spacedock package.
+Its `.pi/extensions/spacedock.ts` discovers skills (`first-officer`, `ensign`, …) from the package's `skills/` directory through `resources_discover`.
+On a taskless launch, the extension sends the FO contract as a first-turn user message.
+The `PI_SPACEDOCK_LAUNCH=1` and `PI_SPACEDOCK_LAUNCH_TASKLESS=1` markers control this send.
+There is no context-hook bootstrap fallback:
 
 ```text
 <spacedock package root>/.pi/extensions/spacedock.ts   (registered package or --plugin-dir dev override)

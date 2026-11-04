@@ -19,21 +19,15 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/safehouse"
 )
 
-// piLaunchMarkerEnv is the frontdoor launch marker: runPi sets it to 1 in the
-// launched child env on every launch shape and the extension gates its
-// FO-bootstrap injection on it. Deliberately NOT SPACEDOCK_BIN (fo-install.md
-// tells users to set that session-scoped). The wrap forwards it via --env-pass.
+// piLaunchMarkerEnv selects FO bootstrap for interactive launches.
+// Provider mode removes this marker, including inherited values.
+// Safehouse forwards the interactive marker through --env-pass.
 const piLaunchMarkerEnv = "PI_SPACEDOCK_LAUNCH"
 
-// piLaunchTasklessEnv marks a TASKLESS frontdoor launch: no operator task argv
-// and no resume passthrough — the only launch shape where nothing else
-// triggers a first model request, so the extension delivers the FO bootstrap
-// as a real first-turn user message via sendUserMessage (which boots the
-// greet and persists it in the transcript). Env-only, like the launch marker:
-// never argv text, never a returned launch string (AC-3). The value is set
-// deterministically — "1" on a taskless launch, "0" otherwise — so an
-// operator shell value cannot flip the gate on a taskful launch, and the
-// wrap forwards the name via --env-pass alongside piLaunchMarkerEnv.
+// piLaunchTasklessEnv is "1" for a taskless interactive launch and "0" for taskful or resume launches.
+// The extension sends the first-turn bootstrap only for the taskless case.
+// Provider mode removes this marker, including inherited values.
+// Both markers remain environment-only and pass through Safehouse on interactive launches.
 const piLaunchTasklessEnv = "PI_SPACEDOCK_LAUNCH_TASKLESS"
 
 // piVersionFloor is the declared floor for the load-bearing pi behaviors the
@@ -265,81 +259,42 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 		fmt.Fprintf(stderr, "spacedock pi: %v\n", err)
 		return 2
 	}
-	cfg := piRuntimeConfigFromEnv(env, dir, lastString(pluginDirs))
-	check := checkPiRuntime(ops, cfg)
-	if !piRuntimeLaunchReady(check) {
-		fmt.Fprint(stderr, "spacedock pi: Pi runtime is not ready; run `spacedock doctor --host pi` or `spacedock install --host pi`\n")
-		printPiDoctorReport(stdout, check)
+	if err := applySandboxEnv(&fd, env); err != nil {
+		fmt.Fprintf(stderr, "spacedock pi: %v\n", err)
 		return 1
 	}
-	// Duplicate/double-extension warnings are loud but NON-fatal: resolution
-	// stays deterministic (first-match scan), so the launch proceeds.
-	for _, warning := range piLaunchWarnings(check) {
-		fmt.Fprintf(stderr, "spacedock pi: WARNING %s\n", warning)
-	}
-
-	// Translate the de-prefixed safehouse knobs into the safehouse `extra` slot
-	// (the same function claude/codex use) and compute the wrap decision identically:
-	// a `.safehouse` profile in dir, the bare `--safehouse` flag, or any knob. An
-	// unknown key is a hard error (no Launch), mirroring the claude/codex gate. The
-	// wrap arm mirrors claude/codex's env-forwarding plumbing (frontdoor.go:345):
-	// launcherBinEnvPassFlags() carries SPACEDOCK_BIN through the sandbox via
-	// --env-pass and Launch is called with launchEnv(os.Environ()); the pi-specific
-	// load-bearing addition is --safehouse-add-dirs <fnm-install-bin-dir> (see the
-	// resolution block below) so the sandbox can see the stable `pi` it is handed.
 	extra, err := safehouse.TranslateFlags(fd.safehouseFlags)
 	if err != nil {
 		fmt.Fprintf(stderr, "spacedock pi: %v\n", err)
 		return 1
 	}
 	wrap := safehouse.Present(dir) || fd.forceSafehouse || len(fd.safehouseFlags) > 0
-
-	launchBanner("pi", dir, wrap, envGetenv(env), ops.LookPath, stderr)
-
-	// The Spacedock first-officer/ensign skills are no longer passed as --skill
-	// flags: the installed package's .pi/extensions/spacedock.ts extension
-	// discovers them for the parent session via resources_discover, and
-	// pi-subagents children discover them via the package-root scan. Only the
-	// pi-subagents extension + skill are passed explicitly here.
-
-	// The inner argv is byte-identical wrapped or not (PI-SPECIFIC DECISION 1): pi
-	// has no per-action permission-prompting flag to suppress, so NO inner
-	// permission-mode flag is added on the wrap arm — safehouse isolation alone is
-	// the boundary, and the operator's --tools/--exclude-tools passthrough wins.
-	// When pi-subagents is registered in settings.json `packages`, pi's own
-	// package discovery loads the package's declared pi.extensions entry (the
-	// package manifest's own entry, not an assumed source path)
-	// as the sole extension specifier — passing the explicit --extension/--skill
-	// would register a second specifier for the same extension and collide
-	// (Tool "subagent" conflicts). Gate the explicit flags on the package NOT
-	// being registered so the only load path is pi's discovery (one specifier).
 	argv := []string{"pi"}
-	if !check.packageStatus.subagentsRegistered {
-		argv = append(argv, "--extension", cfg.extensionPath, "--skill", cfg.subagentsSkill)
-	}
-	// Dev override (--plugin-dir / SPACEDOCK_REPO_ROOT, i.e. cfg.repoRoot != ""):
-	// the Spacedock extension (.pi/extensions/spacedock.ts) is NOT registered in
-	// ~/.pi/agent/settings.json `packages` for the dev checkout, so pi does not
-	// auto-load it (pi does not auto-discover .pi/extensions/ from cwd — verified
-	// empirically). Pass the extension + the checkout's skills explicitly so the
-	// parent session loads the Spacedock first-officer/ensign skills via the
-	// extension's resources_discover. This is the dev-override equivalent of what
-	// `pi install` registers for the installed path. The os.Stat guard makes the
-	// addition graceful: if the extension is absent at the resolved path, the
-	// flags are not added (no crash, falls back to the installed-path mechanism).
-	if cfg.repoRoot != "" {
-		spacedockExt := filepath.Join(cfg.repoRoot, ".pi", "extensions", "spacedock.ts")
-		spacedockSkills := filepath.Join(cfg.repoRoot, "skills")
-		if _, err := os.Stat(spacedockExt); err == nil {
-			argv = append(argv, "--extension", spacedockExt, "--skill", spacedockSkills)
+	if !fd.passthroughMode {
+		cfg := piRuntimeConfigFromEnv(env, dir, lastString(pluginDirs))
+		check := checkPiRuntime(ops, cfg)
+		if !piRuntimeLaunchReady(check) {
+			fmt.Fprint(stderr, "spacedock pi: Pi runtime is not ready; run `spacedock doctor --host pi` or `spacedock install --host pi`\n")
+			printPiDoctorReport(stdout, check)
+			return 1
+		}
+		for _, warning := range piLaunchWarnings(check) {
+			fmt.Fprintf(stderr, "spacedock pi: WARNING %s\n", warning)
+		}
+		launchBanner("pi", dir, wrap, envGetenv(env), ops.LookPath, stderr)
+		// Native package discovery supplies registered resources. Explicit resources cover unregistered packages and local checkouts.
+		if !check.packageStatus.subagentsRegistered {
+			argv = append(argv, "--extension", cfg.extensionPath, "--skill", cfg.subagentsSkill)
+		}
+		if cfg.repoRoot != "" {
+			spacedockExt := filepath.Join(cfg.repoRoot, ".pi", "extensions", "spacedock.ts")
+			if _, err := os.Stat(spacedockExt); err == nil {
+				argv = append(argv, "--extension", spacedockExt, "--skill", filepath.Join(cfg.repoRoot, "skills"))
+			}
 		}
 	}
 	argv = append(argv, fd.passthrough...)
-	// The launch prompt is argv-only: pass the operator task, suppress on
-	// resume (containsResume). The contract is NOT carried here — pi expands
-	// /skill: on user input only, so no argv-embeddable syntax can deliver it;
-	// the extension's PI_SPACEDOCK_LAUNCH-gated injection owns that.
-	if !containsResume(fd.passthrough) && fd.hasTask {
+	if !fd.passthroughMode && !containsResume(fd.passthrough) && fd.hasTask {
 		argv = append(argv, fd.task)
 	}
 	// Resolve the fnm per-shell multishell symlink to its stable node-installation
@@ -376,36 +331,31 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 			fnmSandboxDir = fnmStableSandboxDir(stable)
 		}
 	}
+	launchEnvList := launchEnv(os.Environ())
+	if fd.passthroughMode {
+		launchEnvList = withoutEnv(withoutEnv(launchEnvList, piLaunchMarkerEnv), piLaunchTasklessEnv)
+	} else {
+		tasklessValue := "0"
+		if !containsResume(fd.passthrough) && !fd.hasTask {
+			tasklessValue = "1"
+		}
+		launchEnvList = append(launchEnvList, piLaunchMarkerEnv+"=1", piLaunchTasklessEnv+"="+tasklessValue)
+	}
 	if wrap {
 		if ok, hint := safehouse.Available(ops.LookPath); !ok {
 			fmt.Fprintln(stderr, hint)
 			return 1
 		}
-		// Mirror claude/codex's wrap plumbing (frontdoor.go:345):
-		// launcherBinEnvPassFlags() forwards SPACEDOCK_BIN via --env-pass. The
-		// pi-specific additions are --safehouse-add-dirs <fnmSandboxDir> (the
-		// stable `pi`'s code+deps, see fnmStableSandboxDir) and --env-pass
-		// PI_SPACEDOCK_LAUNCH + PI_SPACEDOCK_LAUNCH_TASKLESS so the gated
-		// extension's markers survive the sandbox boundary.
 		piExtra := append(launcherBinEnvPassFlags(), extra...)
-		piExtra = append(piExtra, "--env-pass", piLaunchMarkerEnv, "--env-pass", piLaunchTasklessEnv)
+		piExtra = append(piExtra, canonicalHostEnvPassFlags("pi", fd.passthroughMode, launchEnvList)...)
+		if !fd.passthroughMode {
+			piExtra = append(piExtra, "--env-pass", piLaunchMarkerEnv, "--env-pass", piLaunchTasklessEnv)
+		}
 		if fnmSandboxDir != "" {
 			piExtra = append(piExtra, "--add-dirs="+fnmSandboxDir)
 		}
 		argv = safehouse.Wrap(argv, piExtra)
 	}
-	// PI_SPACEDOCK_LAUNCH=1 on EVERY launch shape: the extension's bootstrap
-	// gate. A plain `pi` session carries no marker and receives no bootstrap.
-	// PI_SPACEDOCK_LAUNCH_TASKLESS is 1 only when this launch is taskless (no
-	// operator task argv, no resume passthrough) — the sole trigger for the
-	// extension's first-turn greet send. The value is deterministic ("0" when
-	// taskful/resume); os/exec keeps the LAST entry per key, so this append
-	// also overrides any operator shell value.
-	tasklessValue := "0"
-	if !containsResume(fd.passthrough) && !fd.hasTask {
-		tasklessValue = "1"
-	}
-	launchEnvList := append(launchEnv(os.Environ()), piLaunchMarkerEnv+"=1", piLaunchTasklessEnv+"="+tasklessValue)
 	code, err := ops.Launch(argv, launchEnvList)
 	if err != nil {
 		fmt.Fprintf(stderr, "spacedock pi: launch failed: %v\n", err)
@@ -495,9 +445,8 @@ func parsePiFrontDoorArgs(args []string) (fd frontDoorArgs, pluginDirs []string,
 	fs := pflag.NewFlagSet("spacedock-pi", pflag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	pluginDir := fs.StringArray("plugin-dir", nil, "Load local Spacedock skill checkout")
-	// The safehouse subset mirrors bindFrontDoorFlags' safehouse flags (same names
-	// for operator muscle-memory transfer across hosts). --skip-compat-check / --no-install
-	// are NOT registered: pi has no version gate, so advertising them would mislead.
+	passthroughMode := fs.Bool("passthrough", false, passthroughHelp)
+	fs.Bool("skip-compat-check", false, "Accept the compatibility alias. Keep ordinary Pi readiness checks active.")
 	forceSafehouse := fs.Bool("safehouse", false, "Force the safehouse sandbox wrap even without a .safehouse profile in the directory")
 	enable := fs.StringArray("safehouse-enable", nil, "Enable a safehouse capability (KEY[,KEY]); repeatable; e.g. --safehouse-enable ssh,docker")
 	addDirs := fs.StringArray("safehouse-add-dirs", nil, "Grant safehouse read-write access to a directory; repeatable")
@@ -506,6 +455,9 @@ func parsePiFrontDoorArgs(args []string) (fd frontDoorArgs, pluginDirs []string,
 	if err := fs.Parse(args); err != nil {
 		return frontDoorArgs{}, nil, err
 	}
+	fd.passthroughMode = *passthroughMode
+	fd.safehouseExplicit = fs.Changed("safehouse")
+	fd.enableExplicit = fs.Changed("safehouse-enable")
 	fd.forceSafehouse = *forceSafehouse
 	for _, v := range *enable {
 		fd.safehouseFlags = append(fd.safehouseFlags, "enable="+v)
@@ -532,7 +484,7 @@ func parsePiFrontDoorArgs(args []string) (fd frontDoorArgs, pluginDirs []string,
 		fd.task = strings.Join(taskTokens, " ")
 		fd.hasTask = true
 	}
-	return fd, *pluginDir, nil
+	return fd, *pluginDir, validatePassthrough(fd, len(*pluginDir) > 0)
 }
 
 func parsePiSetupArgs(command string, args []string, stderr io.Writer) (host string, check bool, pluginDir string, code int) {

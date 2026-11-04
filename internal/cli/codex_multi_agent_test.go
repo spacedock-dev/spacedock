@@ -275,3 +275,13 @@ func TestDetachedTargetlessWaitRejectsTypedMisboundChildWithSpoofedIdentityText(
 		t.Fatal("targetless waits with typed misbound child and spoofed identity text passed")
 	}
 }
+
+func TestCodexProviderAcceptsCallerCollaboration(t *testing.T) {
+	h := &fakeHost{}
+	var stdout, stderr bytes.Buffer
+	args := []string{"--passthrough", "--", "-c", "agents.enabled=false", "--config=features.multi_agent_v2={}", "--enable", "multi_agent", "--disable=multi_agent_v2", "app-server"}
+	want := []string{"codex", "-c", "agents.enabled=false", "--config=features.multi_agent_v2={}", "--enable", "multi_agent", "--disable=multi_agent_v2", "app-server"}
+	if code := runCodex(context.Background(), args, t.TempDir(), h, lookFound, &stdout, &stderr); code != 0 || !slices.Equal(h.launchedArg, want) {
+		t.Fatalf("exit=%d argv=%q stderr=%q, want %q", code, h.launchedArg, stderr.String(), want)
+	}
+}
