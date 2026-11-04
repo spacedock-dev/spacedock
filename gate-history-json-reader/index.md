@@ -392,7 +392,7 @@ func gateHistoryRiskJSON(path string) ([]byte, error) {
 ## Stage Report: ideation
 
 - DONE: Demonstrate the nested gate-history loss against independent fixtures and identify the smallest read-only API that returns the complete stored tree.
-  AC-1/AC-2: the baseline loses the nested tree. The focused CLI retained two records, five attempts, and 66 scalar leaves. Typed serialization and timestamp normalization each failed the independent oracle.
+  AC-1/AC-2: the baseline loses the nested tree. The focused CLI retained two records, five attempts, and 66 scalar leaves. Typed serialization and timestamp normalization each failed the independent oracle. AC-3: file and Git snapshots remained identical after reads and refusals.
 - DONE: Produce a concrete design, unchanged value ACs with falsifiers, counted file/net-LOC estimate and tolerance, semantic changes, proof owners, and product-documentation diff.
   AC-1 through AC-4 remain byte-identical. The design declares +434 net LOC (444 insertions, 10 deletions), nine files, net tolerance +314 to +554, and seven to eleven files.
 - DONE: Commit a complete ideation Stage Report with the three checklist items and runnable risk evidence; send its exact path and commit to the First Officer.
