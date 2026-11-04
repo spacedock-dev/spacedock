@@ -1,12 +1,13 @@
 ---
 title: Headless FO ends its turn while a background worker is open, and the host stops the worker
-status: backlog
+status: ideation
 source: captain (2026-11-03), from the repair-sonnet-live-flakes ideation probe b2
 score: 0.7
 sprint:
 group: live-lane
 sprint-readiness: ready
 id: 5779fk6mzntvv5j3x6hw8rdn
+started: 2026-11-04T13:02:10Z
 ---
 
 In a headless (`-p`) drive with background workers, the FO can end its turn while a worker is still running. In probe b2 of `repair-sonnet-live-flakes` (Sonnet 5.5, head `64274cef5`, keep-moving journey), the host stopped the background `questioned` ideation worker 600 s after the FO's last turn. The worker had not committed its report, so the journey graded `keep-moving-violation`.
