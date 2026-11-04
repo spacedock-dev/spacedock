@@ -60,6 +60,20 @@ gates:
                 id: briefing:8v4gxdyfenqxz3t9wpc2c474:validation:attempt-1:revision-1
                 digest: sha256:c501d93474abc9d6b2ef537a27a42a0f1874982f695c981cf5cf5b07a1bdfc0c
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:8v4gxdyfenqxz3t9wpc2c474:validation:1
+                briefing: briefing:8v4gxdyfenqxz3t9wpc2c474:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-11-04T10:35:00.757185Z"
+                decision: approve
+                reason: The independent validation report's per-criterion evidence section maps every AC to external command, tree, filesystem, and help proof. Three checklist items are DONE. Exact-candidate normal and race aggregates each passed 21 test-bearing packages; independent checks and the detached audit passed, with five claim-breaking edits detected. The nine-file, net +403 candidate is within the approved surface. Approve PR delivery while terminal authority remains pending until delivery.
+                conn:
+                    quote: Proceed with the 3. You have the conn to approve gate and open pr
+                    source: Captain message in this Codex conversation on 2026-11-03
+              application:
+                target-stage: done
+                state: pending
 started: 2026-11-04T07:47:25Z
 worktree: .worktrees/spacedock-ensign-gate-history-json-reader
 ---
