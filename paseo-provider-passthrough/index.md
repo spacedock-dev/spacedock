@@ -5,6 +5,17 @@ source: "Captain authorized issue 813 on 2026-11-03: Proceed with the 3. You hav
 issue: spacedock-dev/spacedock#813
 sprint: paseo-integration
 id: xerfqfkayjawte0gjem7v8v1
+gates:
+    version: 1
+    records:
+        - id: gate:xerfqfkayjawte0gjem7v8v1:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:xerfqfkayjawte0gjem7v8v1-backlog-1
+              briefing:
+                id: briefing:xerfqfkayjawte0gjem7v8v1:backlog:attempt-1:revision-1
+                digest: sha256:2feac6d7c7831a290eb2866b9ca6bbd0d50eb165039916586156b5fb8a6b4e0d
+                room-ref: '@review/backlog/briefing-1'
 ---
 Paseo can use Spacedock as a provider command while retaining control of its protocol, agent identity, prompts, and permission UI.
 
