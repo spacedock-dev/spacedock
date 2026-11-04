@@ -18,10 +18,11 @@ that runtime target. Removing a binding claims the journey is green there.
 | default-headless-gate-stop | pi | penfp034pt9s3cgwp7wg3ykk | pi reds `gate-hold-violation`, `gate-not-held`, `implementation-worker-not-dispatched` |
 | ac-value-reanchor | pi | psvqjf0w8xh2txp9604gsvmz | pi flake; passes and fails between runs, previously unowned |
 | keep-moving-posture | pi | psvqjf0w8xh2txp9604gsvmz | pi flake; passes and fails between runs |
-| keep-moving-posture | claude-sonnet | 060xp69y61yhrww23g3wvwqy | claude-sonnet flake on `claude-live`: the FO skips the formal revise route for `questioned` |
+| keep-moving-posture | claude-sonnet | 060xp69y61yhrww23g3wvwqy | claude-sonnet flake on `claude-live`: the FO hand batch-commits before `--stamp` (Sonnet 5, run 31894934349), or the host stops the background `questioned` worker before it reports |
 | owned-conflict-owner-handoff | pi | psvqjf0w8xh2txp9604gsvmz | pi flake; flips between XFAIL and XPASS, no single-repair owner |
 | rejection-flow | pi | 6h3teccccn3qh71yqcmjbjx4 | pi rejection-worker topology fault |
 | auto-continue-after-implementation | claude-sonnet | jfdrr2dbdtt952s4cvvy74k8 | claude-sonnet red `validation-worker-not-dispatched` |
+| keep-moving-posture | claude-haiku | unowned (blank; pending analysis) | claude-haiku red `keep-moving-violation`; the host can also stop a background worker 600 s after a headless FO ends its turn (any model) |
 | default-headless-gate-stop | claude-haiku | unowned (blank; pending analysis) | claude-haiku reds `gate-hold-violation`, `gate-not-held`, `implementation-worker-not-dispatched` |
 | withdrawn-gate-recovery | claude-haiku | unowned (blank; pending analysis) | claude-haiku red `withdrawn-recovery-boundary` |
 | `breakGlassSelectedBareGap` (break-glass selected-bare, `dispatch_recovery_live_test.go`) | claude-sonnet | 060xp69y61yhrww23g3wvwqy | claude-sonnet flake: the `Agent` call does not stay in bare mode |

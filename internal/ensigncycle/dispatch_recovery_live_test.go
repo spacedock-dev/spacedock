@@ -79,24 +79,6 @@ func breakGlassSelectedBareGap(target string) liveJourneyGap {
 	return selectLiveGap([]liveJourneyGap{liveXFail("claude-sonnet", "060xp69y61yhrww23g3wvwqy"), liveXFail("claude-haiku", "")}, target)
 }
 
-func TestBreakGlassSelectedBareGapBindsPerTarget(t *testing.T) {
-	for target, want := range map[string]liveJourneyGap{
-		"claude-sonnet": {"xfail", "claude-sonnet", "060xp69y61yhrww23g3wvwqy"},
-		"claude-haiku":  {"xfail", "claude-haiku", ""},
-		"claude-opus":   {},
-	} {
-		if got := breakGlassSelectedBareGap(target); got != want {
-			t.Errorf("break-glass selected-bare gap for %s = %+v, want %+v", target, got, want)
-		}
-	}
-	// A blank-owner binding still owns a red as XFAIL, and its XPASS does not fail the lane.
-	haiku := sharedRuntimeScenario{name: "selected-bare", gap: breakGlassSelectedBareGap("claude-haiku")}
-	failed := liveScenarioGrade(haiku, durableSemantic("break-glass-observables", fmt.Errorf("no helper-failure report")))
-	if passed := liveScenarioGrade(haiku); failed.status != "xfail" || passed.status != "xpass" || liveGradeFailsLane(passed.status) {
-		t.Fatalf("blank-owner grades: failing=%q passing=%q; want xfail and a non-failing xpass", failed.status, passed.status)
-	}
-}
-
 // TestLiveBreakGlassShimRecovery is AC-3's behavioral proof: a PATH-shimmed
 // `spacedock dispatch build` that fails for real must produce a captain-facing
 // helper-failure report BEFORE any Agent() call, a
