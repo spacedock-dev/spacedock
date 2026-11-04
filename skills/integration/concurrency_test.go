@@ -1,11 +1,12 @@
-// ABOUTME: AC-7 concurrency regression — the prescribed path-scoped state commit
-// ABOUTME: for entity B must not sweep in a concurrent writer's already-staged entity A.
+// ABOUTME: Path-scoped state commits: entity B's commit must not sweep a concurrent
+// ABOUTME: writer's staged entity A, and the break-glass commit lands in the entity's repo.
 package integration
 
 import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -71,5 +72,46 @@ func TestPathScopedCommitDoesNotSweepSibling(t *testing.T) {
 	staged := git(t, checkout, "diff", "--cached", "--name-only")
 	if !strings.Contains(staged, "entity-a/index.md") {
 		t.Fatalf("entity A's staged change was swept away by B's commit; staged now:\n%q", staged)
+	}
+}
+
+// TestBreakGlassCommitLandsInEntityRepo runs each break-glass `### Commit` command. A split-root
+// entity lives in a nested state checkout the outer repo ignores, so {workflow_dir} cannot commit it.
+func TestBreakGlassCommitLandsInEntityRepo(t *testing.T) {
+	data, err := os.ReadFile("../fo-dispatch-recovery/SKILL.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	commands := regexp.MustCompile("commit your work path-scoped: `([^`]+)`").FindAllStringSubmatch(string(data), -1)
+	if len(commands) != 2 {
+		t.Fatalf("want the commit command in both break-glass prompts, found %d", len(commands))
+	}
+	for _, stateDir := range []string{"", ".spacedock-state"} { // single-root, then split-root
+		for i, command := range commands {
+			workflowDir := t.TempDir()
+			entityDir := filepath.Join(workflowDir, stateDir)
+			entity := filepath.Join(entityDir, "widget-task.md")
+			git(t, workflowDir, "init", "-q")
+			if err := os.MkdirAll(entityDir, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if stateDir != "" {
+				git(t, entityDir, "init", "-q")
+				err = os.WriteFile(filepath.Join(workflowDir, ".gitignore"), []byte(stateDir+"/\n"), 0o644)
+			}
+			if err != nil || os.WriteFile(entity, []byte("report\n"), 0o644) != nil {
+				t.Fatal("write fixture", err)
+			}
+			script := strings.NewReplacer(`\"`, `"`, "{workflow_dir}", workflowDir, "{entity_file_path}", entity,
+				"{entity title}", "Widget task", "{stage}", "implementation").Replace(command[1])
+			cmd := exec.Command("sh", "-c", script)
+			cmd.Env = append(os.Environ(), "GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t")
+			if out, err := cmd.CombinedOutput(); err != nil {
+				t.Fatalf("state dir %q, prompt %d: %v\n%s\n%s", stateDir, i, err, script, out)
+			}
+			if got := git(t, entityDir, "log", "-1", "--format=%s", "--", entity); got != "Widget task: implementation report\n" {
+				t.Fatalf("state dir %q, prompt %d: entity commit subject = %q", stateDir, i, got)
+			}
+		}
 	}
 }
