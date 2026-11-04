@@ -30,6 +30,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-11-04T07:48:58Z
 ---
 Paseo can use Spacedock as a provider command while retaining control of its protocol, agent identity, prompts, and permission UI.
 
