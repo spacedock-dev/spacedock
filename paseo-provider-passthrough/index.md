@@ -462,3 +462,19 @@ The recommendation is revise, with the original design and value criteria unchan
 R1 now specifies canonical settings preservation through the existing Safehouse allowance, with unchanged ordinary behavior and filesystem grants.
 Accepted independent observations prove the reused allowance and Codex permission effect, while implementation still owes candidate observations through those real boundaries.
 The estimate remains +400 net LOC across 13 files, with 470 insertions, 70 deletions, and the same tolerance.
+
+
+## Stage Report: ideation-review (cycle 2)
+
+- DONE: Re-review the revised design against R1 and verify complete presence-filtered selected-host configuration forwarding, without new caller obligations or filesystem grants.
+  `ideation-review-r2.md` finds all four variables, presence rules, empty values, explicit Claude `0`, and the authorized host/mode limits complete.
+- DONE: Verify the original value AC statements, ordinary behavior boundary, counted surface/tolerance, environment proof matrix, and concrete documentation remain coherent and unchanged in value.
+  The five seed value statements remain exact. The existing proof owners cover R1 within +400 net LOC/13 files and unchanged tolerance.
+- DONE: Commit and send a second independent ideation-review artifact and report with three checklist outcomes, remaining finding triage, and approve/revise recommendation.
+  `ideation-review-r2.md` and this report form the path-scoped state delivery. The first officer receives the exact commit and approve recommendation.
+
+### Summary
+
+The committed revision closes R1 at the design boundary through the existing selected-host Safehouse allowance.
+No remaining design finding requires revision, and the recommendation is approve ideation.
+Implementation and validation still owe candidate behavior, full regression evidence, and the inherited audit obligations.
