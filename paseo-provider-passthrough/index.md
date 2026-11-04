@@ -60,6 +60,20 @@ gates:
                 id: briefing:xerfqfkayjawte0gjem7v8v1:validation:attempt-1:revision-1
                 digest: sha256:d527206f0419b13c145b0eb9dbd7b791d4c6dafc1a1d34d2e656acaeeb54d3ef
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:xerfqfkayjawte0gjem7v8v1:validation:1
+                briefing: briefing:xerfqfkayjawte0gjem7v8v1:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-11-04T11:36:18.818638Z"
+                decision: approve
+                reason: All three validation checklist items are DONE. Each of the five acceptance criteria has behavioral evidence. Full normal and race suites each passed 21/21 test packages. Independent validation passed 12/12 roots, 148/148 subtests, and 21/21 external observations. Existing owners caught all 18 adversarial edits. The clean candidate remains within the approved surface and semantics. Approve PR delivery. Exact-candidate host live CI remains required before merge, and both named skipped checks remain unverified.
+                conn:
+                    quote: Proceed with the 3. You have the conn to approve gate and open pr
+                    source: Captain message in this Codex conversation on 2026-11-03
+              application:
+                target-stage: done
+                state: pending
 started: 2026-11-04T07:48:58Z
 worktree: .worktrees/spacedock-ensign-paseo-provider-passthrough
 ---
