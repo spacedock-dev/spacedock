@@ -22,9 +22,8 @@ const recoverySkillArg = "spacedock:fo-dispatch-recovery"
 
 // streamContentBlock is one tool_use/text content block of one assistant message
 // delta, decoded generically: Input as a raw key-set (not a typed struct) so an
-// oracle can test field PRESENCE as well as value. Claude may serialize a blocking
-// bare-mode Agent() with an omitted key or with `run_in_background: false`; true is
-// still a different transport and must be rejected.
+// oracle can test field PRESENCE as well as value: the Agent tool starts a call
+// without `run_in_background` in the background, so bare must pass explicit false.
 type streamContentBlock struct {
 	Type  string                     `json:"type"`
 	Name  string                     `json:"name"`
@@ -177,7 +176,7 @@ func assertBreakGlassObservables(stream string, selectedMode dispatchMode) error
 			modeShape := false
 			switch selectedMode {
 			case dispatchModeBare:
-				modeShape = !hasName && !hasTeamName && (!hasRunInBackground || !runInBackground)
+				modeShape = !hasName && !hasTeamName && hasRunInBackground && !runInBackground
 			case dispatchModeTeam:
 				modeShape = nameShaped && runInBackground && hasRunInBackground && !hasTeamName
 			}

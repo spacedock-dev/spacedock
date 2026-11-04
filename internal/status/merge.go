@@ -557,11 +557,11 @@ func reworkDelivery(roots roots, slug, entityPath string, fields map[string]stri
 // successor AND that successor is terminal — the shape consume leaves behind
 // when routing approved-awaiting-merge. A genuinely gate-less entity (no gates
 // record at all) reports (nil-record legacy): pending=false, err=nil. Every
-// A consumed nonterminal application that entered the current ordinary stage
-// is completed history, so it reports pending=false, err=nil. Every other
-// shape — unreadable or digest-stale retained authority, a superseded
-// application, or a non-binding target — returns an error so the ceremony
-// refuses byte-clean instead of terminalizing with authority left pending.
+// A consumed nonterminal application whose ordinary target the entity holds or
+// has left only through ungated stages is completed history, so it reports
+// pending=false, err=nil. Every other shape — unreadable or digest-stale
+// retained authority, a superseded application, or a non-binding target —
+// returns an error so the ceremony refuses byte-clean instead of terminalizing with authority left pending.
 func pendingTerminalApproval(entityPath, workflowDir, currentStatus string) (gates.Eligibility, bool, error) {
 	elig, err := gates.EligibilityFileAt(entityPath, workflowDir)
 	if err != nil {
@@ -583,7 +583,8 @@ func pendingTerminalApproval(entityPath, workflowDir, currentStatus string) (gat
 }
 
 // consumedNonterminalHistory reports whether the latest gate application is
-// the spent authority that entered the current ordinary stage.
+// the spent authority that entered an ordinary stage the entity has since
+// stayed on, moved past through ungated stages, or completed to terminal.
 func consumedNonterminalHistory(entityPath, workflowDir, currentStatus string) (bool, error) {
 	doc, _, err := gates.Read(entityPath)
 	if err != nil {
@@ -597,16 +598,29 @@ func consumedNonterminalHistory(entityPath, workflowDir, currentStatus string) (
 		return false, nil
 	}
 	app := record.Attempts[len(record.Attempts)-1].Application
-	if app == nil || app.State != "consumed" || app.TargetStage != currentStatus {
+	if app == nil || app.State != "consumed" {
 		return false, nil
 	}
 	stages := parseStagesBlock(filepath.Join(workflowDir, "README.md"))
 	for i, stage := range stages {
-		if stage.Name != record.Stage || i+1 >= len(stages) {
+		if stage.Name != record.Stage || i+1 >= len(stages) || stages[i+1].Name != app.TargetStage {
 			continue
 		}
-		target := stages[i+1]
-		return target.Name == currentStatus && !target.gate && !target.terminal, nil
+		if stages[i+1].terminal {
+			return false, nil
+		}
+		// The spent approval entered an ordinary successor. The entity may have
+		// moved on through further ungated stages, or already carry the terminal
+		// status; a gated stage on that path is not history this approval covers.
+		for _, later := range stages[i+1:] {
+			if later.gate || (later.terminal && later.Name != currentStatus) {
+				return false, nil
+			}
+			if later.Name == currentStatus {
+				return true, nil
+			}
+		}
+		return false, nil
 	}
 	return false, nil
 }

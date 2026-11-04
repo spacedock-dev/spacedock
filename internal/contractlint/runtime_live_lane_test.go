@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/release"
 )
 
 type liveGapRow struct{ kind, target, owner string }
@@ -128,15 +130,18 @@ func parseLiveGap(expr ast.Expr, targets map[string]bool) (liveGapRow, error) {
 		}
 		values[i], _ = strconv.Unquote(literal.Value)
 	}
-	if !targets[values[0]] || !ownerID.MatchString(values[1]) {
+	// A blank owner (unowned, pending analysis) is permitted only on claude-haiku.
+	if !targets[values[0]] || !ownerID.MatchString(values[1]) && (values[1] != "" || values[0] != "claude-haiku") {
 		return liveGapRow{}, fmt.Errorf("malformed live%s binding", kind)
 	}
 	return liveGapRow{strings.ToLower(kind), values[0], values[1]}, nil
 }
 
 func TestRuntimeLiveGapBindingValidation(t *testing.T) {
-	targets := map[string]bool{"codex": true}
+	targets := map[string]bool{"codex": true, "claude-haiku": true, "claude-sonnet": true}
 	for source, valid := range map[string]bool{
+		`liveXFail("claude-haiku", "")`:                                                          true,
+		`liveXFail("claude-sonnet", "")`:                                                         false,
 		`liveTODO("codex", "98aa776adg66gn823a8gamdq")`:                                          true,
 		`liveXFail("codex", "98aa776adg66gn823a8gamdq")`:                                         true,
 		`liveTODO("codex", "98aa776adg66gn823a8gamdq", "code")`:                                  false,
@@ -153,6 +158,117 @@ func TestRuntimeLiveGapBindingValidation(t *testing.T) {
 			t.Errorf("parseLiveGap(%s) error = %v, valid=%t", source, err, valid)
 		}
 	}
+}
+
+// liveBinding is one live gap binding: the journey it covers, its target and owner.
+type liveBinding struct{ journey, target, owner string }
+
+// TestRuntimeLiveRegistryMatchesBindings reads every real gap binding in
+// internal/ensigncycle and checks it through parseLiveGap: a known target, and a
+// 24-character owner (blank only on claude-haiku). The bindings and the rows of
+// docs/runtime-live-ci-registry.md must then match in both directions.
+func TestRuntimeLiveRegistryMatchesBindings(t *testing.T) {
+	repo := repoRoot(t)
+	code := ensigncycleLiveBindings(t, filepath.Join(repo, "internal", "ensigncycle"))
+	doc := map[liveBinding]bool{}
+	for _, line := range strings.Split(string(mustRead(t, filepath.Join(repo, "docs", "runtime-live-ci-registry.md"))), "\n") {
+		cells := strings.Split(strings.Trim(line, "| "), " | ")
+		if !strings.HasPrefix(line, "| ") || len(cells) != 4 || cells[0] == "Journey" {
+			continue
+		}
+		owner := strings.Trim(cells[2], "`")
+		if strings.HasPrefix(owner, "unowned") {
+			owner = ""
+		}
+		doc[liveBinding{strings.Trim(strings.Fields(cells[0])[0], "`"), strings.Trim(cells[1], "`"), owner}] = true
+	}
+	if len(code) == 0 || len(doc) == 0 {
+		t.Fatalf("found %d bindings and %d registry rows, want both non-empty", len(code), len(doc))
+	}
+	for binding := range code {
+		if !doc[binding] {
+			t.Errorf("binding %+v has no registry row", binding)
+		}
+	}
+	for row := range doc {
+		if !code[row] {
+			t.Errorf("registry row %+v has no binding in internal/ensigncycle", row)
+		}
+	}
+}
+
+// ensigncycleLiveBindings collects each liveJourney gaps argument (inline or
+// through a package var), keyed by the journey id, and each gap built in a
+// non-Test function such as breakGlassSelectedBareGap, keyed by that function's
+// name. Other gap literals inside Test functions are grading fixtures.
+func ensigncycleLiveBindings(t *testing.T, dir string) map[liveBinding]bool {
+	t.Helper()
+	paths, err := filepath.Glob(filepath.Join(dir, "*.go"))
+	if err != nil || len(paths) == 0 {
+		t.Fatalf("glob %s: %v", dir, err)
+	}
+	targets := map[string]bool{"codex": true, "pi": true}
+	for key := range release.LiveModels {
+		if role, ok := strings.CutPrefix(key, "claude."); ok && !strings.Contains(role, ".") {
+			targets["claude-"+role] = true
+		}
+	}
+	fset, vars, funcs, found := token.NewFileSet(), map[string]ast.Expr{}, []*ast.FuncDecl{}, map[liveBinding]bool{}
+	for _, path := range paths {
+		file, err := parser.ParseFile(fset, path, nil, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, decl := range file.Decls {
+			if fn, ok := decl.(*ast.FuncDecl); ok {
+				funcs = append(funcs, fn)
+			} else if gen, ok := decl.(*ast.GenDecl); ok {
+				for _, spec := range gen.Specs {
+					if value, ok := spec.(*ast.ValueSpec); ok && len(value.Names) == 1 && len(value.Values) == 1 {
+						vars[value.Names[0].Name] = value.Values[0]
+					}
+				}
+			}
+		}
+	}
+	collect := func(journey string, node ast.Node) {
+		ast.Inspect(node, func(n ast.Node) bool {
+			call, ok := n.(*ast.CallExpr)
+			if !ok || exprName(call.Fun) != "liveXFail" && exprName(call.Fun) != "liveTODO" {
+				return true
+			}
+			gap, err := parseLiveGap(call, targets)
+			if err != nil {
+				t.Errorf("%s binding at %s: %v", journey, fset.Position(call.Pos()), err)
+			}
+			found[liveBinding{journey, gap.target, gap.owner}] = true
+			return false
+		})
+	}
+	for _, fn := range funcs {
+		if !strings.HasPrefix(fn.Name.Name, "Test") {
+			collect(fn.Name.Name, fn.Body)
+			continue
+		}
+		ast.Inspect(fn.Body, func(n ast.Node) bool {
+			call, ok := n.(*ast.CallExpr)
+			if !ok || exprName(call.Fun) != "liveJourney" || len(call.Args) < 5 {
+				return true
+			}
+			id, _ := call.Args[1].(*ast.BasicLit)
+			if id == nil {
+				t.Fatalf("liveJourney at %s has no literal id", fset.Position(call.Pos()))
+			}
+			journey, _ := strconv.Unquote(id.Value)
+			if ident, ok := call.Args[4].(*ast.Ident); ok && vars[ident.Name] != nil {
+				collect(journey, vars[ident.Name])
+			} else {
+				collect(journey, call.Args[4])
+			}
+			return false
+		})
+	}
+	return found
 }
 
 func exprName(expr ast.Expr) string {

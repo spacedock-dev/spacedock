@@ -60,7 +60,7 @@ func TestBuildHostResolutionFromFlagAndEnv(t *testing.T) {
 		out := decodeBuildOutput(t, native.stdout)
 		assertCodexFreshPrompt(t, out.Prompt, out.DispatchFilePath)
 		body := readDispatchBody(t, out.DispatchFilePath)
-		for _, banned := range []string{"Skill(skill=\"spacedock:ensign\")", "SendMessage(to=\"team-lead\""} {
+		for _, banned := range []string{"Skill(skill=\"spacedock:ensign\")", "SendMessage(to=\"main\""} {
 			if strings.Contains(body, banned) {
 				t.Fatalf("derived Codex dispatch body contains %q:\n%s", banned, body)
 			}

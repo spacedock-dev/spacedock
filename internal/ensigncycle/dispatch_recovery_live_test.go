@@ -73,28 +73,10 @@ func TestLiveBareReachable(t *testing.T) {
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 
-// breakGlassSelectedBareGap binds each target's own known failure: Sonnet's owned
-// gap, Haiku's unowned gap (pending analysis), and nothing for other targets.
+// breakGlassSelectedBareGap binds Haiku's unowned gap (pending analysis) and
+// nothing for other targets.
 func breakGlassSelectedBareGap(target string) liveJourneyGap {
-	return selectLiveGap([]liveJourneyGap{liveXFail("claude-sonnet", "060xp69y61yhrww23g3wvwqy"), liveXFail("claude-haiku", "")}, target)
-}
-
-func TestBreakGlassSelectedBareGapBindsPerTarget(t *testing.T) {
-	for target, want := range map[string]liveJourneyGap{
-		"claude-sonnet": {"xfail", "claude-sonnet", "060xp69y61yhrww23g3wvwqy"},
-		"claude-haiku":  {"xfail", "claude-haiku", ""},
-		"claude-opus":   {},
-	} {
-		if got := breakGlassSelectedBareGap(target); got != want {
-			t.Errorf("break-glass selected-bare gap for %s = %+v, want %+v", target, got, want)
-		}
-	}
-	// A blank-owner binding still owns a red as XFAIL, and its XPASS does not fail the lane.
-	haiku := sharedRuntimeScenario{name: "selected-bare", gap: breakGlassSelectedBareGap("claude-haiku")}
-	failed := liveScenarioGrade(haiku, durableSemantic("break-glass-observables", fmt.Errorf("no helper-failure report")))
-	if passed := liveScenarioGrade(haiku); failed.status != "xfail" || passed.status != "xpass" || liveGradeFailsLane(passed.status) {
-		t.Fatalf("blank-owner grades: failing=%q passing=%q; want xfail and a non-failing xpass", failed.status, passed.status)
-	}
+	return selectLiveGap([]liveJourneyGap{liveXFail("claude-haiku", "")}, target)
 }
 
 // TestLiveBreakGlassShimRecovery is AC-3's behavioral proof: a PATH-shimmed
@@ -122,7 +104,7 @@ func TestLiveBreakGlassShimRecovery(t *testing.T) {
 		mode   dispatchMode
 		prompt string
 	}{
-		{"selected-bare", dispatchModeBare, breakGlassShimPrompt()},
+		{"selected-bare", dispatchModeBare, breakGlassShimBarePrompt()},
 		{"selected-team", dispatchModeTeam, breakGlassShimTeamPrompt()},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
