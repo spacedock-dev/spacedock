@@ -62,6 +62,10 @@ gates:
                 id: briefing:s2atxdv146qknetdjvx0xer6:validation:attempt-2:revision-1
                 digest: sha256:3a5e3218f37e932c109d57deccb70ad5888a43e6d29fb9de4dd2f6d1e7f99682
                 room-ref: '@review/validation/briefing-2'
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-11-04T13:30:31.671248Z"
+                reason: Dispositions recorded after the briefing; re-preparing on the updated entity.
 started: 2026-11-03T18:29:08Z
 worktree: .worktrees/spacedock-ensign-align-claude-break-glass-agent-proof
 ---
