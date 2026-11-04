@@ -77,6 +77,7 @@ gates:
 started: 2026-11-04T07:48:58Z
 worktree: .worktrees/spacedock-ensign-paseo-provider-passthrough
 mod-block: merge:pr-merge
+pr: "#861"
 ---
 Paseo can use Spacedock as a provider command while retaining control of its protocol, agent identity, prompts, and permission UI.
 
