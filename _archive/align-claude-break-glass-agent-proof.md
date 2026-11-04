@@ -1,6 +1,6 @@
 ---
 title: Align Claude break-glass recovery proof with the current Agent tool
-status: validation
+status: done
 source: "PR #680 run 31640122346, Sonnet job 94260537662, artifact 9159859622: TestLiveBreakGlassShimRecovery rejected selected-bare after a successful worker completion because the Agent call lacked the expected bare marker, and rejected selected-team after observing two Agent calls."
 score: 0.90
 id: s2atxdv146qknetdjvx0xer6
@@ -84,10 +84,13 @@ gates:
                     source: 'captain /goal command in FO session a91fcb1a (2026-11-03 PST), granting option 1 of the FO overnight plan: the FO can approve the validation gates of live-lane-shared-failure-fixes, align-claude-break-glass-agent-proof and repair-sonnet-live-flakes if the fresh validator recommends PASSED with no material findings and the diff stays within its ceiling; the FO opens the stacked PRs and runs CI including claude-live, but does not merge'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-11-03T18:29:08Z
 worktree: .worktrees/spacedock-ensign-align-claude-break-glass-agent-proof
 pr: pr-merge:864
+verdict: PASSED
+completed: 2026-11-04T16:41:52Z
+archived: 2026-11-04T16:41:52Z
 ---
 
 Restore a truthful break-glass substrate proof for the current Claude Agent tool surface.
