@@ -245,3 +245,11 @@ I rebased the two layer commits onto 5311949c8. The branch head is now 08582eae2
 ### Summary
 
 The rebased layer is the same in substance as the validated layer. The conflict kept the parent's test deletion, and every AC-2 to AC-4 falsifying edit still turns its test red. An unbound live Sonnet run passed both arms with a host-reported foreground bare spawn and committed reports. But this time the FO did not pass `--bare-mode` before the helper failed, so AC-4's live clause did not reproduce. I propose that as a deferred evidence risk, not a material finding. Surface, gofmt, contractlint and both suites are clean. The one ENOSPC failure passed when rerun alone.
+
+## Review-finding disposition
+
+FO authorizations after validation cycle 2 (2026-11-04), candidate `08582eae2` on parent `5311949c8`.
+
+1. AC-4 live clause did not reproduce in the cycle-2 live run: the bare FO ran `dispatch build` without `--bare-mode` before the helper failed (1 of 5 local bare runs; the other 4, on bytes identical in substance before the rebase, carried it). The outcome AC-1 promises held: one blocking bare worker, host `foreground=1, started_in_background=0`. Class: Deferred risk (evidence defect), as the validator proposed. FO authorization: `decline`. AC-4's live clause is accepted on the 4 of 5 earlier runs. Promote when a selected-bare run without `--bare-mode` dispatches named or in the background, or when the captain wants `--bare-mode` graded (that needs a Claude contract rule first).
+2. The bare predicate accepts non-boolean `run_in_background` values. Class: Deferred risk. FO authorization: `decline`.
+3. Normal `dispatch build --bare-mode` omits the key. Class: Deferred risk, follow-up task. FO authorization: `decline`.
