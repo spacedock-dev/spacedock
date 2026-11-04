@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:060xp69y61yhrww23g3wvwqy:validation:attempt-2:revision-1",
+  "question": "Approve validation (PASSED) for the rebased keep-moving layer 8739edef9, with AC-1 and AC-3 owned by headless-fo-turn-end-background-worker-stop?",
+  "artifacts": [
+    {
+      "id": "artifact:060xp69y61yhrww23g3wvwqy:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/1ea45f2f79c47769c58a2504dc0fc5666f3c44a8/repair-sonnet-live-flakes.md",
+      "rev": "sha256:06ee084a76fcd0a271e653adda0e51f7d744e6bb6f46b4208bdfc4b661a3b544",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED, no material findings: rebased layer has the identical patch (range-diff =, same patch-id); the replay test goes red when started returns to the advance, when the proof check is weakened, and when --stamp stops filling started; only the non-gated clause of step 5 changed; parent cycle-1 edits, the 060xp binding and its corrected row unchanged; contractlint passes; net +70, 2 files; suites pass (ENOSPC-only reruns). AC-2 met; AC-1 and AC-3 moved to headless-fo-turn-end-background-worker-stop by captain ruling. Deferred: entity that already has started has no protection."
+    }
+  ]
+}

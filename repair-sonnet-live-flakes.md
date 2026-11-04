@@ -69,6 +69,11 @@ gates:
                 by: agent:first-officer
                 at: "2026-11-04T08:45:38.704745Z"
                 reason: Parent live-lane-shared-failure-fixes moved to 5311949c8 in feedback cycle 1 (it edits skills/fo-dispatch-recovery/SKILL.md, dispatch_recovery_live_test.go, shared_live_runner_test.go and the registry); this layer must rebase, so the validated candidate bytes change.
+            - id: gate-attempt:060xp69y61yhrww23g3wvwqy-validation-2
+              briefing:
+                id: briefing:060xp69y61yhrww23g3wvwqy:validation:attempt-2:revision-1
+                digest: sha256:7a1eee52584cb50ac195bd70f5c2f71d478d8a38795fea98721124dcc4338d33
+                room-ref: '@review/validation/briefing-2'
 started: 2026-11-03T18:28:41Z
 worktree: .worktrees/spacedock-ensign-repair-sonnet-live-flakes
 mod-block:
