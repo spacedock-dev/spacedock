@@ -74,6 +74,20 @@ gates:
                 id: briefing:060xp69y61yhrww23g3wvwqy:validation:attempt-2:revision-1
                 digest: sha256:7a1eee52584cb50ac195bd70f5c2f71d478d8a38795fea98721124dcc4338d33
                 room-ref: '@review/validation/briefing-2'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:060xp69y61yhrww23g3wvwqy:validation:2
+                briefing: briefing:060xp69y61yhrww23g3wvwqy:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-11-04T13:01:52.566429Z"
+                decision: approve
+                reason: Fresh validator PASSED with no material findings; net +70 within the +59..+119 band.
+                conn:
+                    quote: proceed gate grants
+                    source: 'captain /goal command in FO session a91fcb1a (2026-11-03 PST), granting option 1 of the FO overnight plan: the FO can approve the validation gates of live-lane-shared-failure-fixes, align-claude-break-glass-agent-proof and repair-sonnet-live-flakes if the fresh validator recommends PASSED with no material findings and the diff stays within its ceiling; the FO opens the stacked PRs and runs CI including claude-live, but does not merge'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-11-03T18:28:41Z
 worktree: .worktrees/spacedock-ensign-repair-sonnet-live-flakes
 mod-block:
