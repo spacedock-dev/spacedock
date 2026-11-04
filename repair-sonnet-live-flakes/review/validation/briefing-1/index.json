@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:060xp69y61yhrww23g3wvwqy:validation:attempt-1:revision-1",
+  "question": "Approve validation (PASSED) for the step-5 fix 0542c94ad with AC-1 and AC-3 (binding retirement) narrowed out of this task, and advance to done after the parent merges?",
+  "artifacts": [
+    {
+      "id": "artifact:060xp69y61yhrww23g3wvwqy:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/788aab5c4edd6ba46471a8069842f7e90f0e44f4/repair-sonnet-live-flakes.md",
+      "rev": "sha256:9b33730b9c8059134f1c5b86791249256fcaef0fcc0f2ab3417f3e6cf492fd4f",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED: the new deterministic test fails when started returns to the advance, when the proof check is weakened, and when --stamp stops filling started; it reads no instruction file. Only the non-gated clause of step 5 changed; the 060xp binding and registry row are unchanged; contractlint passes; net +70, 2 files; 21/21 packages pass with and without -race. AC-1 and AC-3 (unbound live PASS, binding retirement) have no evidence and need the CI Sonnet lane plus a fix for the host stop of background workers."
+    }
+  ]
+}

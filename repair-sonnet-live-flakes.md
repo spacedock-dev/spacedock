@@ -57,6 +57,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:060xp69y61yhrww23g3wvwqy:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:060xp69y61yhrww23g3wvwqy-validation-1
+              briefing:
+                id: briefing:060xp69y61yhrww23g3wvwqy:validation:attempt-1:revision-1
+                digest: sha256:aedaaef0e584dd45e95287f09fd0e4dc464fd7e52e4619ae79e3dd49f52f917b
+                room-ref: '@review/validation/briefing-1'
 started: 2026-11-03T18:28:41Z
 worktree: .worktrees/spacedock-ensign-repair-sonnet-live-flakes
 mod-block:
