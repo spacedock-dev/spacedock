@@ -1,6 +1,6 @@
 ---
 title: Repair Sonnet keep-moving and selected-bare live flakes
-status: validation
+status: done
 score: "0.95"
 source: "Exact-main Runtime Live E2E run 31894934349 attempts 1 and 2"
 sprint: test-behavior-completeness
@@ -87,11 +87,14 @@ gates:
                     source: 'captain /goal command in FO session a91fcb1a (2026-11-03 PST), granting option 1 of the FO overnight plan: the FO can approve the validation gates of live-lane-shared-failure-fixes, align-claude-break-glass-agent-proof and repair-sonnet-live-flakes if the fresh validator recommends PASSED with no material findings and the diff stays within its ceiling; the FO opens the stacked PRs and runs CI including claude-live, but does not merge'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-11-03T18:28:41Z
 worktree: .worktrees/spacedock-ensign-repair-sonnet-live-flakes
 mod-block:
 pr: pr-merge:863
+verdict: PASSED
+completed: 2026-11-04T16:41:44Z
+archived: 2026-11-04T16:41:44Z
 ---
 ## Problem
 
