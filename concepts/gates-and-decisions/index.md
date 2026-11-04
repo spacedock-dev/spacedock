@@ -2,7 +2,7 @@
 title: "Gates & decisions"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-10-28 00:19:09"
+last_updated: "2026-11-04 16:40:58"
 ---
 
 # Gates & decisions
@@ -63,7 +63,7 @@ Approval to a terminal target is *held* at consume: `gate consume` spends nothin
 
 Before the first officer shows a gate, it captures the exact bound Briefing identity, digest, and emitted room in committed machine state, then presents a compact snapshot identity in prose. A run without decision authority stops with that attempt open: it writes no Resolution, consumes nothing, advances nothing, and dispatches nothing. After an authorized decision, the recorder itself commits and syncs the Resolution before every route. `gate record --decision approve --consume` is the shortest approval path: close, sync, consume, and sync in one call. The supported standalone `gate consume` path rechecks the retained request, Briefing, Git sources, and authority before atomically writing the successor stage and consumed mark. Until that first-entered working stage has a durable, complete Stage Report, `status --next` and boot name it as both `current` and `next`. Once the same-stage dispatch sets its worktree, every away-status `status --set`—backward or forward, even with `--force`—is refused until the report is durable. The consumed descendant commit therefore lands before one recoverable successor dispatch. No separate state commit follows a successful record or consume write. Revise routes feedback after its self-synced close, and hold stays at the gate. `status` projects the next action from durable facts; the acting command reports any authoritative refusal.
 
-After the nonterminal approval is consumed, it is ordinary stage history. The worker can write atomic terminal fields without `--force` after its report is durable. Pending terminal approval and unreadable or stale authority still fail closed. A consumed application that targets a terminal stage also fails closed.
+After the nonterminal approval is consumed, it is ordinary stage history. The worker can write atomic terminal fields without `--force` after its report is durable, and `merge guard --verdict` finalizes and archives it from any later ungated stage or after that terminal write. Pending terminal approval and unreadable or stale authority still fail closed. A consumed application that targets a terminal stage also fails closed.
 
 The review itself stays concise: capability, evidence, reviewed snapshot, findings, recommendation, and decision ask. The entity, spec, and package remain linked references rather than replacing that review with raw artifacts.
 
