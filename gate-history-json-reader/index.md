@@ -491,3 +491,45 @@ The First Officer owns any independent design review and the gate decision. No w
 ### Remaining limits
 
 No unresolved product finding remains. Cache-removal cause and low disk headroom remain environment limits. Independent validation and the detached command audit remain with the First Officer. No product branch was pushed, and no PR, merge, release, frontmatter, or gate-state change occurred.
+
+## Stage Report: validation
+
+- DONE: Independently verify each acceptance criterion against the exact committed candidate and report explicit PASS/FAIL with reproducible external evidence.
+  PASS. All four ACs pass the real CLI, independent literal trees, unchanged status fixtures, and before/after filesystem and Git observations.
+- DONE: Attack the highest-risk semantics and perform any workflow-required detached adversarial audit in a throwaway checkout; report concrete falsifiers and outcomes.
+  PASS. The detached baseline passed 23/23 cases; existing proof owners killed 5/5 claim-breaking edits. The external adjacent matrix passed 14/14 cases.
+- DONE: Commit and send a complete validation Stage Report with the three checklist outcomes, tests and denominators, exact candidate SHA, authorized findings, and PASSED/REJECTED recommendation.
+  PASS. This path-scoped report contains every required result. Its state commit and publication result accompany the report sent to the First Officer.
+
+### Summary
+
+Recommendation: **PASSED** for product `2aeab0a03e5b54d9644304ca7325e913d4f7697b` on `gate-history-json-reader`. The exact candidate remains clean and unchanged. Validation found no new outcome defect or evidence defect.
+
+### Acceptance criteria evidence
+
+- PASS AC-1: `TestGateReadCLI` compares independent complete Markdown/JSON fixtures through the actual CLI: two records, five attempts, and 66 scalar leaves. Typed serialization that loses empty and compatibility fields failed the detached `slug` owner.
+- PASS AC-2: Complete-tree and repeat-byte assertions preserve stored order, exact Unicode reasons, empty fields, timestamps, and both empty-history forms. Removing timestamp retention failed `slug`; the external matrix also preserved reordered records/attempts, consumed approvals, NUL/Unicode/EOF, and exact signed/unsigned 64-bit integers.
+- PASS AC-3: All 23 command cases retain fixture files/directories, HEAD, index, status, and the existing status-read output. A write of `<entity>.audit-lock` failed both `slug` and `invalid_version`; the external matrix independently compared complete file hashes and Git/status-read bytes for all 14 cases. Existing status golden and section-read owners also pass unchanged.
+- PASS AC-4: Both exact help owners and all three removed-verb cases pass. The real command exercises documented slug/archive forms and rejects unsupported `gate validate`. The documentation diff matches the approved command, empty result, refusal, and read-only contracts; changed prose meets the workflow's sentence and modal rules.
+
+### Checks and detached audit
+
+- Independent focused command: `go test ./internal/cli ./internal/status -run '^(TestGateReadCLI|TestTopLevelHelpFormsAreIdentical|TestGatePrepareCLIPrintsExactRoomBindingAndCurrentV1HelpSurface|TestRemovedGateVerbsAreAbsentAndSideEffectFree|TestGoldenRead|TestJSONReadGolden|TestReadFrontmatterParity|TestReadHeadingMapLocatesBytes|TestReadFencedHeadingsSkipped|TestFindSectionSpansUsesFenceSafeHeadingOwnership|TestReadEntityRefResolvesLikeResolve|TestReadPathFormResolvesPlainFile|TestReadFlagIncompatibility)$' -count=1 -json`: exit 0, 13/13 top-level tests, 47/47 named subcases, 2/2 packages.
+- Reused exact-candidate completion evidence: `go test ./...` and `go test ./... -race -timeout 30m` each passed 21/21 test-bearing packages, plus two without tests. Independent log inspection found no failed package. Full suites were not duplicated.
+- Reused the producer's required `gofmt -w ./cmd ./internal` run and its authorized unrelated-formatting disposition. Independent `gofmt -l` on the entrypoint and all six changed Go files printed nothing; `git diff --check` passed. The producer's strict MkDocs build is green.
+- Detached checkout: `/tmp/spacedock-gate-history-json-reader-validation-audit-20261104-2aeab0a`, detached at the exact product SHA. `go test ./internal/cli -run '^TestGateReadCLI$' -count=1 -json` passed 23/23 subcases before mutation. The checkout is clean after all mutations were restored.
+- Falsifier 1: serialize the typed `Document` instead of the original node. `TestGateReadCLI/slug` failed its complete-tree comparison; explicit empty fields and stored compatibility data cannot disappear silently.
+- Falsifier 2: omit `retainGateTimestampText`. `TestGateReadCLI/slug` failed its complete-tree comparison because timestamp spelling changed.
+- Falsifier 3: write an adjacent lock file before reading. `TestGateReadCLI/slug` and `/invalid_version` failed their filesystem/Git snapshots, including the refusal path.
+- Falsifier 4: bypass canonical `gates.Validate`. `/invalid_version` and `/invalid_binding` failed when the CLI returned exit 0 and JSON instead of exit 1 and empty stdout.
+- Falsifier 5: write `{` before returning a JSON-encoding refusal. `/non-string_key` and `/non-JSON_number` failed their empty-stdout assertions. All five edits failed tests, not compilation.
+- External matrix: 14/14 cases passed, comprising 11 successful history variants and three refusals. Sizes 65,535, 65,536, 65,537, and 1,048,577 reason bytes were preserved; the largest read took 0.118 seconds without truncation. Duplicate record identity and positive infinity exited 1 with empty stdout.
+- Alias hypothesis: an anchor inside `gates` preserves the exact aliased timestamp. An anchor outside `gates` is already refused by canonical reading: both `gate read` and existing `status --validate` report `gates.version must be 1`. It does not establish a regression or a newly accepted format restriction.
+
+### Scope, findings, and retained evidence
+
+- Actual product surface versus approved baseline `15e0baea39a6d47a802a01f45cdcfd8063c6edfd`: nine files, +411/-8, net +403. This is 7.1% below the net +434 estimate and within +314 to +554 and seven to eleven files. No AC, stored authority, schema, mutation behavior, or runtime behavior changed.
+- No new finding requires disposition. The implementation's recorded discovery, diagnostic, cache, disk, formatting, and concurrent-suite dispositions remain authorized as recorded. No material finding remains. No new deferred risk was established.
+- All commands used the assigned session `GOCACHE`, `GOFLAGS=-p=1`, and verified fnm Node PATH. Last observed free space was 315 MiB; no write failed and no shared cache or peer file was cleaned. No host adapter, dispatch, skill, or live-lane trigger occurs in this diff.
+- Focused evidence: `/tmp/spacedock-gate-history-json-reader-validation-focused.jsonl`. Detached mutation commands, exact patches, logs, and `summary.json` remain in `/tmp/spacedock-gate-history-json-reader-validation-audit-evidence`.
+- Reproduce adjacent evidence with `python3 /tmp/spacedock-gate-history-json-reader-validation-audit-evidence/adjacent.py <exact-candidate-checkout> <candidate-binary> <new-fixture-directory>`; the script uses repository literal fixtures and Python's standard library. `adjacent-summary.json` retains exact output hashes, timings, and canonical alias-refusal evidence.
