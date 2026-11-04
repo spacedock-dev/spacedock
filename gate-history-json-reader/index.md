@@ -52,6 +52,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:8v4gxdyfenqxz3t9wpc2c474:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:8v4gxdyfenqxz3t9wpc2c474-validation-1
+              briefing:
+                id: briefing:8v4gxdyfenqxz3t9wpc2c474:validation:attempt-1:revision-1
+                digest: sha256:c501d93474abc9d6b2ef537a27a42a0f1874982f695c981cf5cf5b07a1bdfc0c
+                room-ref: '@review/validation/briefing-1'
 started: 2026-11-04T07:47:25Z
 worktree: .worktrees/spacedock-ensign-gate-history-json-reader
 ---
