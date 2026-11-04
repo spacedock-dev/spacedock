@@ -293,6 +293,10 @@ Rejected snapshot: validation gate attempt 1, briefing `briefing:vtgw5b1ar42s6x8
 4. Registry: the cause text of the Sonnet `060xp` keep-moving row ("the FO skips the formal revise route for `questioned`") is disproved.
    - Class: Polish. FO authorization: `fix` (captain-approved). Replace it with the observed causes: a hand batch commit before `--stamp` (Sonnet 5, run 31894934349) and the host stop of the background `questioned` worker before it reports.
 5. Deferred risks, FO authorization `decline` (no change): the `060xp` bindings accept any failure code; no committed test for the consumed terminal-target refusal; four surviving `merge.go` mutants. Promote conditions are in the validation report.
+6. Re-review cycle 1 (validator, 2026-11-04): the new commit line needs an absolute `{entity_file_path}`; a repo-relative path exits 128.
+   - Class: Deferred risk. In both live arms the FO filled an absolute path. Promote when a break-glass stream shows a relative path. FO authorization: `decline` (no change in this task).
+7. Re-review cycle 1 (validator, 2026-11-04): `{entity_file_path}` is unquoted, so a path with spaces breaks `add --`, `commit --` and `dirname`. The same gap exists on base.
+   - Class: Deferred risk. Promote when a supported workflow lives under a path with spaces. FO authorization: `decline` (no change in this task).
 
 ## Stage Report: implementation (cycle 1)
 
