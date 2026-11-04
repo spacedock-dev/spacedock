@@ -91,7 +91,7 @@ gates:
 started: 2026-11-03T18:28:41Z
 worktree: .worktrees/spacedock-ensign-repair-sonnet-live-flakes
 mod-block:
-pr:
+pr: "#863"
 ---
 ## Problem
 
