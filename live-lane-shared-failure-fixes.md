@@ -73,6 +73,20 @@ gates:
                 id: briefing:vtgw5b1ar42s6x807nfdzwb9:validation:attempt-2:revision-1
                 digest: sha256:e705de56b4d5d6d2d1c3b4acd5e7298994ccda869db0188b13d041162cf3c560
                 room-ref: '@review/validation/briefing-2'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:vtgw5b1ar42s6x807nfdzwb9:validation:2
+                briefing: briefing:vtgw5b1ar42s6x807nfdzwb9:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-11-04T09:56:31.180952Z"
+                decision: approve
+                reason: Fresh re-review PASSED with no material findings; net +198 within the +200 captain ceiling.
+                conn:
+                    quote: proceed gate grants
+                    source: 'captain /goal command in FO session a91fcb1a (2026-11-03 PST), granting option 1 of the FO overnight plan: the FO can approve the validation gates of live-lane-shared-failure-fixes, align-claude-break-glass-agent-proof and repair-sonnet-live-flakes if the fresh validator recommends PASSED with no material findings and the diff stays within its ceiling; the FO opens the stacked PRs and runs CI including claude-live, but does not merge'
+              application:
+                target-stage: done
+                state: pending
 review-round:
     id: round:vtgw5b1ar42s6x807nfdzwb9:validation:1
     stage: validation
