@@ -552,3 +552,45 @@ Implementation and validation still owe candidate behavior, full regression evid
 
 The candidate preserves orchestrator control through the existing launcher and Safehouse wrapper, with no new protocol parser or process controller.
 Native startup/settings and deterministic proof pass. Validation still owns the detached adversarial audit and required live lanes before merge.
+
+## Stage Report: validation
+
+- DONE: Independently verify each acceptance criterion against the exact committed candidate and report explicit PASS/FAIL with reproducible external evidence.
+  AC-1 PASS: exact argv and clean stdout. AC-2 PASS: caller settings and identity. AC-3 PASS: wrapping, precedence, and binary identity. AC-4 PASS: provider bypass and ordinary defaults. AC-5 PASS: rendered help and runnable examples. Evidence follows.
+- DONE: Attack the highest-risk semantics and perform any workflow-required detached adversarial audit in a throwaway checkout; report concrete falsifiers and outcomes.
+  AC-1, AC-2, AC-3, AC-4: 18/18 independent production mutations failed their existing test owners; 21/21 external process observations passed. Candidate bytes and HEAD stayed unchanged.
+- DONE: Commit and send a complete validation Stage Report with the three checklist outcomes, tests and denominators, exact candidate SHA, authorized findings, and PASSED/REJECTED recommendation.
+  AC-1, AC-2, AC-3, AC-4, AC-5: this canonical entity contains the report. The path-scoped state commit and exact candidate SHA accompany the delivery to the First Officer. Recommendation: PASSED for PR readiness.
+
+### Evidence
+
+- Candidate: `2f99a397a36ea77addc69e6481f98777d584f440`, branch `paseo-provider-passthrough`. The implementation worktree and detached audit checkout both remain clean at this SHA.
+- AC-1 PASS: `TestProviderHostLaunch` and `TestPiProviderLaunch` compare literal complete argv and quiet launcher channels. Six external plain/wrapped launches retained 14 arguments, including empty, Unicode, newline, repeated settings, and a native fence. Adding an identity, prompt, permission flag, or banner failed the audit.
+- AC-2 PASS: `TestCodexProviderAcceptsCallerCollaboration` accepts caller overrides. `TestProviderCanonicalSettings` checks selected-host allowances and exact absent/empty/0/spaced values. Native evidence returns Codex `review-selected`/`on-request`, Claude `claude-sonnet-5`/`permissionMode: default`, and Pi `autoCompactionEnabled: false`/`steeringMode: all`, wrapped and plain. Removing a canonical allowance, filtering empty/0, changing host selection, or retaining Pi markers failed.
+- AC-3 PASS: `TestSandboxEnvironmentPrecedence`, `TestSafehouseEnvPassForwardsSpacedockBin`, and `TestRunPi_LaunchArgv0_StableUnderWrapWithAddDirs` passed independently. Real-wrapper processes observed `APP_SANDBOX_CONTAINER_ID=agent-safehouse`, the exact selected binary, and exit 7. Ignoring explicit Boolean/capability flags or removing the fnm grant failed.
+- AC-4 PASS: provider fixtures skip discovery, installation, compatibility, and Pi readiness. `TestPiProviderLaunch` retains ordinary readiness despite the alias. Existing Claude default, Codex complete collaboration argv, and Pi native-resource owners passed. Removing ordinary Claude permissions or Codex collaboration failed the audit.
+- AC-5 PASS: `TestProviderHelp` exercised all three rendered command helps. The concrete documentation describes pre-fence mode selection, native forwarding, environment precedence, and bounded canonical settings. Producer native startup exercised Claude stream-json, Codex app-server, and Pi RPC examples. Changed help, comments, and documentation passed the Simple English review.
+- Independent focused command: `go test ./internal/cli -run '^(TestProvider.*|TestCodexProviderAcceptsCallerCollaboration|TestPiProviderLaunch|TestSandboxEnvironmentPrecedence|TestCodexCollaborationLayerCompleteArgv|TestClaudeFrontDoorLaunchesOnCompatible|TestSafehouseEnvPassForwardsSpacedockBin|TestRunPi_LaunchArgv0_StableUnderWrapWithAddDirs|TestPiFrontDoorLaunchesWithNativeResourcePaths)$' -count=1 -json`; 12/12 roots, 148/148 subtests, one package passed, no skips. Log: `/tmp/paseo-provider-passthrough-validation-baseline.jsonl`.
+- Required broad checks reused: `go test ./...` passed 21/21 test-bearing packages plus 2 no-test packages; `go test ./... -race -timeout 30m -json` passed the same packages, 1533 roots, and 1946 subtests. Logs: `/tmp/paseo-provider-passthrough-normal-retry.log` and `/tmp/paseo-provider-passthrough-race.jsonl`.
+- Unverified skips remain: `TestCodexIsolatedHomeCollaborationLifecycle` requires an opt-in model turn. `TestUpdateFrontmatterBlockScalarsRewrapped` retains documented divergence #L2-b. Neither is counted as passed.
+- Environment: every independent Go command used `GOCACHE=/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/paseo-fo-64ye7hx6/gocache`, `GOFLAGS=-p=1`, and PATH prefixed with `/Users/clkao/.local/share/fnm/node-versions/v24.13.1/installation/bin`. No full suite ran concurrently; no cache or peer files were cleaned. No independent command reported ENOSPC; final free space was 742 MiB.
+- Native evidence reused: `/tmp/paseo-provider-passthrough-proof/native-probes.json` records 15/15 real observations: nine Safehouse sentinels and six native settings startups. Its final Pi observations supersede the documented initial fixture setup failure.
+- External independent proof: `/tmp/paseo-provider-passthrough-validation/process-results.json` records 21/21 observations: six exact plain/wrapped argv/environment launches, nine early task/plugin rejections, three invalid-Boolean rejections, and three explicit-Boolean overrides. Rejections added zero child spy events. The exact-SHA binary has SHA-256 `291923bee44eb03d4bab9fbfe71425337b765f9b24f1bd87ced2e269464a8675`.
+- Detached audit: `/tmp/paseo-provider-passthrough-validation-audit` was created with `git worktree add --detach ... 2f99a397a36ea77addc69e6481f98777d584f440`. `/tmp/paseo-provider-passthrough-validation/audit.py` applies each production-only edit separately, runs `go test ./internal/cli -run '^OWNER$' -count=1 -json`, and restores the original bytes.
+- Audit AC-1/AC-2: bootstrap, Claude identity, both wrapped permission bypasses, and stdout banner failed `TestProviderHostLaunch`; restored collaboration rejection failed `TestCodexProviderAcceptsCallerCollaboration`; inherited Pi markers and unsolicited resources failed `TestPiProviderLaunch`.
+- Audit AC-2/AC-4: omitted Codex allowance, filtered empty values, filtered 0 values, wrong-host selection, and expanded ordinary allowances failed `TestProviderCanonicalSettings`. Expected values remain test literals independent of production lists.
+- Audit AC-3/AC-4: ignored explicit Boolean/capability flags failed `TestSandboxEnvironmentPrecedence`; removed ordinary Codex collaboration failed `TestCodexCollaborationLayerCompleteArgv`; removed ordinary Claude permissions failed `TestClaudeFrontDoorLaunchesOnCompatible`; removed fnm grant failed `TestRunPi_LaunchArgv0_StableUnderWrapWithAddDirs`.
+- Audit total: 18/18 mutations caught by assertion failures, zero surviving mutations, zero compile-failure substitutes. Full per-mutation commands, exit codes, failed tests, and logs are in `/tmp/paseo-provider-passthrough-validation/audit-results.json`.
+- Format/surface: producer ran `gofmt -w ./cmd ./internal`; independent `gofmt -l` found no changed Go file. `git diff --check main...HEAD` passed. Actual surface is 13 files, +612/-240, net +372 (93% of +400 estimate), within +280..+520 and maximum 15 files. All five approved ACs and semantic boundaries remain unchanged.
+
+### Findings and remaining proof
+
+- No new outcome defect, evidence defect, deferred risk, or polish finding arose. The detached audit refuted nothing material; no candidate edit or reviewer rerun required disposition.
+- Existing authorized corrections are satisfied: the Pi help oracle accepts the compatibility alias while retaining the unsupported `--no-install` exclusion and ordinary readiness. The authorized ENOSPC recovery produced complete green normal/race runs.
+- Before merge, Claude, Codex, and Pi live CI still require green evidence for this exact product SHA. The First Officer owns this requirement and holds merge. No provider live-lane evidence exists yet; unrelated reader PR #860 cannot establish it.
+- The First Officer reports reader-only run `41817979627` has Pi/Codex OAuth failures before agent turns (`refresh_token_reused`/expired token, HTTP 401). These are environment evidence failures on another candidate. No credential mutation or repeated doomed run was authorized.
+
+### Summary
+
+The candidate satisfies AC-1 through AC-5 with deterministic, native, and independent process evidence. All 18 adversarial edits were caught, and the recommendation is PASSED for PR readiness.
+Required host live CI remains pending before merge, and both named skipped checks remain unverified.
