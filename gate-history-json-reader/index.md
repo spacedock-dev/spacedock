@@ -30,6 +30,14 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:8v4gxdyfenqxz3t9wpc2c474:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:8v4gxdyfenqxz3t9wpc2c474-ideation-1
+              briefing:
+                id: briefing:8v4gxdyfenqxz3t9wpc2c474:ideation:attempt-1:revision-1
+                digest: sha256:1452421613a39eda31b11e8d881ab43e3bd41fd482189b2aba94a3b14a9cb7f4
+                room-ref: '@review/ideation/briefing-1'
 started: 2026-11-04T07:47:25Z
 ---
 Paseo can show gate history from the binary-owned schema without parsing Markdown itself.

@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:8v4gxdyfenqxz3t9wpc2c474:ideation:attempt-1:revision-1",
+  "question": "Approve the read-only gate-history JSON design for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:8v4gxdyfenqxz3t9wpc2c474:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/538d5ee1a6cf96f5e806bfd5dd191db3e8b79437/gate-history-json-reader/index.md",
+      "rev": "sha256:e3887718e4bedba7ced7b26ee2516c3bc783dd577bf027a70ea97eed4a6f35ba",
+      "mediaType": "text/markdown",
+      "summary": "Add gate read \u003cref-or-path\u003e --json through existing read resolution. Preserve the complete stored tree, timestamp spelling, order, and reasons. The independent spike passed 66 scalar values and read-only snapshots. Expected +434 net LOC across nine files; tolerance +314 to +554 and seven to eleven files. No storage or authority changes."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:8v4gxdyfenqxz3t9wpc2c474:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/661c607ae34620caa9579f2f65b53e4a5d242344/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:68525cd15144ae445da3f721418e16585c3f4d7168a09c507b0485988ff8b948"
+    }
+  ]
+}
