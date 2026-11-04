@@ -38,6 +38,20 @@ gates:
                 id: briefing:xerfqfkayjawte0gjem7v8v1:ideation:attempt-1:revision-1
                 digest: sha256:3ff2ebd4a21be5e2945a698c39f2288f5a65ba65eb53ebc5c1a2b4c1ae5efc82
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:xerfqfkayjawte0gjem7v8v1:ideation:1
+                briefing: briefing:xerfqfkayjawte0gjem7v8v1:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-11-04T08:51:20.893949Z"
+                decision: approve
+                reason: Three revision checklist items are DONE and independent re-review approves the design. Real probes establish protocol, permission, and canonical-setting loss. The revision closes R1 through bounded existing allowances, retains seed values and ordinary behavior, and declares focused candidate proof and the full checks/audit still owed.
+                conn:
+                    quote: Proceed with the 3. You have the conn to approve gate and open pr
+                    source: Captain message in this Codex conversation on 2026-11-03
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-11-04T07:48:58Z
 ---
 Paseo can use Spacedock as a provider command while retaining control of its protocol, agent identity, prompts, and permission UI.
