@@ -151,6 +151,9 @@ homebrew_casks:
       - formula: spacedock-dev/tap/subspace-beta
       - formula: spacedock-dev/tap/compass
     caveats: |
+      Add the agent plugins:
+        spacedock install --host claude   (or --host codex)
+
       Recommended companion (install separately):
         safehouse  — sandboxes agent runs (https://agent-safehouse.dev)
         brew install eugene1g/safehouse/agent-safehouse
@@ -206,6 +209,9 @@ homebrew_casks:
       - formula: spacedock-dev/tap/subspace-beta
       - formula: spacedock-dev/tap/compass
     caveats: |
+      Add the agent plugins:
+        spacedock install --host claude   (or --host codex)
+
       Recommended companion (install separately):
         safehouse  — sandboxes agent runs (https://agent-safehouse.dev)
         brew install eugene1g/safehouse/agent-safehouse

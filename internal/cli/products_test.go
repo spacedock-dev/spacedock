@@ -41,10 +41,10 @@ func TestInstallSequencesEndWithSubspaceAndCompassForClaudeAndCodexOnEachChannel
 func testInstallSequencesEndWithSubspaceAndCompass(t *testing.T, source, branch string) {
 	claude := installArgvSequence(source, branch)
 	wantClaude := []installStep{
-		{argv: []string{"plugin", "uninstall", "subspace@spacedock-edge"}, tolerateExit: true},
+		{argv: []string{"plugin", "uninstall", "subspace@spacedock-edge"}, tolerateExit: true, reportExit: true, ifInstalled: "subspace@spacedock-edge"},
 		{argv: []string{"plugin", "install", "subspace@spacedock"}, tolerateExit: true},
 		{argv: []string{"plugin", "update", "subspace@spacedock"}, tolerateExit: true, reportExit: true},
-		{argv: []string{"plugin", "uninstall", "compass@spacedock-edge"}, tolerateExit: true},
+		{argv: []string{"plugin", "uninstall", "compass@spacedock-edge"}, tolerateExit: true, reportExit: true, ifInstalled: "compass@spacedock-edge"},
 		{argv: []string{"plugin", "install", "compass@spacedock"}, tolerateExit: true},
 		{argv: []string{"plugin", "update", "compass@spacedock"}, tolerateExit: true, reportExit: true},
 	}
