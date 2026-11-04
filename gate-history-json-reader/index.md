@@ -443,3 +443,51 @@ The implementation adds no stored format or authority change and replaces stale 
 
 No ideation blocker remains. Implementation and validation must run the required full checks and report any remaining baseline limits.
 The First Officer owns any independent design review and the gate decision. No worker approved a gate or opened a PR.
+
+## Stage Report: implementation
+
+- DONE: Deliver the approved behavior and documentation with focused red-first evidence for every value acceptance criterion.
+  The committed CLI fixtures prove AC-1 through AC-3. The exact help owners, removed-verb owner, and command reference prove AC-4.
+- DONE: Commit the scoped candidate after formatting and the complete Go and race suites pass; report denominators and unchanged approved semantics.
+  Product 2aeab0a03e5b54d9644304ca7325e913d4f7697b follows formatting and successful complete normal/race commands. Each final command passed all 21 test-bearing packages.
+- DONE: Commit and send a complete implementation Stage Report with candidate identity, three checklist outcomes, AC evidence, surface actuals, and any finding proposals.
+  This report records all three outcomes, the candidate, AC proofs, surface, and authorized dispositions. Its path-scoped state commit is sent to the First Officer.
+
+### Summary
+
+`gate read <ref-or-path> --json` now returns the complete validated stored gate object. The reader retains timestamp text, scalar values, array order, empty fields, and compatibility data without changing stored authority.
+
+### Candidate and surface
+
+- Product: `2aeab0a03e5b54d9644304ca7325e913d4f7697b`, branch `gate-history-json-reader`, approved source baseline `15e0baea39a6d47a802a01f45cdcfd8063c6edfd`. The product worktree is clean.
+- Actual surface: nine files, +411/-8, net +403. Estimate: nine files, net +434. Actual net is 7.1% smaller and within +314 to +554 and seven to eleven files.
+- Approved semantics remain unchanged: stored schema, decision authority, application semantics, runtime launch behavior, and existing status output. Observable changes are the new reader and corrected gate help.
+
+### Evidence and checks
+
+- Red first: `go test ./internal/cli -run '^(TestGateReadCLI|TestTopLevelHelpFormsAreIdentical|TestGatePrepareCLIPrintsExactRoomBindingAndCurrentV1HelpSurface)$' -count=1 -v` exited 1 before implementation. All 23 reader cases and both help owners failed on the missing command or stale help (4.943s).
+- AC-1/AC-2: `TestGateReadCLI` passes 23/23 cases against independent Markdown/JSON literals: two records, five attempts, and 66 scalar leaves. Typed serialization, timestamp normalization, field loss, reason edits, or array reordering fail the complete-tree oracle. Repeat reads also require identical bytes, readable Unicode, unescaped HTML characters, and one final newline.
+- AC-3: the same owner snapshots five complete-history forms, two empty forms, and 16 refusals. It compares every fixture file and directory, Git HEAD, index, status, and before/after status-read output. A writer, sync, or incorrect split-root resolver fails these checks.
+- AC-3 compatibility: nine existing status owners pass unchanged, including `TestGoldenRead`, `TestJSONReadGolden`, and section-read cases. Changing string-valued frontmatter or existing output fails these golden/read assertions.
+- AC-4: both exact help owners and all three removed-verb cases pass. Restoring `validate` help or omitting `read` from diagnostics fails them. The documented slug, path, archive, discovery, and relative-workflow forms run through the real CLI.
+- Final focused command: `go test ./internal/cli ./internal/status -run '^(TestGateReadCLI|TestTopLevelHelpFormsAreIdentical|TestGatePrepareCLIPrintsExactRoomBindingAndCurrentV1HelpSurface|TestRemovedGateVerbsAreAbsentAndSideEffectFree|TestGoldenRead|TestJSONReadGolden|TestReadFrontmatterParity|TestReadHeadingMapLocatesBytes|TestReadFencedHeadingsSkipped|TestFindSectionSpansUsesFenceSafeHeadingOwnership|TestReadEntityRefResolvesLikeResolve|TestReadPathFormResolvesPlainFile|TestReadFlagIncompatibility)$' -count=1 -v`: 13 top-level tests and 47 named subcases passed across two packages.
+- Final Go environment: `PATH=/Users/clkao/.local/share/fnm/node-versions/v24.13.1/installation/bin:$PATH`, `GOFLAGS=-p=1`, `GOCACHE=/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/paseo-fo-64ye7hx6/gocache`. Full suites ran sequentially; no global install or shared-cache change occurred.
+- `go test ./...` exited 0: 21/21 test-bearing packages passed fresh, plus two packages without tests. No package timed out.
+- `go test ./... -race -timeout 30m` exited 0: 21/21 test-bearing packages passed (17 cached, four fresh), plus two without tests. No race finding appeared. The First Officer authorized the invocation budget after a measured 520.323-second normal package; no assertion, AC, or committed timeout changed.
+- `go test ./internal/ensigncycle -race -timeout 30m` passed 1/1 packages in 519.922s before the successful aggregate rerun. It retained every assertion and used the same cache/PATH/GOFLAGS.
+- `gofmt -w ./cmd ./internal` exited 0. All six changed Go files also passed `gofmt -l`; `git diff --check` passed. The authorized exclusion of unrelated baseline formatting appears below.
+- `uv run --with-requirements docs/requirements.txt mkdocs build --strict --site-dir /tmp/spacedock-gate-history-json-reader-site` exited 0. The pinned requirements declare the documentation dependencies.
+- Complete logs remain under `/tmp/spacedock-gate-history-json-reader-`: `focused.log`, `focused-final.log`, `normal.log`, `normal-final.log`, `race.log`, `race-ensigncycle-retry.log`, and `race-final.log`. Failed commands remain failed in this record.
+
+### Findings and authorized dispositions
+
+- Discovery: user/workflow: a developer runs the no-flag reader. Harm: the new fixture could not prove valid discovery. Authority: `value-ac[AC-3]` requires valid resolver evidence. Trigger: the first post-code run passed 22/23 reader cases and reported no commissioned workflow. Worker proposal: Polish, task-owned, fix. The First Officer classified an owned Material evidence defect and authorized only local `commissioned-by` setup. The final 23/23 reader cases pass; shared fixtures and discovery semantics remain unchanged.
+- Diagnostic: user/workflow: a developer runs removed gate verbs. Harm: a stale exact-output oracle rejected the approved supported-command list. Authority: `value-ac[AC-4]` requires supported command names. Trigger: three removed-verb cases expected `prepare|withdraw|record|consume`; actual diagnostics also named `read`. Worker/FO disposition: Material evidence defect, task-owned, fix only that expected list. Rejection and side-effect assertions remain; all three cases pass.
+- Missing cache archives: user/workflow: a developer runs the complete normal suite. Harm: six late packages could not build. Authority: `value-ac[AC-3]` requires complete compatibility evidence. Trigger: Go reported missing shared-cache archives for `testing`, `os`, and other imports. That first normal command exited 1: 14/21 packages passed, seven failed, plus two without tests. Worker/FO disposition: Material evidence/environment defect, environment-owned, fix with the session cache. Removal cause remains unknown; the complete normal rerun passed.
+- Disk capacity: user/workflow: a developer runs the complete race suite. Harm: Go could not retain the workflow-cycle test log. Authority: `value-ac[AC-3]` requires a successful complete compatibility command. Trigger: assertions printed PASS, then `no space left on device` failed the package at 533.658s. That aggregate exited 1: 20/21 packages passed, one failed, plus two without tests. Worker proposal: Material environment defect, environment-owned, hold. The First Officer authorized an isolated failed-package retry, then the identical complete aggregate. Both passed; no files were deleted and no assertion changed.
+- Formatting: user/workflow: released workflows remain unchanged. Harm: none. Authority: none: unrelated whitespace cannot establish a value failure. Trigger: required global gofmt aligned two pre-existing fields in `internal/release/runtime_live_evidence_workflow_test.go`. Worker/FO disposition: Polish, outside task ownership, decline. Only those two incidental edits were restored; that file is absent from the candidate.
+- Concurrent suites: user/workflow: a developer runs the required checks. Harm: no shared-path interference was observed. Authority: `value-ac[AC-3]` protects the known shared dispatch proof boundary. Trigger: two external workflow-cycle test processes overlapped a green normal package. Worker/FO disposition: Deferred risk, environment-owned, decline product changes and continue. No other session was stopped. An observed shared-path failure promotes this risk for new triage.
+
+### Remaining limits
+
+No unresolved product finding remains. Cache-removal cause and low disk headroom remain environment limits. Independent validation and the detached command audit remain with the First Officer. No product branch was pushed, and no PR, merge, release, frontmatter, or gate-state change occurred.
