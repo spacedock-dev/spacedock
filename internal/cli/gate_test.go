@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -14,6 +16,148 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/status"
 	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
+
+func TestGateReadCLI(t *testing.T) {
+	workflow, state, _ := gatePrepareCLIFixture(t)
+	root := filepath.Dir(filepath.Dir(workflow))
+	readme, err := os.ReadFile(filepath.Join(workflow, "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, filepath.Join(workflow, "README.md"), strings.Replace(string(readme), "---\n", "---\ncommissioned-by: spacedock@1\n", 1))
+	source, err := os.ReadFile("../status/testdata/gate-history/complete.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, err := os.ReadFile("../status/testdata/gate-history/complete.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, filepath.Join(state, "task.md"), string(source))
+	archive := filepath.Join(state, "_archive")
+	if err := os.MkdirAll(archive, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, filepath.Join(archive, "finished.md"), strings.Replace(string(source), "id: task\n", "id: finished\n", 1))
+	writeFile(t, filepath.Join(state, "absent.md"), "---\nid: absent\nstatus: validation\n---\n")
+	writeFile(t, filepath.Join(state, "empty.md"), "---\nid: empty\nstatus: validation\ngates: {version: 1, records: []}\n---\n")
+	git(t, state, "add", ".")
+	git(t, state, "commit", "-q", "-m", "gate history fixture")
+	invoke := func(dir string, args ...string) (int, string, string) {
+		var out, errOut bytes.Buffer
+		code := run(context.Background(), args, nil, dir, nil, &out, &errOut, &status.NativeRunner{}, nil)
+		return code, out.String(), errOut.String()
+	}
+	statusCode, statusBefore, statusErr := invoke(workflow, "status", "--read", "task", "--json", "--workflow-dir", workflow)
+	if statusCode != 0 || statusErr != "" {
+		t.Fatalf("status baseline exit=%d stderr=%q", statusCode, statusErr)
+	}
+	readArgs := func(ref string) []string {
+		return []string{"gate", "read", ref, "--json", "--workflow-dir", workflow}
+	}
+	bad := strings.Replace(string(source), "id: task\n", "id: bad\n", 1)
+	application := "          application:\n            target-stage: done\n            state: superseded\n            legacy: {live: false, counts: [1, 2], note: '  old  '}\n"
+	for _, tc := range []struct {
+		name, dir, source, wantErr string
+		args                       []string
+		code                       int
+		empty                      bool
+	}{
+		{name: "slug", args: readArgs("task")},
+		{name: "path", args: readArgs(filepath.Join(state, "task.md"))},
+		{name: "archive", args: readArgs("archive:finished")},
+		{name: "discovery", args: []string{"gate", "read", "task", "--json"}},
+		{name: "relative workflow", dir: root, args: []string{"gate", "read", "task", "--json", "--workflow-dir", "docs/dev"}},
+		{name: "absent", args: readArgs("absent"), empty: true},
+		{name: "empty", args: readArgs("empty"), empty: true},
+		{name: "invalid version", source: strings.Replace(bad, "version: 1", "version: 2", 1), args: readArgs("bad"), code: 1, wantErr: "gates.version must be 1"},
+		{name: "malformed YAML", source: "---\nid: bad\ngates: [\n---\n", args: readArgs("bad"), code: 1, wantErr: "parse frontmatter"},
+		{name: "invalid binding", source: strings.Replace(bad, "briefing: briefing:validation:1", "briefing: wrong", 1), args: readArgs("bad"), code: 1, wantErr: "briefing binding is invalid"},
+		{name: "scalar application", source: strings.Replace(bad, application, "          application: legacy\n", 1), args: readArgs("bad"), code: 1, wantErr: "application must be a mapping"},
+		{name: "non-string key", source: strings.Replace(bad, "legacy: {live: false, counts: [1, 2], note: '  old  '}", "legacy: {1: value}", 1), args: readArgs("bad"), code: 1, wantErr: "unsupported type"},
+		{name: "non-JSON number", source: strings.Replace(bad, "live: false", "live: .nan", 1), args: readArgs("bad"), code: 1, wantErr: "unsupported value"},
+		{name: "unknown reference", args: readArgs("missing"), code: 1, wantErr: "unknown reference"},
+		{name: "missing reference", args: []string{"gate", "read", "--json"}, code: 2, wantErr: "requires exactly one reference and --json"},
+		{name: "missing JSON", args: []string{"gate", "read", "task"}, code: 2, wantErr: "requires exactly one reference and --json"},
+		{name: "extra reference", args: []string{"gate", "read", "task", "other", "--json"}, code: 2, wantErr: "requires exactly one reference and --json"},
+		{name: "repeated JSON", args: []string{"gate", "read", "task", "--json", "--json"}, code: 2, wantErr: "requires exactly one reference and --json"},
+		{name: "repeated workflow", args: append(readArgs("task"), "--workflow-dir", workflow), code: 2, wantErr: "--workflow-dir exactly once"},
+		{name: "missing workflow value", args: []string{"gate", "read", "task", "--json", "--workflow-dir"}, code: 2, wantErr: "--workflow-dir requires an argument"},
+		{name: "mutation flag", args: []string{"gate", "read", "missing", "--json", "--consume", "--workflow-dir", "missing"}, code: 2, wantErr: "unknown gate read flag: --consume"},
+		{name: "mutation argument", args: []string{"gate", "read", "missing", "--json", "--decision", "approve", "--workflow-dir", "missing"}, code: 2, wantErr: "unknown gate read flag: --decision"},
+		{name: "unsupported validate", args: []string{"gate", "validate", "task"}, code: 2, wantErr: "want: prepare|withdraw|record|read|consume"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.source != "" {
+				writeFile(t, filepath.Join(state, "bad.md"), tc.source)
+			}
+			before := gateReadSnapshot(t, root, state)
+			dir := tc.dir
+			if dir == "" {
+				dir = workflow
+			}
+			code, out, errOut := invoke(dir, tc.args...)
+			if code != tc.code || tc.code == 0 && errOut != "" || tc.code != 0 && (out != "" || !strings.Contains(errOut, tc.wantErr)) {
+				t.Fatalf("exit=%d stdout=%q stderr=%q; want exit=%d error=%q", code, out, errOut, tc.code, tc.wantErr)
+			}
+			if code == 0 {
+				if tc.empty {
+					if out != "{\"records\":[],\"version\":1}\n" {
+						t.Fatalf("empty history=%q", out)
+					}
+				} else {
+					var gotTree, wantTree any
+					if err := json.Unmarshal([]byte(out), &gotTree); err != nil {
+						t.Fatal(err)
+					}
+					if err := json.Unmarshal(want, &wantTree); err != nil {
+						t.Fatal(err)
+					}
+					if !reflect.DeepEqual(gotTree, wantTree) {
+						t.Fatalf("complete stored history differs:\n%s", out)
+					}
+					if !strings.HasPrefix(out, "{\"records\":[{\"attempts\":[{\"application\":") || !strings.Contains(out, "Résumé — 保留 <reason> &") || !strings.HasSuffix(out, "}\n") || strings.Count(out, "\n") != 1 {
+						t.Fatalf("JSON byte contract differs: %q", out)
+					}
+				}
+				if code2, out2, err2 := invoke(dir, tc.args...); code2 != 0 || out2 != out || err2 != "" {
+					t.Fatalf("repeat read differs: exit=%d stdout=%q stderr=%q", code2, out2, err2)
+				}
+			}
+			if after := gateReadSnapshot(t, root, state); !reflect.DeepEqual(before, after) {
+				t.Fatal("reader changed fixture files, directories, or Git metadata")
+			}
+		})
+	}
+	if code, out, errOut := invoke(workflow, "status", "--read", "task", "--json", "--workflow-dir", workflow); code != statusCode || out != statusBefore || errOut != statusErr {
+		t.Fatalf("status read changed: exit=%d stdout=%q stderr=%q", code, out, errOut)
+	}
+}
+
+func gateReadSnapshot(t *testing.T, root, state string) map[string]string {
+	t.Helper()
+	snapshot := map[string]string{}
+	for _, repo := range []string{root, state} {
+		snapshot[repo+":status"] = git(t, repo, "--no-optional-locks", "status", "--porcelain=v1", "--untracked-files=all")
+		snapshot[repo+":HEAD"] = git(t, repo, "rev-parse", "HEAD")
+	}
+	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() {
+			snapshot[path+"/"] = ""
+			return nil
+		}
+		data, err := os.ReadFile(path)
+		snapshot[path] = string(data)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return snapshot
+}
 
 func TestGateWithdrawCLIUsesExactGrammarAndImplicitFirstOfficerAttribution(t *testing.T) {
 	workflow, state, artifact := gatePrepareCLIFixture(t)
@@ -109,7 +253,9 @@ func TestGatePrepareCLIPrintsExactRoomBindingAndCurrentV1HelpSurface(t *testing.
 		"       spacedock gate withdraw <entity> --reason TEXT [--workflow-dir DIR]\n" +
 		"       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--conn-quote TEXT --conn-source TEXT] [--consume] [--workflow-dir DIR]\n" +
 		"       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--workflow-dir DIR]\n" +
+		"       spacedock gate read <ref-or-path> --json [--workflow-dir DIR]\n" +
 		"       spacedock gate consume <entity> [--workflow-dir DIR]\n\n" +
+		"Read complete gate history as one JSON document. The reader changes no files.\n\n" +
 		"On an approval whose target stage is terminal, consume spends nothing: it leaves the\n" +
 		"application pending and reports route=approved-awaiting-merge. The terminal merge\n" +
 		"ceremony (`spacedock merge guard <slug> --verdict passed|rejected`) is the sole terminal\n" +
@@ -436,7 +582,7 @@ func TestRemovedGateVerbsAreAbsentAndSideEffectFree(t *testing.T) {
 
 			var out, errOut bytes.Buffer
 			code := run(context.Background(), []string{"gate", verb, "task"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
-			if code != 2 || !strings.Contains(errOut.String(), "unknown subcommand (want: prepare|withdraw|record|consume)") {
+			if code != 2 || !strings.Contains(errOut.String(), "unknown subcommand (want: prepare|withdraw|record|read|consume)") {
 				t.Fatalf("gate %s exit=%d stdout=%q stderr=%q", verb, code, out.String(), errOut.String())
 			}
 			after, err := os.ReadDir(root)
