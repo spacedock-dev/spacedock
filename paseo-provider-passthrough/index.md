@@ -16,6 +16,20 @@ gates:
                 id: briefing:xerfqfkayjawte0gjem7v8v1:backlog:attempt-1:revision-1
                 digest: sha256:2feac6d7c7831a290eb2866b9ca6bbd0d50eb165039916586156b5fb8a6b4e0d
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:xerfqfkayjawte0gjem7v8v1:backlog:1
+                briefing: briefing:xerfqfkayjawte0gjem7v8v1:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-11-04T07:48:27.359557Z"
+                decision: approve
+                reason: The seed defines the reported orchestrator failures, retains sandbox behavior, protects ordinary launches, and requires each host boundary to be exercised.
+                conn:
+                    quote: Proceed with the 3. You have the conn to approve gate and open pr
+                    source: Captain message in this Codex conversation on 2026-11-03
+              application:
+                target-stage: ideation
+                state: pending
 ---
 Paseo can use Spacedock as a provider command while retaining control of its protocol, agent identity, prompts, and permission UI.
 
