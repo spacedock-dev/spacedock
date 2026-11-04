@@ -9,7 +9,7 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-live-lane-shared-failure-fixes
 issue:
-pr: "#862"
+pr: pr-merge:862
 mod-block:
 gates:
     version: 1
