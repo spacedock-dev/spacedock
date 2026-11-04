@@ -339,3 +339,19 @@ Add: `Provider mode suppresses these launch markers and explicit resources. See 
 The probes identify interactive launch additions as the cause of protocol and permission failures.
 The proposed mode preserves caller arguments and the existing sandbox wrapper, with no new process controller or collaboration policy.
 Baseline suite failures limit full regression proof, and the First Officer owns independent design review before the gate.
+
+
+## Stage Report: ideation-review
+
+- DONE: Challenge necessity and semantic scope of the proposed three-host launcher mode, including permission ownership, Pi resources, Codex configuration, and sandbox precedence.
+  `ideation-review.md` records removal challenges and R1. Real wrapped Codex settings changed from the caller's `on-request` to fallback `never`.
+- DONE: Review the independent risk evidence, exact value ACs, regression proof owners, counted surface/tolerance, and proposed documentation for missing promised behavior or unnecessary mechanisms.
+  The review retains all five seed value criteria, accepts existing probes, checks the +400/13-file estimate, and identifies the missing settings allowance.
+- DONE: Commit and send a concise independent ideation-review artifact and Stage Report with three checklist outcomes, concrete finding triage, and approve/revise recommendation; do not change the design.
+  `ideation-review.md` and this appended report form the path-scoped state delivery. The first officer receives the exact commit, results, evidence, and revise recommendation.
+
+### Summary
+
+The proposed mode needs its existing guards and wrapper, with no additional process or enforcement mechanism.
+The first officer classified R1 as owned Material and directed bounded forwarding of explicit host settings through the existing Safehouse allowlist.
+The recommendation is revise, with the original design and value criteria unchanged.
