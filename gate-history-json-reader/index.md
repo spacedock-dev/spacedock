@@ -30,6 +30,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-11-04T07:47:25Z
 ---
 Paseo can show gate history from the binary-owned schema without parsing Markdown itself.
 
