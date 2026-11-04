@@ -164,9 +164,10 @@ The shared product checkout remained unchanged.
   The runs overlapped, and this fixture uses the shared `/tmp/spacedock-dispatch/thing-backlog.md` path.
   Artifact interference remains an unconfirmed explanation.
   A focused repeat during the remaining suite reported the same failure.
-- Both Pi extension tests failed with `Library not loaded: /opt/homebrew/opt/llhttp/lib/libllhttp.9.3.dylib` from Homebrew Node 25.9.0_2.
+- Both Pi extension tests failed with `Library not loaded: /opt/homebrew/opt/llhttp/lib/libllhttp.9.3.dylib` from `/opt/homebrew/Cellar/node/25.9.0_2/bin/node`.
   A focused repeat reproduced both failures.
-  Native Pi RPC still passed through the working Node installation.
+  A repeat with per-command PATH through `/Users/clkao/.local/share/fnm/node-versions/v24.13.1/installation/bin` passed both extension tests in 0.714 seconds.
+  Native Pi RPC also passed through a working Node installation.
 - The focused ordinary launcher checks passed in 5.036 seconds.
   Their existing owners cover permission defaults, Codex collaboration, Pi launch markers, binary propagation, fnm resolution, resident parentage, and exit codes.
   Removing a default, marker, env-pass allowance, or resident parent breaks its respective owner.
