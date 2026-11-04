@@ -53,6 +53,7 @@ gates:
                 target-stage: implementation
                 state: consumed
 started: 2026-11-04T07:47:25Z
+worktree: .worktrees/spacedock-ensign-gate-history-json-reader
 ---
 Paseo can show gate history from the binary-owned schema without parsing Markdown itself.
 
