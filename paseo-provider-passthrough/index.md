@@ -1,6 +1,6 @@
 ---
 title: Preserve orchestrator control in launcher passthrough mode
-status: implementation
+status: validation
 source: "Captain authorized issue 813 on 2026-11-03: Proceed with the 3. You have the conn to approve gate and open pr"
 issue: spacedock-dev/spacedock#813
 sprint: paseo-integration
