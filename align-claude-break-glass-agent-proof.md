@@ -87,7 +87,7 @@ gates:
                 state: pending
 started: 2026-11-03T18:29:08Z
 worktree: .worktrees/spacedock-ensign-align-claude-break-glass-agent-proof
-pr: "#864"
+pr: pr-merge:864
 ---
 
 Restore a truthful break-glass substrate proof for the current Claude Agent tool surface.
