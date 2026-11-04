@@ -189,3 +189,27 @@ The selected-bare arm now uses the `/spacedock bare` captain selector. The recov
 ### Summary
 
 Detached audit of 64274cef5..616c1c9fe. Every named falsifying edit for AC-2 to AC-4 turned its test red, and the six-stream CI replay reproduced. An independent unbound live Sonnet run passed both arms, with a host-reported foreground bare spawn and `--bare-mode` before recovery. That supports removing the Sonnet 060xp binding. Surface, gofmt, and race and non-race suites are all clean. Recommend PASSED with two deferred risks: the oracle accepts non-boolean values, and normal bare dispatch still omits the key (a follow-up).
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Rebase this layer's two commits (8068e55e9, 616c1c9fe) from 64274cef5 onto the parent head 5311949c8 in this worktree; the parent deleted TestBreakGlassSelectedBareGapBindsPerTarget and changed the commit line in skills/fo-dispatch-recovery/SKILL.md and the registry, so resolve conflicts keeping both the parent's changes and this layer's approved change, with no other edits.
+  Rebased with `git rebase --onto 5311949c8 64274cef5`: 8068e55e9 became fdc5831dc (clean), and 616c1c9fe became 08582eae2. The one conflict was in `dispatch_recovery_live_test.go`. Resolution: keep the parent's deletion of TestBreakGlassSelectedBareGapBindsPerTarget. The parent's dfaff7f50 says TestRuntimeLiveRegistryMatchesBindings is the independent check. Keep this layer's binding change (Haiku only). SKILL.md and the registry auto-merged. There were no other edits.
+- DONE: Show that the layer's own diff against the new parent is unchanged in substance (list any line that differs from the 64274cef5..616c1c9fe diff and why), and that the AC-2 to AC-4 offline tests still go red under their named falsifying edits.
+  I compared `git diff 64274cef5 616c1c9fe` with `git diff 5311949c8 08582eae2`. Every +/- line is the same, except for three differences that come from the parent:
+  1. Registry hunk: only the context line and offset changed (the parent's restored keep-moving Haiku row). The removed Sonnet 060xp selected-bare row is identical.
+  2. Live test: the hunk that set `"claude-sonnet": {}` in TestBreakGlassSelectedBareGapBindsPerTarget is gone because the parent deleted that test. The `breakGlassSelectedBareGap` change and its comment are identical.
+  3. SKILL.md: the unchanged `### Commit` prompt line is context only. It now carries the parent's `git -C "$(dirname {entity_file_path})"` command. The layer's `run_in_background=false` lines are identical.
+  The falsifying edits were applied one at a time and then restored with `git checkout`:
+  - AC-2: revert the bare predicate to `(!hasRunInBackground || !runInBackground)`. Result: `selected_bare_rejects_omitted_run_in_background` goes red.
+  - AC-3: count only `subagent_type == "spacedock:ensign"` Agent calls in assertBreakGlassObservables. Result: TestAssertBreakGlassObservablesOffline goes red with "an Agent()-delivered shutdown must count as a second spawn".
+  - AC-4: drop the `/spacedock bare` prefix from breakGlassShimBarePrompt. Result: TestDispatchRecoveryPromptsSelectIntendedDispatchModes goes red.
+- DONE: gofmt, contractlint, go test ./... and go test ./... -race pass (per package with -timeout 30m if needed); no live run in this stage.
+  - gofmt: the layer's files are clean. `gofmt -l` flags only `internal/release/runtime_live_evidence_workflow_test.go`, which this layer does not touch and which is also unformatted on main at 661c607ae. I left it unchanged.
+  - contractlint: `internal/contractlint` passes in both runs.
+  - `go test -p 1 -count=1 -timeout 30m ./...`: exit 0.
+  - `-race ./...`: every package passes except `internal/ensigncycle`. All 43 of its failures were `TempDir: ... no space left on device`, caused by concurrent runs on the shared disk. A rerun of `go test -race ./internal/ensigncycle` passed (561s).
+  - No live run.
+
+### Summary
+
+I rebased the two layer commits onto 5311949c8. The branch head is now 08582eae2. In the only conflict, I kept the parent's deletion of the per-target binding test, and the layer's binding change still lands. The layer diff is the same in substance, and all three AC-2 to AC-4 falsifying edits still turn their offline tests red. The full suites pass. The race run needed one package rerun after a disk-full condition caused by other runs.
