@@ -5,6 +5,17 @@ source: "Captain authorized issue 814 on 2026-11-03: Proceed with the 3. You hav
 issue: spacedock-dev/spacedock#814
 sprint: paseo-integration
 id: 8v4gxdyfenqxz3t9wpc2c474
+gates:
+    version: 1
+    records:
+        - id: gate:8v4gxdyfenqxz3t9wpc2c474:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:8v4gxdyfenqxz3t9wpc2c474-backlog-1
+              briefing:
+                id: briefing:8v4gxdyfenqxz3t9wpc2c474:backlog:attempt-1:revision-1
+                digest: sha256:1eff4abee71d034d2bb6e6bb157e4b2ecc422e69e87742e9773adb551d07a908
+                room-ref: '@review/backlog/briefing-1'
 ---
 Paseo can show gate history from the binary-owned schema without parsing Markdown itself.
 
