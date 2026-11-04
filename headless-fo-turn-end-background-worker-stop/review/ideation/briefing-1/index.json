@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:5779fk6mzntvv5j3x6hw8rdn:ideation:attempt-1:revision-1",
+  "question": "Approve the launcher fix (spacedock claude sets CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 unless set, passed through Safehouse; +51 net, 8 files) and replace the seed AC with 'the worker is not stopped before it reports'?",
+  "artifacts": [
+    {
+      "id": "artifact:5779fk6mzntvv5j3x6hw8rdn:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/2eaa8eef5a6c3508a39c25145667d6c3f6ad27f1/headless-fo-turn-end-background-worker-stop.md",
+      "rev": "sha256:b7dad108c0a3a16806612f394cb0b1e5b9f2b5d2ff3dbf16a7614cdbe32aa4ec",
+      "mediaType": "text/markdown",
+      "summary": "Cause confirmed by 7 Haiku host probes: in -p mode Claude Code 2.1.303 stops background agents after CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS (default 600000) of main-turn idleness; each FO turn resets it; 0 lets a worker report 663 s later and wake the FO. The FO contract's end_turn-and-wait posture is correct. Fix: spacedock claude sets the variable to 0 unless the operator set it, with --env-pass under Safehouse; the live harness launches through spacedock claude, so it is covered. Rejected: FO wait rule (no blocking tool, sleep banned), ensign stage-size rule, harness-only env. Risks: a never-ending background agent now never exits; the variable is undocumented. Needs decision: seed AC change. 0 Sonnet runs used."
+    }
+  ]
+}

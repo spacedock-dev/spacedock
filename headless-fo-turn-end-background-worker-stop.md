@@ -8,6 +8,17 @@ group: live-lane
 sprint-readiness: ready
 id: 5779fk6mzntvv5j3x6hw8rdn
 started: 2026-11-04T13:02:10Z
+gates:
+    version: 1
+    records:
+        - id: gate:5779fk6mzntvv5j3x6hw8rdn:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:5779fk6mzntvv5j3x6hw8rdn-ideation-1
+              briefing:
+                id: briefing:5779fk6mzntvv5j3x6hw8rdn:ideation:attempt-1:revision-1
+                digest: sha256:c9399b0d41a8b1e46e8bb2c1bae3e4c892614f542f8447c6d586a8ff7e529ef2
+                room-ref: '@review/ideation/briefing-1'
 ---
 
 In a headless (`-p`) drive with background workers, the FO can end its turn while a worker is still running. In probe b2 of `repair-sonnet-live-flakes` (Sonnet 5.5, head `64274cef5`, keep-moving journey), the host stopped the background `questioned` ideation worker 600 s after the FO's last turn. The worker had not committed its report, so the journey graded `keep-moving-violation`.
