@@ -1,6 +1,6 @@
 ---
 title: Repair Sonnet keep-moving and selected-bare live flakes
-status: implementation
+status: validation
 score: "0.95"
 source: "Exact-main Runtime Live E2E run 31894934349 attempts 1 and 2"
 sprint: test-behavior-completeness
