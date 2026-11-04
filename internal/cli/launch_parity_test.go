@@ -5,6 +5,9 @@ package cli
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"os"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -431,4 +434,132 @@ func TestPluginDirRelaxesGate(t *testing.T) {
 			t.Fatalf("Launch invoked despite failing gate and no --plugin-dir: %v", fake.launchedArg)
 		}
 	})
+}
+
+func recordSandboxLaunch(t *testing.T, host string, args []string, dir string, available bool) (argv, env []string, code int, diagnostic string) {
+	t.Helper()
+	var stdout, stderr bytes.Buffer
+	look := lookFound
+	if !available {
+		look = lookMissing
+	}
+	if host == "pi" {
+		repo, pkg := t.TempDir(), t.TempDir()
+		writePiSkillFixtures(t, repo)
+		writePiSubagentsFixtures(t, pkg)
+		ops := piSafehouseReadyOps(repo, pkg)
+		if !available {
+			delete(ops.lookPath, "safehouse")
+		}
+		code = runPi(context.Background(), args, dir, append(os.Environ(), piTestEnv(pkg, t.TempDir())...), ops, &stdout, &stderr)
+		argv, env = ops.launched, ops.launchedEnv
+	} else {
+		ops := &fakeHost{manifest: compatibleManifest(t)}
+		if host == "claude" {
+			code = runClaude(context.Background(), args, dir, ops, look, &stdout, &stderr)
+		} else {
+			code = runCodex(context.Background(), args, dir, ops, look, &stdout, &stderr)
+		}
+		argv, env = ops.launchedArg, ops.launchedEnv
+	}
+	return argv, env, code, stderr.String()
+}
+
+func TestSandboxEnvironmentPrecedence(t *testing.T) {
+	withExecutablePath(t, executableFixture(t), nil)
+	for _, host := range []string{"claude", "codex", "pi"} {
+		for _, provider := range []bool{false, true} {
+			for _, tc := range []struct {
+				name, force, enable          string
+				flags, extra                 []string
+				profile, wrap, missing, fail bool
+			}{
+				{name: "unset"}, {name: "empty"}, {name: "force", force: "1", wrap: true},
+				{name: "false", force: "0"}, {name: "parse bool", force: "TRUE", wrap: true},
+				{name: "invalid", force: "bad", fail: true}, {name: "flag false", force: "bad", flags: []string{"--safehouse=false"}},
+				{name: "flag true", force: "bad", flags: []string{"--safehouse=true"}, wrap: true},
+				{name: "capabilities", enable: "ssh,docker", wrap: true, extra: []string{"--enable=ssh", "--enable=docker"}},
+				{name: "replace", enable: "network", flags: []string{"--safehouse-enable=docker", "--safehouse-enable=ssh,docker"}, wrap: true, extra: []string{"--enable=docker", "--enable=ssh", "--enable=docker"}},
+				{name: "explicit empty", enable: "ssh", flags: []string{"--safehouse-enable="}, wrap: true, extra: []string{"--enable="}},
+				{name: "profile", force: "0", profile: true, wrap: true},
+				{name: "independent grant", force: "1", flags: []string{"--safehouse=false", "--safehouse-add-dirs=/chosen"}, wrap: true, extra: []string{"--add-dirs=/chosen"}},
+				{name: "missing sandbox", force: "1", missing: true, fail: true},
+			} {
+				t.Run(fmt.Sprintf("%s/provider=%t/%s", host, provider, tc.name), func(t *testing.T) {
+					t.Setenv("SPACEDOCK_SAFEHOUSE", tc.force)
+					t.Setenv("SPACEDOCK_SAFEHOUSE_ENABLE", tc.enable)
+					if tc.name == "unset" {
+						os.Unsetenv("SPACEDOCK_SAFEHOUSE")
+						os.Unsetenv("SPACEDOCK_SAFEHOUSE_ENABLE")
+					}
+					dir, args := t.TempDir(), slices.Clone(tc.flags)
+					if tc.profile {
+						dir = safehouseFixtureDir(t)
+					}
+					if provider {
+						args = append(args, "--passthrough")
+					}
+					argv, _, code, diagnostic := recordSandboxLaunch(t, host, args, dir, !tc.missing)
+					if tc.fail {
+						if code == 0 || argv != nil || diagnostic == "" {
+							t.Fatalf("exit=%d argv=%q stderr=%q", code, argv, diagnostic)
+						}
+						return
+					}
+					if code != 0 || len(argv) == 0 || (argv[0] == "safehouse") != tc.wrap {
+						t.Fatalf("exit=%d argv=%q stderr=%q", code, argv, diagnostic)
+					}
+					var actual []string
+					for _, arg := range piSafehouseExtra(argv) {
+						if strings.HasPrefix(arg, "--enable=") || strings.HasPrefix(arg, "--add-dirs=") {
+							actual = append(actual, arg)
+						}
+					}
+					if !slices.Equal(actual, tc.extra) {
+						t.Fatalf("wrapper flags=%q, want %q", actual, tc.extra)
+					}
+				})
+			}
+		}
+	}
+}
+
+func TestProviderCanonicalSettings(t *testing.T) {
+	withExecutablePath(t, executableFixture(t), nil)
+	names := []string{"CLAUDE_CONFIG_DIR", "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "CODEX_HOME", "PI_CODING_AGENT_DIR"}
+	for _, host := range []string{"claude", "codex", "pi"} {
+		for _, mode := range []string{"wrapped provider", "plain provider", "ordinary"} {
+			for _, value := range []string{"absent", "", "0", "settings with space=value"} {
+				t.Run(host+"/"+mode+"/"+value, func(t *testing.T) {
+					for _, name := range names {
+						t.Setenv(name, value)
+						if value == "absent" {
+							os.Unsetenv(name)
+						}
+					}
+					args := []string{"--safehouse"}
+					if mode != "ordinary" {
+						args = append(args, "--passthrough")
+					}
+					if mode == "plain provider" {
+						args = []string{"--passthrough"}
+					}
+					argv, env, code, diagnostic := recordSandboxLaunch(t, host, args, t.TempDir(), true)
+					if code != 0 {
+						t.Fatalf("exit=%d stderr=%q", code, diagnostic)
+					}
+					for _, name := range names {
+						selected := host == "claude" && (name == "CLAUDE_CONFIG_DIR" || name == "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS") || host == "codex" && name == "CODEX_HOME" || host == "pi" && name == "PI_CODING_AGENT_DIR"
+						wantAllowance := mode == "wrapped provider" && selected && value != "absent"
+						if slices.Contains(piSafehouseExtra(argv), name) != wantAllowance {
+							t.Fatalf("allowance %s: argv=%q want=%t", name, argv, wantAllowance)
+						}
+						if mode != "ordinary" && (hasEnv(env, name) != (value != "absent") || value != "absent" && envGetenv(env)(name) != value) {
+							t.Fatalf("value %s=%q present=%t, want %q", name, envGetenv(env)(name), hasEnv(env, name), value)
+						}
+					}
+				})
+			}
+		}
+	}
 }

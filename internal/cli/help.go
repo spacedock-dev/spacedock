@@ -37,6 +37,23 @@ Workflow
 Run "spacedock <command> --help" for details.  ·  --version prints the version.
 `
 
+const passthroughHelp = "Pass host arguments without interactive additions. Preserve explicit canonical host settings through Safehouse."
+
+const providerLaunchHelp = `
+With --passthrough, your orchestrator controls the host session. Put all native
+host arguments after --. Task text and --plugin-dir before -- are invalid.
+Spacedock skips interactive plugin setup, identity, prompts, permission flags,
+and first-officer banners. Native host discovery and caller configuration still apply.
+`
+
+const sandboxEnvironmentHelp = `
+Environment:
+  SPACEDOCK_SAFEHOUSE requests Safehouse with a Boolean value.
+  SPACEDOCK_SAFEHOUSE_ENABLE supplies comma-separated capabilities.
+  Explicit corresponding flags replace these values. Profiles and other sandbox
+  flags still select Safehouse independently.
+`
+
 func printHelp(w io.Writer) {
 	fmt.Fprint(w, topLevelHelp)
 }
@@ -74,8 +91,8 @@ Usage:
 Start `+hostTitle(host)+` as your Spacedock first officer. The optional task is the
 launch prompt; supported host arguments after -- forward verbatim to `+host+`.
 
-`+pluginBehavior+`
-
+Interactive launches:
+`+pluginBehavior+providerLaunchHelp+sandboxEnvironmentHelp+`
 Flags:
 `)
 		fmt.Fprint(w, c.Flags().FlagUsages())
@@ -93,14 +110,10 @@ Examples:
 	})
 }
 
-// setPiHelp installs the Pi-specific launch help. Pi loads explicit skills and
-// extensions instead of a Claude/Codex plugin manifest. The safehouse subset
-// mirrors the claude/codex help (same flag names) so operator muscle memory
-// transfers across hosts; --skip-compat-check / --no-install are NOT declared
-// because pi has no version gate. The flags are declared on the command only so
-// FlagUsages renders them (the pi command is DisableFlagParsing, exactly like
-// claude/codex); parsePiFrontDoorArgs owns the real parsing.
+// setPiHelp describes Pi launch flags. parsePiFrontDoorArgs owns their parsing.
 func setPiHelp(cmd *cobra.Command, w io.Writer) {
+	cmd.Flags().Bool("passthrough", false, passthroughHelp)
+	cmd.Flags().Bool("skip-compat-check", false, "Accept the compatibility alias. Keep ordinary Pi readiness checks active.")
 	cmd.Flags().StringArray("plugin-dir", nil, "Load a local Spacedock skill checkout")
 	cmd.Flags().Bool("safehouse", false, "Force the safehouse sandbox wrap even without a .safehouse profile in the directory")
 	cmd.Flags().StringArray("safehouse-enable", nil, "Enable a safehouse capability (KEY[,KEY]); repeatable; e.g. --safehouse-enable ssh,docker")
@@ -124,6 +137,9 @@ present, the launch is wrapped as `+"`"+`safehouse --trust-workdir-config [extra
 so a sandboxed session can grant additional directory access. No inner
 permission flag is added — pi's posture is its --tools/--exclude-tools passthrough
 and the safehouse isolation itself.
+`+providerLaunchHelp+sandboxEnvironmentHelp+`
+Pi provider mode also suppresses launch-owned resources and first-officer markers.
+The --skip-compat-check alias keeps ordinary Pi readiness checks active.
 
 Flags:
 `)

@@ -1212,3 +1212,54 @@ func equalArgv(got, want []string) bool {
 	}
 	return true
 }
+
+func TestProviderHostLaunch(t *testing.T) {
+	for _, host := range []string{"claude", "codex"} {
+		for _, wrapped := range []bool{false, true} {
+			for _, adjacent := range []bool{false, true} {
+				t.Run(fmt.Sprintf("%s/wrap=%t/adjacent=%t", host, wrapped, adjacent), func(t *testing.T) {
+					dir := t.TempDir()
+					if wrapped {
+						dir = safehouseFixtureDir(t)
+					}
+					bin := executableFixture(t)
+					if adjacent {
+						_, bin = localPluginCheckout(t, host)
+					}
+					withExecutablePath(t, bin, nil)
+					t.Setenv("CODEX_HOME", t.TempDir())
+					t.Setenv("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "0")
+					h := &resolvingHost{fakeHost: fakeHost{resolveErr: errors.New("plugin discovery forbidden"), launchCode: 7}}
+					var stdout, stderr bytes.Buffer
+					args := []string{"--passthrough", "--no-install", "--", "--output-format", "stream-json", "", "--model=x", "--model", "y", "native prompt"}
+					want := []string{host, "--output-format", "stream-json", "", "--model=x", "--model", "y", "native prompt"}
+					var code int
+					if host == "codex" {
+						code = runCodex(context.Background(), args, dir, h, lookFound, &stdout, &stderr)
+					} else {
+						code = runClaude(context.Background(), args, dir, h, lookFound, &stdout, &stderr)
+					}
+					if wrapped && (len(h.launchedArg) == 0 || h.launchedArg[0] != "safehouse") {
+						t.Fatalf("missing wrapper: %q; stderr=%q", h.launchedArg, stderr.String())
+					}
+					if code != 7 || !equalArgv(piSafehouseInnerArgv(h.launchedArg), want) || stdout.Len() != 0 || stderr.Len() != 0 {
+						t.Fatalf("exit=%d argv=%q stdout=%q stderr=%q, want %q", code, h.launchedArg, stdout.String(), stderr.String(), want)
+					}
+					if h.resolveCalls != 0 || h.inventoryCalls != 0 || len(h.installCmds) != 0 {
+						t.Fatalf("plugin activity: resolve=%d inventory=%d install=%v", h.resolveCalls, h.inventoryCalls, h.installCmds)
+					}
+					if envGetenv(h.launchedEnv)("CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS") != "0" {
+						t.Fatal("caller teams value changed")
+					}
+					wantBin, err := filepath.EvalSymlinks(bin)
+					if err != nil {
+						t.Fatal(err)
+					}
+					if got := envGetenv(h.launchedEnv)("SPACEDOCK_BIN"); got != wantBin {
+						t.Fatalf("launcher identity=%q, want %q", got, wantBin)
+					}
+				})
+			}
+		}
+	}
+}

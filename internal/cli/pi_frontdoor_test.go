@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -36,8 +37,9 @@ type fakePiRuntimeOps struct {
 	// healthy current binary, above the launcher floor, so the many
 	// existing fixtures don't each need a version field; sub-floor and
 	// garbage-version tests set it explicitly.
-	piVersionOut string
-	piVersionErr error
+	piVersionCalls int
+	piVersionOut   string
+	piVersionErr   error
 }
 
 func (f *fakePiRuntimeOps) LookPath(name string) (string, error) {
@@ -71,6 +73,7 @@ func (f *fakePiRuntimeOps) SpacedockPackageStatus(agentDir, home string) piPacka
 }
 
 func (f *fakePiRuntimeOps) PiVersion() (string, error) {
+	f.piVersionCalls++
 	if f.piVersionOut == "" && f.piVersionErr == nil {
 		return piTestVersionAboveFloor + "\n", nil
 	}
@@ -1395,10 +1398,8 @@ func TestPiFrontDoorWrapInnerEqualsUnwrapped(t *testing.T) {
 	}
 }
 
-// TestPiHelpCarriesSafehouseDetail pins AC-4: `spacedock pi --help` (exit 0)
-// carries the four --safehouse-* usages + the --safehouse-add-dirs ~/scratch
-// example + the -- forwarding note, and does NOT declare --skip-compat-check / --no-install
-// (pi has no version gate).
+// TestPiHelpCarriesSafehouseDetail covers sandbox flags, native forwarding, and the compatibility alias.
+// Pi accepts --skip-compat-check but does not support --no-install.
 func TestPiHelpCarriesSafehouseDetail(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{"pi", "--help"}, &stdout, &stderr)
@@ -1414,6 +1415,7 @@ func TestPiHelpCarriesSafehouseDetail(t *testing.T) {
 		"--safehouse-append-profile",
 		"Append a safehouse policy file; repeatable; relative paths use the launch directory",
 		"--plugin-dir",
+		"--skip-compat-check",
 		"--safehouse-add-dirs ~/scratch",
 		"forward verbatim",
 		"Examples:",
@@ -1422,7 +1424,7 @@ func TestPiHelpCarriesSafehouseDetail(t *testing.T) {
 			t.Errorf("pi --help missing %q:\n%s", want, out)
 		}
 	}
-	for _, notWant := range []string{"--skip-compat-check", "--no-install"} {
+	for _, notWant := range []string{"--no-install"} {
 		if strings.Contains(out, notWant) {
 			t.Errorf("pi --help should not declare %q:\n%s", notWant, out)
 		}
@@ -2055,5 +2057,33 @@ func TestPiSpacedockPackageStatus_DoubleRegistration(t *testing.T) {
 	}
 	if !status.firstOfficerDiscoverable {
 		t.Fatalf("first-officer should be discoverable from the winning (first) root")
+	}
+}
+
+func TestPiProviderLaunch(t *testing.T) {
+	t.Setenv("PI_SPACEDOCK_LAUNCH", "inherited")
+	t.Setenv("PI_SPACEDOCK_LAUNCH_TASKLESS", "inherited")
+	for _, wrapped := range []bool{false, true} {
+		ops := &fakePiRuntimeOps{lookPath: piHealthyPathFixtures(), launchCode: 7, piVersionErr: errors.New("readiness forbidden")}
+		args := []string{"--passthrough", "--skip-compat-check", "--", "--mode", "rpc", "", "--skill", "caller", "--skill=second"}
+		if wrapped {
+			args = append([]string{"--safehouse"}, args...)
+		}
+		var stdout, stderr bytes.Buffer
+		code := runPi(context.Background(), args, t.TempDir(), os.Environ(), ops, &stdout, &stderr)
+		want := []string{"pi", "--mode", "rpc", "", "--skill", "caller", "--skill=second"}
+		if code != 7 || !equalArgv(piSafehouseInnerArgv(ops.launched), want) || stdout.Len() != 0 || stderr.Len() != 0 || ops.piVersionCalls != 0 {
+			t.Fatalf("wrap=%t exit=%d argv=%q readiness=%d stdout=%q stderr=%q", wrapped, code, ops.launched, ops.piVersionCalls, stdout.String(), stderr.String())
+		}
+		for _, name := range []string{"PI_SPACEDOCK_LAUNCH", "PI_SPACEDOCK_LAUNCH_TASKLESS"} {
+			if hasEnv(ops.launchedEnv, name) || slices.Contains(piSafehouseExtra(ops.launched), name) {
+				t.Fatalf("inherited marker survived: %s", name)
+			}
+		}
+	}
+	var stdout, stderr bytes.Buffer
+	ops := &fakePiRuntimeOps{lookPath: piHealthyPathFixtures()}
+	if code := runPi(context.Background(), []string{"--skip-compat-check"}, t.TempDir(), nil, ops, &stdout, &stderr); code != 1 || ops.launchCalls != 0 || !strings.Contains(stderr.String(), "runtime is not ready") {
+		t.Fatalf("ordinary readiness bypassed: exit=%d stderr=%q", code, stderr.String())
 	}
 }
