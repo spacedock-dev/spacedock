@@ -1,7 +1,7 @@
 ---
 id: vtgw5b1ar42s6x807nfdzwb9
 title: Three shared live-lane failures that are not model faults
-status: validation
+status: implementation
 source: "Captain, 2026-10-27: Haiku analysis after PR #853 (runs 37703335512, 40448057053, 40447244422) found four of nine Haiku journey failures are grader bugs or cross-model failures. Captain: file the targeted fixes and get them passing locally."
 started: 2026-10-27T04:56:52Z
 completed:
@@ -265,3 +265,21 @@ Material: none.
 ### Summary
 
 The audit and the local live runs confirm all five fixes on 64274cef5. The deterministic tests for fixes 1, 2a and 3a and the contractlint registry check go red under their claim-breaking edits. The live Sonnet runs show zero team-lead-unreachable, ineligible and `--verdict` usage errors. Fixes 2b and 3b have no committed test that can go red on Sonnet while the captain-kept 060xp bindings stay. One run with 3b reverted showed that regression as XFAIL. The break-glass commit line is wrong for split-root workflows. These are recorded as deferred risks with promote conditions. Recommend PASSED once the FO records the 2026-11-03 captain ruling against the AC text.
+
+## Review-finding disposition
+
+Rejected snapshot: validation gate attempt 1, briefing `briefing:vtgw5b1ar42s6x807nfdzwb9:validation:attempt-1:revision-1`, candidate `64274cef5`. Captain decision `revise` (2026-11-03). Scope ruling of 2026-11-03 stays in force: the agreement check (AC-3 d) is removed, three `jfdrr2` Sonnet bindings are retired, the contractlint registry check is added, both Sonnet `060xp` bindings stay (AC-2 d and AC-3 a run bound), and the ceiling is net +200.
+
+1. Break-glass commit line fails on split-root and worktree entities.
+   - Released user and normal workflow: a captain on a split-root workflow (this repo's `docs/dev`) whose `dispatch build` fails and who uses break-glass recovery.
+   - Observable harm: `git -C {workflow_dir} add -- {entity_file_path}` exits 1 ("paths are ignored"), so the recovery worker leaves no committed report.
+   - Affected value AC: `value-ac[AC-3]` break-glass recovery leaves a committed, complete worker report.
+   - Trigger evidence: validator dry run on `docs/dev` exits 1.
+   - Class: Material. Owner: this task. FO authorization: `fix` (captain-approved). Run the commit in the repository that holds the entity file, for example `git -C "$(dirname {entity_file_path})"`. Prove it with a test that executes the shipped command against a split-root fixture and a single-root fixture. The test must not match instruction-file prose.
+2. `TestBreakGlassSelectedBareGapBindsPerTarget` compares the gap function with a literal copy of itself.
+   - Class: Polish. FO authorization: `fix` (captain-approved). Delete the test. `TestRuntimeLiveRegistryMatchesBindings` is the independent check.
+3. Registry: the Haiku keep-moving binding was removed with Sonnet evidence only, and a second keep-moving cause (the host stops a background worker 600 s after a headless FO ends its turn) applies to every model.
+   - Class: Material for the registry promise (a red with no owner). Owner: this task. FO authorization: `fix` (captain-approved). Restore `liveXFail("claude-haiku", "")` on keep-moving and its registry row (blank owner, pending analysis).
+4. Registry: the cause text of the Sonnet `060xp` keep-moving row ("the FO skips the formal revise route for `questioned`") is disproved.
+   - Class: Polish. FO authorization: `fix` (captain-approved). Replace it with the observed causes: a hand batch commit before `--stamp` (Sonnet 5, run 31894934349) and the host stop of the background `questioned` worker before it reports.
+5. Deferred risks, FO authorization `decline` (no change): the `060xp` bindings accept any failure code; no committed test for the consumed terminal-target refusal; four surviving `merge.go` mutants. Promote conditions are in the validation report.
