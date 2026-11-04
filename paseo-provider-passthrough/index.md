@@ -30,6 +30,14 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:xerfqfkayjawte0gjem7v8v1:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:xerfqfkayjawte0gjem7v8v1-ideation-1
+              briefing:
+                id: briefing:xerfqfkayjawte0gjem7v8v1:ideation:attempt-1:revision-1
+                digest: sha256:3ff2ebd4a21be5e2945a698c39f2288f5a65ba65eb53ebc5c1a2b4c1ae5efc82
+                room-ref: '@review/ideation/briefing-1'
 started: 2026-11-04T07:48:58Z
 ---
 Paseo can use Spacedock as a provider command while retaining control of its protocol, agent identity, prompts, and permission UI.
