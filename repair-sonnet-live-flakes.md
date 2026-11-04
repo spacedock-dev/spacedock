@@ -245,3 +245,16 @@ Deferred risks and polish:
 ### Summary
 
 I ran the detached audit on a throwaway clone of `0542c94ad`. The new test fails when `started` goes back into the replayed advance, when the proof check is weakened, and when `--stamp` stops filling `started`. The test uses the live oracle and the binary's own commit message, and it reads no instruction file. Only the non-gated clause of step 5 changed. The binding and registry row are unchanged, contractlint passes, the surface is net +70 in 2 files, and the full suite and the race suite both pass. Recommendation: PASSED, with one deferred risk (no protection for an entity that already has `started`), one pre-existing oracle-coverage polish item, and AC bookkeeping for the FO. No live run was made, as directed.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Rebase this layer's commit 0542c94ad from 64274cef5 onto the parent head 5311949c8 in this worktree, resolving any conflict with no other edits.
+  `git rebase --onto 5311949c8 64274cef5` applied with no conflict. The new layer commit is `8739edef9` on `repair-sonnet-live-flakes`, and its parent is `5311949c8`. I made no other edits.
+- DONE: Show that the layer's own diff against the new parent is unchanged in substance, and that TestKeepMovingStrayCommitKeepsDispatchProof still goes red when started is written in the advance.
+  `git range-diff 64274cef5..0542c94ad 5311949c8..8739edef9` reports `0542c94ad = 8739edef9` (identical patch). `git diff 5311949c8 HEAD` matches `git diff 64274cef5 0542c94ad` byte for byte, apart from index and hunk-offset lines: +70 test, +1/-1 contract, 2 files. The test passes at `8739edef9`. When I add `"started"` to the `advance-without-started` advance (line 25), the subtest fails with `path-scoped dispatch proof = false, want true`. I then restored the file, and the tree is clean.
+- DONE: gofmt, contractlint, go test ./... and go test ./... -race pass (per package with -timeout 30m if needed); no live run in this stage.
+  `gofmt -l ./cmd ./internal` lists only `internal/release/runtime_live_evidence_workflow_test.go`, which is also unformatted at `5311949c8` and is not in this diff. `go test ./internal/contractlint/` passes. `go test -count=1 -p 1 -timeout 30m ./...` passes in all 21 packages, but some packages needed a second run. The first run failed with ENOSPC only (`no space left on device` while building) in runtimehost, safehouse, statesync, status, testgit and skills/integration, and that run printed no result for internal/release. I reran each of these packages alone, and each passed. `go test -race -count=1 -p 1 -timeout 30m` passes in all 21 packages, run one package at a time. On the coordinator's direction, I ran `go clean -cache` before the race run continued from `gates`. I made no live run.
+
+### Summary
+
+I rebased the layer onto the re-reviewed parent `5311949c8` with no conflict. The new commit `8739edef9` carries the same patch as `0542c94ad` (range-diff `=`). The keep-moving replay test still passes, and it still goes red when the advance writes `started`. The full suite and the race suite pass in every package. Because concurrent work used up disk space, the ENOSPC packages were rerun alone and `go clean -cache` was run once, as the coordinator directed. The commit is local only. I did not push it, because SSH push is blocked in this sandbox.
