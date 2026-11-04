@@ -52,6 +52,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:xerfqfkayjawte0gjem7v8v1:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:xerfqfkayjawte0gjem7v8v1-validation-1
+              briefing:
+                id: briefing:xerfqfkayjawte0gjem7v8v1:validation:attempt-1:revision-1
+                digest: sha256:d527206f0419b13c145b0eb9dbd7b791d4c6dafc1a1d34d2e656acaeeb54d3ef
+                room-ref: '@review/validation/briefing-1'
 started: 2026-11-04T07:48:58Z
 worktree: .worktrees/spacedock-ensign-paseo-provider-passthrough
 ---
