@@ -280,3 +280,10 @@ Deferred risks and polish:
 ### Summary
 
 The rebased layer `8739edef9` has the same patch as the validated `0542c94ad` (range-diff `=`, same patch-id). On a detached throwaway clone, the replay test still fails when `started` is put back in the advance, when the proof check is weakened, and when `--stamp` stops filling `started`. The parent's cycle-1 edits, the binding and the corrected registry row do not change. Contractlint and registry reconciliation pass. The full suite and the race suite pass in every package; the race runs of `internal/release` and `skills/integration` passed only after reruns because of ENOSPC. AC-1 and AC-3 belong to `headless-fo-turn-end-background-worker-stop`. Recommendation: PASSED, with one deferred risk (a gated-successor or re-dispatch entry that already has `started`), one polish item and one AC-2 bookkeeping note.
+
+## Review-finding disposition
+
+FO authorizations after validation cycle 2 (2026-11-04), candidate `8739edef9` on parent `5311949c8`. Captain ruling 2026-11-03: AC-1 and AC-3 (unbound live PASS, retirement of the `060xp` keep-moving binding) move to `headless-fo-turn-end-background-worker-stop`. AC-2 is proven by a test that hardcodes the advance sequence and does not read `fo-dispatch-core.md`.
+
+1. An entity that already has `started` has no protection (gated-successor and reuse paths in `fo-dispatch-core.md` still write `started`). Class: Deferred risk. FO authorization: `decline` (no change in this task). Promote when a graded lane shows a missing `dispatch:` proof on a gated-successor or re-dispatch entry.
+2. The oracle's message and `started` conditions have no single-condition guard in `internal/ensigncycle` (exists on base). Class: Polish. FO authorization: `decline`.
