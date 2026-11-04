@@ -1,0 +1,21 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:vtgw5b1ar42s6x807nfdzwb9:validation:round-1",
+  "question": "Do the cycle-1 corrections at 5311949c8 apply the FO-authorized dispositions (items 1-4 fix, item 5 decline) to the rejected validation candidate 64274cef5, within the net +200 ceiling, ready for the validation re-run?",
+  "artifacts": [
+    {
+      "id": "artifact:vtgw5b1ar42s6x807nfdzwb9:validation:round-1:entity-cycle-1",
+      "uri": "git-root://state/adecd1bce3f02bde4a92691080455e45f0489d40/live-lane-shared-failure-fixes.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:e27591f2187600a82b5dc67d5ac42bd14867caf7e57900cdcc4f997f2a1d2009"
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:vtgw5b1ar42s6x807nfdzwb9:validation:round-1:captain-revise",
+      "label": "Captain resolution:spacedock:vtgw5b1ar42s6x807nfdzwb9:validation:1 (person:captain, decision revise, state commit ecbcda016): 'Captain rejects validation attempt 1 for three fixes: (1) the break-glass commit line must work on split-root and worktree entities; (2) remove TestBreakGlassSelectedBareGapBindsPerTarget, which compares a value with a copy of itself; (3) registry: keep the Haiku keep-moving binding with a blank owner, and correct the cause text of the Sonnet 060xp keep-moving row. Ceiling stays +200.'"
+    }
+  ]
+}

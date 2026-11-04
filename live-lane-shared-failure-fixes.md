@@ -68,6 +68,14 @@ gates:
                 at: "2026-11-04T07:30:35.024341Z"
                 decision: revise
                 reason: 'Captain rejects validation attempt 1 for three fixes: (1) the break-glass commit line must work on split-root and worktree entities; (2) remove TestBreakGlassSelectedBareGapBindsPerTarget, which compares a value with a copy of itself; (3) registry: keep the Haiku keep-moving binding with a blank owner, and correct the cause text of the Sonnet 060xp keep-moving row. Ceiling stays +200.'
+review-round:
+    id: round:vtgw5b1ar42s6x807nfdzwb9:validation:1
+    stage: validation
+    cycle: 1
+    briefing:
+        id: briefing:vtgw5b1ar42s6x807nfdzwb9:validation:round-1
+        digest: sha256:a2a2f1c5c5ea2fe19b1d1affbd2424ae5654b7631dd9b3a81a257685e3a39d00
+        room-ref: '@review/validation/round-1'
 ---
 
 Fix three live-lane failures that hit Sonnet and Haiku alike, so live results show real model behavior and not harness or contract faults.
@@ -202,6 +210,8 @@ Verified by: (a) local live `TestLiveBreakGlassShimRecovery` on Sonnet. Both sub
 - Before claiming completion, run `go test ./...`, `go test ./... -race` and `gofmt`. The golden regeneration uses the package's existing update path.
 
 ### Feedback Cycles
+
+- Cycle 1: REJECTED — captain at validation gate (break-glass commit line fails on split-root; validator recommended PASSED); surface 38 files/net +198 vs estimate 32-42 files/net +40..+120 (165%), within the captain ceiling of +200; AC narrowed: captain ruling 2026-11-03 (AC-3 d removed; AC-2 d and AC-3 a run with the 060xp bindings in place; ceiling +200).
 
 ## Stage Report: ideation
 
