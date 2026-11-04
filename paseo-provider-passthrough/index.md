@@ -501,3 +501,54 @@ The estimate remains +400 net LOC across 13 files, with 470 insertions, 70 delet
 The committed revision closes R1 at the design boundary through the existing selected-host Safehouse allowance.
 No remaining design finding requires revision, and the recommendation is approve ideation.
 Implementation and validation still owe candidate behavior, full regression evidence, and the inherited audit obligations.
+
+## Stage Report: implementation
+
+- DONE: Deliver the approved behavior and documentation with focused red-first evidence for every value acceptance criterion.
+  AC-1, AC-2, AC-3, AC-4, AC-5: provider guards, sandbox fallback, canonical allowances, and product documentation ship on `paseo-provider-passthrough`.
+- DONE: Commit the scoped candidate after formatting and the complete Go and race suites pass; report denominators and unchanged approved semantics.
+  AC-1, AC-2, AC-3, AC-4, AC-5: candidate `2f99a397a36ea77addc69e6481f98777d584f440`. Normal `exit 0, 21/21 test packages passed, 2 no-test packages`. Race `exit 0, 21/21 test packages passed, 2 no-test packages (1533 root passes and 1946 subtest passes)`. Both commands use the assigned environment and a serialized window.
+- DONE: Commit and send a complete implementation Stage Report with candidate identity, three checklist outcomes, AC evidence, surface actuals, and any finding proposals.
+  AC-1, AC-2, AC-3, AC-4, AC-5: this report records evidence, surface counts, finding dispositions, and candidate identity. The state commit and canonical path form the delivery.
+
+### Evidence
+
+- AC-1: `TestProviderHostLaunch`, `TestPiProviderLaunch`, and six native startup observations retain caller argv and JSON stdout. A bootstrap prompt or banner breaks these owners.
+- AC-2: `TestCodexProviderAcceptsCallerCollaboration` and `TestProviderCanonicalSettings` retain overrides and exact present values. Restoring a reserved-key rejection or dropping an empty/0 allowance breaks them.
+- AC-2 native: wrapped/plain Codex `config/read` returns `review-selected`/`on-request`. Claude init returns `claude-sonnet-5`/`permissionMode: default`. Pi returns `autoCompactionEnabled: false`/`steeringMode: all`.
+- AC-3: `TestSandboxEnvironmentPrecedence` covers three hosts and both modes. Real wrapper sentinels retain canonical settings, sandbox identity, binary identity, and exit 7. Reversing precedence or removing an allowance fails.
+- AC-4: `TestProviderGrammar` and Pi readiness cases cover the common alias and invalid input. Existing permissions/collaboration and 9 process/Pi path roots plus 11 subtests retain ordinary behavior. Removing defaults or fnm grants fails.
+- AC-5: `TestProviderHelp` and existing help owners exercise rendered command help. Native startup exercises provider examples. Documentation records precedence and bounded settings transport.
+- Focused red: `/tmp/paseo-provider-passthrough-red.jsonl` has 7 failed roots, 95 failed subtests, and 47 passed subtests before product edits. Grammar-only follow-up records active gate/override/readiness failures.
+- Focused green: 7/7 roots and 142/142 subtests pass. Logs: `/tmp/paseo-provider-passthrough-focused.jsonl`, `paseo-provider-passthrough-process.jsonl`, and `paseo-provider-passthrough-help-correction.jsonl`.
+- Race skips: `TestCodexIsolatedHomeCollaborationLifecycle` needs the opt-in live flag. `TestUpdateFrontmatterBlockScalarsRewrapped` has documented divergence #L2-b and no live fixture. Neither counts as a passing test. Both remain unverified.
+- Full commands: `/tmp/paseo-provider-passthrough-normal-retry.log` records `go test ./...` and `/tmp/paseo-provider-passthrough-race.jsonl` records `go test ./... -race -timeout 30m -json`, sequential with `GOFLAGS=-p=1`, `GOCACHE=/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/paseo-fo-64ye7hx6/gocache`, and PATH prefixed by `/Users/clkao/.local/share/fnm/node-versions/v24.13.1/installation/bin`.
+- Native proof: 15/15 observations in `/tmp/paseo-provider-passthrough-proof/native-probes.json`. 9 wrapped sentinel cases plus 6 wrapped/plain native settings startups. Every consumed stdout line parses as JSON.
+- Native commands: candidate `host --passthrough [--safehouse-add-dirs=<fixture>] -- <native argv>`. Codex uses `app-server` with initialize/initialized/config-read. Claude uses the specified stream-json print flags. Pi uses RPC/offline/no-session/no-extensions/no-skills.
+- Probe setup: native versions are Codex 0.166.0, Claude 2.1.283, Pi 1.0.2, Safehouse 0.12.0. The isolated Claude/Pi wrapper also receives an explicit read-only fnm-installation grant. No product grant changes.
+- Probe setup corrections: isolated-HOME Claude initially exits 127 without the fixture-only grant. Pi 1.0.2 rejects `--no-mcp`. The isolated probe has no MCP config. Model-less Pi clamps thinking to off, so documented compaction/steering settings distinguish the native settings files.
+- Fixture correction: executable expectations use independent filesystem symlink resolution for `/var` versus `/private/var`. `SPACEDOCK_BIN` still promises the resolved selected executable.
+- Formatting: `gofmt -w ./cmd ./internal` completed. Unrelated pre-existing alignment drift in `internal/release/runtime_live_evidence_workflow_test.go` was restored. `git diff --check` passes.
+- Surface: `13 files, +612/-240 = +372 net LOC (93% of estimate)` versus +400 net LOC/13 files (+470/-70). Tolerance remains +280..+520 net and at most 15 files. Approved ACs and semantic boundaries remain unchanged. Ordinary permission defaults, stored formats, workflow authority, and process supervision remain unchanged.
+
+### Finding disposition
+
+- Exact observation: `TestPiHelpCarriesSafehouseDetail` reports `pi --help should not declare "--skip-compat-check"`. `/tmp/paseo-provider-passthrough-regression.jsonl` records 66 passed outcomes and this one failure.
+- Released user and normal workflow: a developer runs the existing Pi help regression before shipping the approved common flag.
+- Observable harm: the stale negative oracle rejects the supported compatibility alias and blocks required suite completion.
+- Authority: `value-ac[AC-4]` Every host accepts `--skip-compat-check`, while ordinary Pi readiness stays active.
+- Trigger evidence: the HEAD oracle excludes both flags. Candidate help advertises the new alias, and `TestPiProviderLaunch` retains ordinary readiness.
+- Proposed materiality: Material. Proposed ownership: this task's approved `pi_frontdoor_test.go`. Proposed disposition: fix only the stale alias expectation and comment.
+- FO authorization: `fix` that expectation/comment, retain the `--no-install` exclusion and readiness assertions, and rerun the focused owner. Both focused roots pass after that authorized correction.
+
+- ENOSPC observation: the first normal aggregate exits 1 at `safehouse.test: open .../go-build3647562817/b268/importcfg: no space left on device`. It records 16 passing test packages, 5 build failures, and 2 no-test packages (23 total).
+- Released user/workflow: a developer runs the required normal suite before candidate commit. Observable harm: the first run leaves five test packages unbuilt, so its proof is incomplete.
+- Authority: `contract[AGENTS.md#expected-commands]` The complete normal and race checks remain required before completion.
+- Trigger evidence: six ENOSPC messages in `/tmp/paseo-provider-passthrough-normal.log`, automatic Go work-directory removal, and 421 MiB available afterward.
+- Proposed materiality: Material evidence/environment defect. Proposed ownership: FO-session environment, outside product ownership. Proposed disposition: hold the candidate and request bounded recovery without an assertion waiver.
+- FO authorization: retry the five packages individually with the same environment and no `-count`. Then repeat the complete normal command and race with 30m headroom. Stop on any recurring ENOSPC. All five retries pass. The complete normal retry and complete race each pass 21/21 test packages without another ENOSPC.
+
+### Summary
+
+The candidate preserves orchestrator control through the existing launcher and Safehouse wrapper, with no new protocol parser or process controller.
+Native startup/settings and deterministic proof pass. Validation still owns the detached adversarial audit and required live lanes before merge.
