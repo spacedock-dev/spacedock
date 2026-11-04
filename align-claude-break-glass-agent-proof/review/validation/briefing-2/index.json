@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:s2atxdv146qknetdjvx0xer6:validation:attempt-2:revision-1",
+  "question": "Approve validation for the rebased layer 08582eae2, accepting the AC-4 live clause (--bare-mode before the helper) from 4 of 5 earlier runs, or send it back?",
+  "artifacts": [
+    {
+      "id": "artifact:s2atxdv146qknetdjvx0xer6:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/a09ad869f2a57603314eec8c1c8cdc909a965849/align-claude-break-glass-agent-proof.md",
+      "rev": "sha256:d26fdf0a6ed12fae601c31cb152ce1956b46968b9fd56ca6a9b5b01020bf145b",
+      "mediaType": "text/markdown",
+      "summary": "Validator recommends PASSED, no material findings, but checklist item 2 is FAILED: in the unbound live Sonnet run on 08582eae2 both arms passed (host foreground bare spawn, committed reports), yet the bare FO did not pass --bare-mode to dispatch build before the helper failed, so AC-4's live clause did not reproduce (1 of 5 local bare runs; the earlier 4 carried it). Offline AC-2..AC-4 falsifying edits all red; rebased diff identical in substance; net +14, 6 files; suites pass (one ENOSPC rerun). Held for the captain: the grant covers PASSED with no material findings, but accepting an AC clause that failed on the final candidate is an acceptance decision."
+    }
+  ]
+}
