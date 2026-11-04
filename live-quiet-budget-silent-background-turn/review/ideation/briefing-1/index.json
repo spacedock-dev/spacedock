@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:w6kcbj4k8ev9t8n2hpw52dds:ideation:attempt-1:revision-1",
+  "question": "Approve the quiet-budget proposal (180 s silence limit while a host-registered non-Bash task is open, 60 s otherwise; +140 net, 3 files) and start implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:w6kcbj4k8ev9t8n2hpw52dds:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/551fd4f14c77cff73c9ad64367c67457f8a5f0e8/live-quiet-budget-silent-background-turn.md",
+      "rev": "sha256:07a9a298f8ddc0b13c0b44e5db16d7d445bbd07aa62dc144710fd8d55b01a97a",
+      "mediaType": "text/markdown",
+      "summary": "Kill rule: drainToExit kills after 60 s with no stream line while the process is alive. No signal shows progress inside a silent thinking turn; host task_started/task_notification events show a worker is alive, in all 3 recorded fixtures including team mode. Proposal: 180 s limit while such a task is open, 60 s otherwise; kill message names the limit and worker count. Fake-clock spike 5 of 5, two mutations red, fixture replay passes. Risk bound: at most 120 s more per run; a real silence over 180 s remains a flake. No live run needed for the ACs."
+    }
+  ]
+}

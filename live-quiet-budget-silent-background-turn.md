@@ -8,6 +8,17 @@ group: live-lane
 sprint-readiness: ready
 id: w6kcbj4k8ev9t8n2hpw52dds
 started: 2026-11-04T07:38:35Z
+gates:
+    version: 1
+    records:
+        - id: gate:w6kcbj4k8ev9t8n2hpw52dds:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:w6kcbj4k8ev9t8n2hpw52dds-ideation-1
+              briefing:
+                id: briefing:w6kcbj4k8ev9t8n2hpw52dds:ideation:attempt-1:revision-1
+                digest: sha256:69b09a3413f0f312fe3860f4247cb749fea1adc3ea5ccb17fe4adbb5d5f8399c
+                room-ref: '@review/ideation/briefing-1'
 ---
 
 `drainToExit` in the live harness kills a run when no stream line arrives for 60 s (`quietBudgetDefault`). In the keep-moving probes of `repair-sonnet-live-flakes` (Sonnet 5.5, effort max, head `64274cef5`), 7 of 8 unchanged-byte runs were killed this way. Each kill came after the FO ended its turn while the background `questioned` worker was in a long thinking turn. In run b1 (budget raised to 180 s), silent gaps of 78 to 128 s occurred five times. These kills are infra failures, not grades, and the XFAIL binding does not absorb them, so they fail the lane.
