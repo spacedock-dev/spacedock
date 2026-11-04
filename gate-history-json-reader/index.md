@@ -16,6 +16,20 @@ gates:
                 id: briefing:8v4gxdyfenqxz3t9wpc2c474:backlog:attempt-1:revision-1
                 digest: sha256:1eff4abee71d034d2bb6e6bb157e4b2ecc422e69e87742e9773adb551d07a908
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:8v4gxdyfenqxz3t9wpc2c474:backlog:1
+                briefing: briefing:8v4gxdyfenqxz3t9wpc2c474:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-11-04T07:47:02.951714Z"
+                decision: approve
+                reason: The committed seed addresses issue 814 with complete stored-tree fidelity, read-only behavior, output stability, and focused proof requirements.
+                conn:
+                    quote: Proceed with the 3. You have the conn to approve gate and open pr
+                    source: Captain message in this Codex conversation on 2026-11-03
+              application:
+                target-stage: ideation
+                state: pending
 ---
 Paseo can show gate history from the binary-owned schema without parsing Markdown itself.
 
