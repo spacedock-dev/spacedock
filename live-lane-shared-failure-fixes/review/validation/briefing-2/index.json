@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:vtgw5b1ar42s6x807nfdzwb9:validation:attempt-2:revision-1",
+  "question": "Approve validation (PASSED) for 5311949c8 after feedback cycle 1, and move to delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:vtgw5b1ar42s6x807nfdzwb9:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/4edb55695dff0b0c29a9950b17744897ad747571/live-lane-shared-failure-fixes.md",
+      "rev": "sha256:26cd270849265ad0e576a4e6cda9e93239013d7d23f8fb026f5dc660e96d0b96",
+      "mediaType": "text/markdown",
+      "summary": "Re-review PASSED, no material findings: each cycle-1 fix has a committed test that goes red under its claim-breaking edit; TestBreakGlassCommitLandsInEntityRepo executes the shipped commit command on single-root and split-root repos (judged execution, not prose matching); one live Sonnet break-glass run passed both arms with committed reports and 0 team-lead errors; 060xp cause text matches the evidence; item 5 unchanged. Surface 38 files net +198 vs merge-base, within the +200 ceiling; 21/21 packages pass with and without -race. New deferred risks: the commit line needs an absolute entity path; the path is unquoted."
+    }
+  ]
+}

@@ -68,6 +68,11 @@ gates:
                 at: "2026-11-04T07:30:35.024341Z"
                 decision: revise
                 reason: 'Captain rejects validation attempt 1 for three fixes: (1) the break-glass commit line must work on split-root and worktree entities; (2) remove TestBreakGlassSelectedBareGapBindsPerTarget, which compares a value with a copy of itself; (3) registry: keep the Haiku keep-moving binding with a blank owner, and correct the cause text of the Sonnet 060xp keep-moving row. Ceiling stays +200.'
+            - id: gate-attempt:vtgw5b1ar42s6x807nfdzwb9-validation-2
+              briefing:
+                id: briefing:vtgw5b1ar42s6x807nfdzwb9:validation:attempt-2:revision-1
+                digest: sha256:e705de56b4d5d6d2d1c3b4acd5e7298994ccda869db0188b13d041162cf3c560
+                room-ref: '@review/validation/briefing-2'
 review-round:
     id: round:vtgw5b1ar42s6x807nfdzwb9:validation:1
     stage: validation
