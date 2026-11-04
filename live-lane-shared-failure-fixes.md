@@ -60,6 +60,14 @@ gates:
                 id: briefing:vtgw5b1ar42s6x807nfdzwb9:validation:attempt-1:revision-1
                 digest: sha256:df547f85f96fc1249add2638ec2011f93fb1d4839ec0a36ec9e04a3bee5d4207
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:vtgw5b1ar42s6x807nfdzwb9:validation:1
+                briefing: briefing:vtgw5b1ar42s6x807nfdzwb9:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-11-04T07:30:35.024341Z"
+                decision: revise
+                reason: 'Captain rejects validation attempt 1 for three fixes: (1) the break-glass commit line must work on split-root and worktree entities; (2) remove TestBreakGlassSelectedBareGapBindsPerTarget, which compares a value with a copy of itself; (3) registry: keep the Haiku keep-moving binding with a blank owner, and correct the cause text of the Sonnet 060xp keep-moving row. Ceiling stays +200.'
 ---
 
 Fix three live-lane failures that hit Sonnet and Haiku alike, so live results show real model behavior and not harness or contract faults.
