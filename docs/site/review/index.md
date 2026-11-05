@@ -38,9 +38,9 @@ Your agent picks up your feedback and acts on your decision. No need to copy it 
 
 ![Several agents send work to Spacedock Review. You review locally or in the browser, and feedback returns to the requesting agent](assets/architecture.svg)
 
-Spacedock Review uses a harness-neutral feedback gateway. Each requesting agent listens for its own review result through its harness integration.
+Each agent that asked for a review waits for its own result, the way its tool (Claude Code or Codex) waits.
 
-When you finish, the result contains your decision, anchored comments and the document version you reviewed. The integration delivers it to the requesting conversation. Harnesses handle waiting and delivery differently, but use the same result format.
+When you finish, the result contains your decision, anchored comments and the document version you reviewed, and it goes back to the conversation that asked. Claude Code and Codex wait differently, but receive the same result.
 
 <a id="what-happens-to-a-document-you-share"></a>
 <a id="shared-document-access"></a>
