@@ -21,7 +21,7 @@ Or ask your agent:
 
 Agree to the upload. The first time, your agent runs `rr pair` for you to pair this computer with your account: sign in and approve in the browser page it opens. You pair once per computer.
 
-Over SSH, the terminal shows a link and a code instead. Open the link in a browser on any device, sign in, enter the code and approve. Then answer `y` in the terminal.
+Over SSH, the terminal shows a link and a code instead. Open the link in a browser on any device, sign in, enter the code and approve. Then confirm in the terminal: answer `y`. If your agent started the pairing and reports `paired: not yet`, run `rr pair --confirm` in your own terminal on that computer and answer `y` there.
 
 Your agent then opens the review. Signed in, you are the owner and make the decision. Send the same share link to [invite others](sharing.md); they comment, and only you decide.
 
@@ -33,7 +33,7 @@ Your agent then opens the review. Signed in, you are the owner and make the deci
 2. Press **Finish review**. Choose **Approve**, **Request changes** or **Hold decision**.
 3. Press **Send decision**. Your agent receives the decision and included comments. The review closes.
 
-Your unsent comments are included automatically. For comments already sent, select **Include** beside each one you want returned with your decision.
+Comments you have added are included automatically; add or cancel any text still in the comment box first. For comments already sent, select **Include** beside each one you want returned with your decision.
 
 ![Browser review with an anchored comment included and Request changes selected on the finish screen](assets/browser-decision.png)
 

@@ -5,7 +5,7 @@ A comment identifies something to discuss or change. A decision tells your agent
 | Decision | What happens next |
 | --- | --- |
 | **Approve** | The agent continues the task within the permission you already gave it |
-| **Request changes** | The agent revises the file using your feedback and presents it again |
+| **Request changes** | In the browser, the agent revises the file using your feedback and shares it again. In the terminal, the agent receives your feedback and acts within the permission it already has |
 | **Hold decision** | The agent pauses the work |
 
 <a id="decisions"></a>

@@ -22,7 +22,7 @@ Use `/spacedock:review` in Claude Code or `$spacedock:review` in Codex. Both use
 
 A location supplied with a file applies to that review only. Without a saved preference, your agent asks where to review.
 
-`terminal` also accepts `tui` or `local`. `web` also accepts `webui` or `remote`.
+To save a preference, `terminal` also accepts `tui` or `local`, and `web` also accepts `webui` or `remote`. With a file, use `terminal` or `web` exactly.
 
 Or ask your agent:
 

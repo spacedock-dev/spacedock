@@ -35,7 +35,7 @@ Select text, then press <kbd>c</kbd> to comment or <kbd>s</kbd> to suggest repla
 
 Press <kbd>q</kbd> to open the finish screen. Press <kbd>Tab</kbd> to choose **Approve**, **Request changes** or **Hold decision**, then <kbd>Enter</kbd> to send.
 
-Request changes and Hold decision need a comment or an overall note. Your agent receives your decision and comments.
+Request changes and Hold decision need a comment, a suggested edit or an overall note. Your agent receives your decision and comments.
 
 <a id="ask-about-the-document"></a>
 
