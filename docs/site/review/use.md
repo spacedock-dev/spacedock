@@ -28,7 +28,7 @@ No active plan right now? Try this:
 
 Choose **Terminal** to review on your machine, or **Web** to review in your browser. Your agent remembers the choice for this project.
 
-For Web, agree to the upload, then press **Sign in as owner** to pair with your agent.
+For Web, agree to the upload the first time in a project. The first time on a computer, your agent runs `rr pair` for you to pair this computer with your account: sign in and approve in your browser. After that, your agent opens the review and you decide while signed in.
 
 ## Add a comment
 
