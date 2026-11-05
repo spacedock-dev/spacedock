@@ -2,31 +2,31 @@
 
 State an intent for a session, read the board, and act when an agent drifts from it.
 
-You need Spacedock installed with Compass enabled. See [Install Spacedock and enable Compass](../index.md#install).
+[Install Spacedock](../index.md#install), which includes Compass by default. Compass can also be [installed and run on its own](https://github.com/spacedock-dev/compass).
 
 ## Start Compass
 
 === "Claude Code"
 
     ```text
-    /compass:compass
+    /spacedock:compass
     ```
 
 === "Codex"
 
     ```text
-    $compass
+    $spacedock:compass
     ```
 
 === "Other agents"
 
-    In Antigravity, ask your agent to "open compass". In any other tool, or with no agent at all, start Compass from a terminal:
+    In Antigravity, any other tool, or with no agent at all, start Compass from a terminal:
 
     ```bash
-    python3 "$SKILL/server.py" --daemon
+    spacedock compass --daemon
     ```
 
-    Finding `$SKILL` is in the [reference](reference.md#start-and-stop).
+    Start and stop options are in the [reference](reference.md#start-and-stop).
 
 In Claude Code and Codex you can also ask your agent to "open compass". Compass starts on your machine and gives you its address, `http://127.0.0.1:4553/` by default. It does not open a browser for you, so open the address yourself.
 
@@ -38,7 +38,7 @@ Some of what follows works on some agent tools only. [What works on each tool](r
 
 1. **Open the session.** On the Sessions screen, click the session's row. Its page opens with an **Intent** card at the top.
 
-2. **Give it a goal.** Write what should be true when the work is done, in one box of up to 240 characters. There are four ways to fill it:
+2. **Give it a goal.** Write what should be true when the work is done, in one box of up to 1,000 characters. There are four ways to fill it:
     - **Type it.**
     - **Set `/goal` in the session.** A `/goal` you set in Claude Code, Codex or Antigravity fills the box on its own, marked "From your /goal". A later `/goal` is offered beside your saved goal and never written over it.
     - **Press Use your prompt** to choose from up to five of your prompts. With nothing typed, Compass drafts the goal from your first prompt in a Claude Code or Codex session.
@@ -46,7 +46,7 @@ Some of what follows works on some agent tools only. [What works on each tool](r
 
 3. **Add the expected outcome, if you want.** Open **Expected outcome (optional)** and add up to six lines of up to 240 characters, one check per line. With no lines, Compass reads the session against the goal's own end state.
 
-4. **Press Save intent.** Compass keeps the words and shows them beside the session from now on. Nothing is sent to the agent. A draft is not saved until you press Save intent, or until you press Analyze drift, which adopts it.
+4. **Press Save intent.** Compass keeps the words and shows them beside the session from now on. Nothing is sent to the agent. Save typed or edited intent before analyzing. Analyze drift can adopt an untouched detected goal or prompt draft.
 
 ![A session's Intent card holding the goal from its /goal, and the Drift card showing Claude Code's goal-met claim and a later message to settle](img/goal-from-slash-goal.png)
 
@@ -71,7 +71,7 @@ Press <kbd>Escape</kbd> in a session to go back.
 
 ## See what the session has done
 
-Below Intent, **What the session has done** outlines a Claude Code or Codex session in short lines, one group per message you sent, naming its checks, failures and folders. The outline uses no model.
+Below Intent, **What the session has done** outlines a Claude Code or Codex session in short lines, one group per message you sent. Only the Claude Code outline includes the agent's replies, checks, failures and written folders. The outline uses no model.
 
 On a Claude Code session the card also holds a summary written by a model: an opening paragraph on what the agent did, then phases you open one at a time. Each line cites the session entries it rests on, and a phase that holds evidence for a departure, or has failed tests, says so on its heading. A finished session is summarized when you open it. For a running one, press **Summarize** or **Update summary**.
 
@@ -99,7 +99,7 @@ If the goal is too vague to read the work against, Analyze says so under the Goa
 
 After a reading, the card offers **Check again** when new work or changed words came after it, and **Analyze again** when it is current.
 
-Analyze drift reads the work of Claude Code and Pi sessions. On the other tools, the Drift card says Compass can't read work from that tool.
+Analyze drift reads recorded work from Claude Code, Codex and Pi sessions. Codex check evidence needs records from codex-cli 0.149 or later. On the other tools, the Drift card says Compass can't read work from that tool.
 
 Each analysis uses model capacity from your Claude Code or Codex account. Compass allows 100 in a rolling twenty-four hours, shared across sessions and tools, and Find goal and failed attempts count. When the limit is spent, a banner at the top of the session page says when you can analyze again.
 
@@ -140,10 +140,10 @@ If a reading is wrong, press **Mark as inaccurate**. The analysis stops setting 
 Compass can also check sessions with a typed goal without being asked, and raise only the departures. It spends model capacity with nobody watching, so it is off until you start Compass with the option:
 
 ```text
-python3 "$SKILL/server.py" --daemon --unasked-readings
+spacedock compass --daemon --unasked-readings
 ```
 
-Claude Code checks Claude Code sessions with no further step. For a Codex session, turn on **Allow Codex to run unasked checks** in its Drift card; Attention points to it when sessions are waiting. A check reads your typed goal, not your outcome lines, and stops at three per session and twelve a day. Finding `$SKILL` is in the [reference](reference.md#start-and-stop). What Compass raised shows on the session page under **Raised while you were away**, and in the Intent log.
+Claude Code checks Claude Code sessions with no further step and is preferred for eligible Pi and Antigravity sessions. When a check uses Codex, turn on **Allow Codex to run unasked checks** in the session's Drift card; Attention points to it when sessions are waiting. A check reads your typed goal, not your outcome lines, and stops at three per session and twelve a day. What Compass raised shows on the session page under **Raised while you were away**, and in the Intent log.
 
 ## Get alerted when work reaches a step
 
@@ -159,5 +159,5 @@ Notifications are native on macOS, and browser notifications elsewhere while a C
 
 ## Next
 
-- [Compass reference](reference.md): every command, option and key.
+- [Compass reference](reference.md): commands, options and keys.
 - **Workflow.** [Spacedock Workflow](../workflow/index.md) keeps work moving through steps you define, and Compass shows where each item is.

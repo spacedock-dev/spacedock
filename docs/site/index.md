@@ -1,25 +1,28 @@
-# Welcome
+# Your agents need your judgement
 
-Your agents finish work faster than you can judge it. **Your judgment is the bottleneck, and Spacedock is built around it.**
+Keeping up with their work takes attention. Spacedock brings plans and drafts to you for review. It helps you and your agents keep your goals on track, and lets you define which decisions need you.
 
-## Who it's for
+<a id="install"></a>
 
-You hand agents whole chunks of work and run several sessions at once, in Claude Code or Codex. You may build your own skills, or use agents beyond code: email, research, content, go-to-market.
+<a id="get-started"></a>
 
-## Install
+## Quick start
 
-One command installs Spacedock.
+Paste this into your agent:
 
-```sh
-brew install spacedock-dev/tap/spacedock [TBD]
-```
+<div class="sd-agent-prompt">
+  <code>Install Spacedock using https://spacedock.md/agents.md and use Spacedock Review for plans and artifacts I need to review.</code>
+  <button type="button" class="sd-prompt-copy" aria-label="Copy agent prompt" aria-live="polite" hidden>copy</button>
+</div>
 
-## One problem, three places
+[Manual installation](get-started/install.md).
 
-The bottleneck shows up in three places. Each Spacedock feature takes one.
+<a id="explore-how-spacedock-helps-with-your-attention-bottleneck"></a>
 
-| When this happens | Use | What it does |
-| --- | --- | --- |
-| An agent's work is waiting for your call | **[Review](review/index.md)** | Opens the work beside your session, in the terminal or the browser. You comment on the exact line, and the agent revises from your comments. You can send it to a colleague for a second opinion. |
-| An agent may have left the goal you agreed on | **[Compass](compass/index.md)** | Shows the goal beside what each session is doing, so the one that has left it stands out. |
-| Every call comes to you, and only some need your judgment | **[Workflow](workflow/index.md)** | You write down once what good looks like at each step. Only the calls that need you reach you, with the evidence attached. |
+## Your attention bottlenecks
+
+Your attention goes into judging work, keeping goals on track and setting the standards agents work to.
+
+- **[Review](review/index.md):** Bring the work and evidence together when you need to make a call.
+- **[Compass](compass/index.md):** Check where your agents' work stands against your goals.
+- **[Workflow](workflow/index.md):** Define what needs your judgement and refine it as trust grows.

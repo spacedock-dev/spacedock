@@ -1,152 +1,55 @@
 # Command reference
 
-The `spacedock` binary groups its subcommands into Launch, Setup, and Workflow, plus a top-level `spacedock --version` (the binary version, the host OS/arch, and release channel, and — inside an agent session — that session's runtime and sandbox state). For the exact flags of any command, run `spacedock <command> --help`, the always-current source of truth; `spacedock` with no arguments prints the grouped help.
+Run `spacedock <command> --help` for the full options. Run `spacedock` for the command list.
 
-`dispatch build` names fresh workers `<slug>-<stage>`. Names reserve room for retry/cycle suffixes; long slugs keep a readable prefix plus a deterministic eight-character suffix. `dispatch build --stamp` creates new code branches named `<slug>` and preserves the branch of an existing registered worktree. An occupied new branch or ambiguous generated worker name is refused before mutation. Choose a distinct task slug to resolve a fresh-name collision. Legacy worker names remain valid for reconciliation and reuse.
+## Version
 
-`spacedock dispatch name --workflow-dir DIR --entity-path FILE --stage STAGE` prints the same validated canonical base name without a checklist, assignment artifact, stamp, commit or worktree change. It rejects missing inputs, undeclared stages and unsafe or ambiguous names. Use it for selected named recovery when build fails before any envelope exists. It requires the executable and readable workflow/entity files; it does not repair complete executable absence. Existing suffix-budget and occupied-name checks still apply before spawn.
-
-
-## --version
-
-`spacedock --version` reports the binary version, the host OS/arch, and the release channel the binary drives (`stable` installs `spacedock@spacedock`; `edge` installs `spacedock@spacedock-edge`), and — when it is running inside an agent session — that session's runtime and sandbox state. Outside any session it prints three lines:
-
-    spacedock 0.26.0
-    OS: darwin/arm64
-    Channel: stable (spacedock@spacedock)
-
-Inside a session it also names the host OS/arch, the runtime it detected, the marker that proved it, and whether this process is running inside a sandbox:
-
-    spacedock 0.26.0
-    OS: darwin/arm64
-    Channel: stable (spacedock@spacedock)
-    Runtime: claude (CLAUDECODE)
-    Sandbox: agent-safehouse
-    contract 3
-
-A host detected by more than one marker reports all of them:
-
-    Runtime: pi (PI_CODING_AGENT, PI_CODING_AGENT_DIR)
-
-When markers for more than one runtime are set — a nested session can leak them — it reports the ambiguity rather than guessing, and still exits 0:
-
-    Runtime: ambiguous (CODEX_THREAD_ID, CLAUDECODE)
-
-Nothing on this surface fails, so it names no remedy. The one command the ambiguity does block is `spacedock dispatch build`, which refuses and prints the remedy with all three valid values.
-
-Being outside every runtime is a normal state, not a fault — it means a human at a terminal. There is no `Runtime:` line at all in that case, because there is no session to report: the output is the three lines shown above (the version line, the `OS:` line, and the `Channel:` line).
-
-The `Sandbox:` line answers one question — is this process sandboxed? Sandboxed, the value is the sandbox's name and nothing else; otherwise it is `none`, followed by whether safehouse is available to sandbox future launches:
-
-    Sandbox: agent-safehouse
-    Sandbox: none (safehouse available)
-    Sandbox: none (safehouse not installed)
-
-`spacedock status --boot` reports the same three. The pre-launch banner answers the neighbouring but different question — whether the launch it is about to perform will be wrapped — so its `Sandbox:` line reads in terms of that launch.
-
-The trailing `contract 3` is a frozen compatibility sentinel read only by skill versions predating the current version gate. It prints inside a session only. Use `spacedock doctor --host <host>` to compare this binary with the selected channel plugin. If another channel is enabled, doctor names both plugins and reports the load conflict without changing it. A normal launch repairs that conflict before starting the host; under `--no-install`, run `spacedock install --host <host>` manually.
+`spacedock --version` reports the version, platform and release channel. Inside an agent session, it also reports the runtime and sandbox.
 
 ## Launch
 
-`spacedock claude`, `spacedock codex`, and `spacedock pi` start a host with the first officer loaded. Claude Code is the primary surface; Codex and Pi are experimental. The grammar is the same for all three:
+| Command | Agent |
+| --- | --- |
+| `spacedock claude` | Claude Code |
+| `spacedock codex` | Codex |
+| `spacedock pi` | Pi |
+
+Claude Code is the primary Workflow host. Codex and Pi support is experimental.
+
+Launch from your project directory. You can include a task:
 
 ```bash
-spacedock claude [task] [spacedock-flags] [-- host-flags]
+spacedock claude "continue the workflow"
 ```
 
-The task comes first and becomes the launch prompt. Supported host arguments
-after `--` forward verbatim (`--model`, `resume`, and the like). For Codex,
-Spacedock keeps its normal launch banner, default approval posture, and bootstrap
-prompt unless the forwarded token slice contains an exact token equal to
-`resume`. It does not parse Codex option grammar: `spacedock codex -- --model
-gpt-5.6-sol` remains a fresh first-officer launch, while `spacedock codex --
---model gpt-5.6-sol resume <id>` stays prompt-free. Use bare `spacedock codex` to
-start the first officer. When no plugin is installed, the launcher auto-installs
-it and launches, so the single command yields a working session; a contract
-mismatch fails fast. The sandbox flags (`--safehouse` and its knobs) and the
-contract-gate flags are listed by `spacedock claude --help`.
-
-For Claude and Codex, a valid Spacedock plugin checkout beside the resolved
-launcher is selected automatically. `--plugin-dir <checkout>` before `--` is an
-explicit Spacedock override and takes precedence. Claude treats a post-`--`
-`--plugin-dir` as an additional native session plugin, so the installed or
-adjacent Spacedock provider is still gated normally. Codex has no native
-session-local flag: a post-`--` `--plugin-dir` is rejected, and additional Codex
-plugins must be installed persistently with `codex plugin add`.
-
-Every Codex launch, including local-plugin, Safehouse, and `resume`, puts one Spacedock-owned collaboration layer immediately after the inner `codex` token: `-c agents.enabled=true`, `-c features.multi_agent=true`, and `-c 'features.multi_agent_v2={max_concurrent_threads_per_session=16,tool_namespace="agents",hide_spawn_agent_metadata=false}'`. The first two settings are Codex's supported enablement controls; the exact v2 table pins the requested thread limit, tool namespace, and visible spawn metadata. A `multi_agent_v2=false` feature-list label does not disprove that table or replace an observed spawn/follow-up/list/wait lifecycle proof.
-
-Spacedock reserves `agents.enabled`, `features.multi_agent`, and the complete `features.multi_agent_v2` path. Forwarding any of them with `-c`, `--config`, `--enable`, or `--disable` fails before plugin installation or host launch. Hosts that do not accept the owned settings exit nonzero from their native config parser before a first-officer session opens; Spacedock does not fall back to a prompt-only or downgraded collaboration mode.
-
-An unsandboxed bootstrap launch carries no safehouse isolation, so per-action permission prompting is friction without a matching safety gain: `spacedock claude` starts in `--permission-mode auto` and Codex starts in `--ask-for-approval on-request` unless you supply an approval mode. A sandboxed bootstrap launch instead skips/bypasses approvals (`--dangerously-skip-permissions` for claude, `--dangerously-bypass-approvals-and-sandbox` for codex) since the sandbox is the gate. Claude suppresses its defaults when you pass your own mode or a resume. Codex suppresses its banner and bootstrap prompt only when its forwarded argv contains the exact `resume` token; an explicit approval mode prevents only a duplicate automatic approval flag.
+Put agent-specific options after `--`. See [Supported sandboxes](sandbox.md) for sandbox options and [Local plugin development](../advanced/plugin-development.md) for local checkouts.
 
 ## Setup
 
-| Command | What it does |
-|---------|--------------|
-| `spacedock install` | Install the per-host plugin, then run the compatibility check |
-| `spacedock doctor` | Run the compatibility check alone |
+| Command | Purpose |
+| --- | --- |
+| `spacedock install` | Install or refresh the agent integration |
+| `spacedock doctor` | Check installation and compatibility |
 
-Both take `--host claude|codex|pi` (default `claude`). When `doctor` reports the plugin is out of date, refresh it with `spacedock install`. When the plugin is still contract-compatible but a newer one is available, `doctor` and the front-door launch print an opt-in upgrade hint (`run spacedock install --host <host> to refresh`); the hint never blocks the launch. See [Install Spacedock](../get-started/install.md) for the full setup path.
+Both accept `--host claude`, `--host codex` or `--host pi`. The default is Claude Code. Follow the doctor output to resolve setup problems.
 
-The launcher and plugin are a version-gated bundle. During a gate lifecycle, the real `gate prepare` invocation is the capability check: a nonzero result halts before presentation or later state effects. Refresh the installed bundle or build the current checkout and select that executable with `SPACEDOCK_BIN`; do not scrape help output or hand-edit gate frontmatter as a fallback. Selected-source inputs may be absolute, launch-working-directory-relative, or state-checkout-relative. A relative spelling that names different existing paths under the launch directory and state checkout is refused; use an absolute path. Relative room inputs continue to resolve from the launch working directory.
+See [Installation](../get-started/install.md) for the manual setup path.
 
 ## Workflow
 
-The first officer runs these against workflow state as it moves entities; you operate through it, not by hand. They are documented here for completeness and for the rare direct use (scripting, debugging, restoring a state checkout on a fresh clone).
+Your agent uses these commands to operate the workflow.
 
-| Command | What it does |
-|---------|--------------|
-| `spacedock status` | Read or mutate the state: the default entity table is sorted by later workflow stage first then score descending, paginated to 25 rows by default in the human table (`--page N`, `--limit N`, `--limit 0` for all) while `--json` returns every row unless `--page`/`--limit` selects a window, omits the SOURCE column by default (`--fields source` or `--all-fields` restores it), `--next`, `--where`, `--set`, `--validate` (which resolves canonical `@review/...` refs for both entity forms and warns when a retained ref no longer resolves), `--boot` (with `--identify`, the first officer's Startup identify — discovers the managed workflow(s), folds in the stage taxonomy and canonical ready-gate scheduling rows, and reports the boot sections; each row carries only `id`, `slug`, `current`, and `readiness`, while entity read and gate commands provide the complete decision record at engage; a gate stage alone is not ready; PR_STATE is a local `pr:` view, live PR state is checked at engage; local reads only, no mutation), `--read <ref-or-path>` (a file's structured frontmatter — including the nested `stages:` taxonomy, and projectable with `--fields` — plus a heading offset/lines map, for section-scoped reads; with `--checklist` / `--ac-scan` it extracts a stage report's checklist items with line ranges and per-AC evidence citations for the first officer's gate prep; `--stage` defaults to the entity's current `status` when omitted (so a bare `--read <entity> --checklist` reads the current stage's report), and `--stage X` reads a non-current stage) |
-| `spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...]` | At an actionable current workflow stage (`gate: true` and nonterminal), derive and bind a recorder-ready room for folder or flat form at `<slug>/review/...`, storing the form-independent `@review/...` ref. Frozen `./<slug>/review/...` and `./review/...` bindings retain their historical meaning; no migration or rewrite occurs. A declared `entity-form: folder` still refuses the first flat companion and grandfathers an existing one. At an ungated or terminal stage, preparation exits nonzero before changing the entity or review tree and names the rejected stage. Immediately after successful preparation the room contains exactly `index.json`, the canonical Briefing, with no copied sources or association. Selected files are exact local `git-root://<main\|state>/<full-commit>/<path>` objects with raw SHA-256 revisions; there is no fetch, ref requirement, or worktree fallback. Success prints `room`, `briefing`, `digest`, and `state=open`; the caller commits this prepared binding once before presentation. |
-| `spacedock gate withdraw <entity> --reason TEXT` | Retire the selected current-stage open prepared attempt without a Resolution, provider evidence, application, room write, or status change. Attribution is always `agent:first-officer`; the next `gate prepare` appends a successor. |
-| `spacedock gate record <entity> --decision approve\|revise\|hold --actor ID [--reason TEXT] [--consume]` | Record a chat decision and, for approve only, its derived one-use application. Supported chat actor IDs are `person:captain` and `agent:first-officer`. Delegated First Officer decisions require an evidence reason; the recorder does not accept or authenticate Captain-message text. A standalone close never advances status or dispatches. The current workflow stage must be an actionable gate, and the bound Briefing must use the canonical v1 stage-qualified identity and name that stage; malformed or mismatched identity fails without mutation. `--consume` is the shortest approval path: it sequences close, sync, consume, and sync in one call (usage error with `--decision revise\|hold`), each write appending a `sync=... phase=record\|consume` line. Do not run a separate state commit after a successful split-root close or consume write. Delegated First Officer decisions also require `--conn-quote` (the grant verbatim) and `--conn-source` (where it was given); citation flags are refused with `--actor person:captain`. |
-| `spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl` | For flat or folder form, publish one complete workflow-neutral correction round to `<slug>/review/<stage>/round-<cycle>` and store `@review/<stage>/round-<cycle>`. Frozen folder `./review/...` pointers replay unchanged; no entity migration is needed. The recorder retains canonical Briefing/log bytes and does not classify findings or write workflow body projections; `STAGE` must exist in the workflow taxonomy but may differ from current status for historical backfill. Relative Artifacts must stay inside the ticket review home and cannot name the mutable entity. Exact replay is a no-op; divergence is refused. |
-| `spacedock gate consume <entity>` | Spend a binding pending approval once and advance status atomically; stale approvals become superseded. A consumed nonterminal application becomes ordinary stage history. After the worker report is durable, one atomic terminal status write can complete that stage without `--force`. On an approval whose target stage is terminal, consume spends nothing and writes no status: it leaves the application `pending` and returns the route `approved-awaiting-merge` (idempotently, on repeat), and `merge guard` discovers/arms the delivery mechanism when it acts. For an ungated current-stage-to-terminal transition, finalize directly with `spacedock status --workflow-dir DIR --set SLUG status=TERMINAL completed verdict=PASSED worktree=`; do not use that route for a pending terminal-target approval, whose sole consumer remains `merge guard`. In a split-root workflow, a write (an advance or a stale-pending supersede) commits and syncs itself, appending a `sync=... phase=consume` line; a refusal or a terminal route performs no sync and emits no sync line. |
-| `spacedock merge guard <slug> --verdict passed\|rejected` | Run the terminal merge ceremony and, with delivery proven, finalize: the sole terminal consumer of a pending terminal-target approval — the `mod-block` is cleared in its own step, then `application.state: consumed`, the terminal status, `verdict`, and `completed` move in one locked write, and the `pr` merge sentinel is retained through archive as durable delivery proof. |
-| `spacedock merge guard <slug> --rework` | Delivery requires rework: write the pending terminal-target approval `pending→superseded`, route the entity through the record stage's declared `feedback-to`, and clear `pr`/`mod-block`. Refuses without a pending terminal approval, or with a missing/undefined/terminal `feedback-to`. |
-| `spacedock new` | Create an entity (`new [--folder] SLUG`) from a body on stdin |
-| `spacedock dispatch` | Build pointer-transport worker dispatch artifacts with resolved full-path bootstrap commands (`dispatch build`), or inspect a stage/context package directly (`dispatch show-stage-def`). `dispatch build --stamp` folds the ordinary post-gate dispatch steps — `started`/`worktree=` frontmatter stamps, a state commit+sync, and worktree creation — into the build call itself, before assembling the envelope. The exact `dispatch: <slug> entering <stage>` commit contains the entered status and a nonempty `started` field. Do not put another status write or state commit between gate consume and this stamped build. It refuses (no mutation) unless the entity's status already equals `--stage`, and is incompatible with `--advance`. A stamp/sync failure writes a `dispatch build --stamp:`-prefixed stderr diagnostic and emits no envelope, distinct from an ordinary assembly failure. Normal dispatch passes checklist lines on stdin with `--checklist-file -`; all other assignment identifiers and controls remain flags, with ordinary scope instructions optionally appended directly after the intact helper pointer sent to the worker. `--scope-notes-file` remains optional; feedback uses the existing opaque `--feedback-context-file`. The artifact holds the standard assignment, and supplemental notes live in the worker conversation. The FO retains its checklist for report verification without rereading input files. The checklist format is one item per non-empty line, identical for file and stdin. JSON request input, `--print-schema` and `--validate-only` are retired; stdout is still the same JSON envelope. Existing `--checklist-file FILE` calls remain supported. |
-| `spacedock state` | Manage a [split-root workflow](../advanced/split-root-state.md)'s state checkout (`state init` resumes one on a fresh clone, `state new` births one) |
-| `spacedock completion` | Print a bash or zsh completion script |
+| Command | Purpose |
+| --- | --- |
+| `spacedock status` | Read or update work item state |
+| `spacedock new` | Create a work item |
+| `spacedock dispatch` | Prepare worker assignments |
+| `spacedock gate` | Prepare reviews and record decisions |
+| `spacedock merge guard` | Complete delivery and record the outcome |
+| `spacedock state` | Manage the workflow state checkout |
+| `spacedock completion` | Generate shell completions |
 
-Machine `status --next --json` returns one envelope with the unchanged
-`dispatchable` array and canonical ordered `ready_gates` array. Ready rows include
-the mechanical `needs-preparation` candidate and
-`withdrawn-awaiting-prepare`; they retain the four keys `id`, `slug`, `current`,
-and `readiness`. The First Officer applies ready-gate-first priority on every
-read, including the post-idle read. Preparation uses the existing `gate prepare`
-command; `gate record --briefing` is not a recovery route.
+See [Workflow operation](../running-workflows/operating.md) for the conversation you use to direct the work.
 
-### `state commit`
-
-`spacedock state commit <slug>` commits and synchronizes one active or clean
-archived entity. In a split-root workflow it commits and pushes in the state
-checkout. In an inline workflow it commits the same entity paths in the
-workflow's own repository and pushes nothing; if the workflow directory is not
-inside a git work tree, it reports that and does nothing.
-The operand is one canonical top-level entity slug,
-not a nested path. A flat entity commits exactly `<slug>.md` plus its `<slug>/`
-companion directory when present or tracked; a folder-form entity
-commits every changed, new, or deleted non-ignored path below `<slug>/`, including
-reports and artifacts. Dirty sibling entities and unrelated top-level state paths
-remain untouched. Archived scope is publish-only: dirt or identity/shape collisions refuse before movement; clean unpublished history is pushed, and fully published state is a no-op.
-Because archived recovery never creates or amends a commit, `-m MSG` applies only
-to active entities and has no effect for an archived slug.
-
-The gate `record`/`consume` verbs (their close/consume forms — chat-decision and
-standalone `consume`; NOT the `--round` advisory-publication
-form, which is out of mechanism 1's scope and still needs an explicit `state
-commit` afterward, same as before. In an inline workflow that `state commit` is
-what makes the entity's recorded round visible to `gate prepare` and to the
-`needs-preparation` scheduler row; both read committed bytes only) and
-`dispatch build --stamp` run this same
-commit+publish sequence themselves whenever they write in a split-root workflow
-(their own `sync=.../phase=...` line, or `--stamp`'s stderr/exit, is the
-result) — do not re-run `state commit` after them. Recovering a `sync=failed`
-or a HALTed `sync=halted` (after its manual resolution) is the one case that
-still needs it:
-`spacedock state commit <slug>` publishes whatever that verb already committed
-locally but could not push, regardless of which command wrote it.
-
-[Operate a workflow](../running-workflows/operating.md) covers how the first officer uses `status` on your behalf. Run `spacedock status --help` (and the same for each command) for the full flag list, the mutation guards, and the exit codes.
+<a id="-version"></a>
+<a id="state-commit"></a>
