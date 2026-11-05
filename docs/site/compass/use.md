@@ -15,12 +15,12 @@ State an intent for a session, read the board, and act when an agent drifts from
 === "Codex"
 
     ```text
-    $compass
+    $spacedock:compass
     ```
 
 === "Other agents"
 
-    In Antigravity, ask your agent to "open compass". In any other tool, or with no agent at all, start Compass from a terminal:
+    In Antigravity, any other tool, or with no agent at all, start Compass from a terminal:
 
     ```bash
     spacedock compass --daemon

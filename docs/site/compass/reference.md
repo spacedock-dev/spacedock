@@ -5,14 +5,14 @@
 | Command | What it does | Default |
 | --- | --- | --- |
 | `/spacedock:compass` | Starts Compass from Claude Code. | Port 4553 |
-| `$compass` | Starts Compass from Codex. | Port 4553 |
+| `$spacedock:compass` | Starts Compass from Codex. | Port 4553 |
 | `spacedock compass --daemon` | Starts Compass in the background. Without `--daemon` it runs in the foreground. | Foreground |
 | `spacedock compass --status` | Says whether Compass is running on the port. | Port 4553 |
 | `spacedock compass --stop` | Stops Compass on the port. | Port 4553 |
 | `spacedock compass --diagnose` | Lists where Compass looks for each tool's sessions and whether it can read them. Starts nothing. `--json` prints it as JSON. | Off |
 | `spacedock compass --forget` | Deletes observation history, recorded session ends, stored session summaries and copied-correction records. Pauses model calls and turns summaries off until you turn them back on in the page. Keeps the goals you typed. Refused while Compass is running on the port. | Off |
 | `spacedock compass --version` | Prints the Compass version. | Off |
-| `spacedock compass --sessions [waiting]` | Lists running and recently finished sessions; with `waiting`, lists only sessions waiting on you, excluding the calling session. Needs a running Compass instance. | No waiting filter |
+| `spacedock compass --sessions [waiting]` | Lists running and recently finished sessions; with `waiting`, lists only sessions waiting on you, excluding the calling Claude Code session. Needs a running Compass instance. | No waiting filter |
 | `spacedock compass --footer` | Prints a Claude Code status-line segment from its input and Compass's saved state. Sends no request. May be used alone or with `--session`. | Silent when nothing can be reported |
 | `spacedock compass --help` | Prints the installed Compass options, including three experimental terminal and frontend development options omitted here. | Off |
 
