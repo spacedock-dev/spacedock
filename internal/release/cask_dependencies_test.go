@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"slices"
 	"strings"
 	"testing"
 
@@ -73,7 +75,19 @@ func assertRenderedCask(t *testing.T, name, body string) {
 	// the tap-qualified name legitimately appears in the caveats install command,
 	// so the depends_on-stanza form is the precise signal.
 	if depBlock := dependsOnBlock(body); strings.Contains(depBlock, "formula:") {
-		t.Errorf("rendered cask %q carries a formula dependency in its depends_on stanza; the cross-tap safehouse dep was refuted and must not ship:\n%s", name, depBlock)
+		names := renderedFormula.FindAllStringSubmatch(depBlock, -1)
+		allowed := len(names) > 0
+		for _, n := range names {
+			allowed = allowed && formulaAllowed(n[1])
+		}
+		if !allowed {
+			t.Errorf("rendered cask %q carries a formula dependency in its depends_on stanza; the cross-tap safehouse dep was refuted and must not ship:\n%s", name, depBlock)
+		}
+	}
+	for _, f := range tapFormulas {
+		if !strings.Contains(dependsOnBlock(body), `"`+f+`"`) {
+			t.Errorf("rendered cask %q does not depend on %s:\n%s", name, f, dependsOnBlock(body))
+		}
 	}
 
 	caveats := caveatsBlock(body)
@@ -105,6 +119,14 @@ func assertSafehouseCaveat(t *testing.T, name, caveats string) {
 		t.Errorf("cask %q caveats still says safehouse is \"not installed by brew\"; it is brew-installable from its tap:\n%s", name, caveats)
 	}
 }
+
+// tapFormulas are the formulas both casks depend on, from spacedock-dev/tap,
+// which Homebrew loads as a transitive dependency.
+var tapFormulas = []string{"spacedock-dev/tap/subspace-beta", "spacedock-dev/tap/compass"}
+
+func formulaAllowed(formula string) bool { return slices.Contains(tapFormulas, formula) }
+
+var renderedFormula = regexp.MustCompile(`formula:\s*\[?\s*"([^"]+)"`)
 
 // dependsOnBlock extracts the `depends_on …` stanza of a rendered cask up to the
 // blank line that separates it from the next stanza, so a `formula:` check sees
@@ -227,16 +249,23 @@ func assertCaskConfig(t *testing.T) {
 	}
 	for _, cask := range cfg.HomebrewCasks {
 		hasAgentsview := false
+		formulas := map[string]bool{}
 		for _, dep := range cask.Dependencies {
 			if dep.Cask == "agentsview" {
 				hasAgentsview = true
 			}
-			if dep.Formula != "" {
+			formulas[dep.Formula] = true
+			if dep.Formula != "" && !formulaAllowed(dep.Formula) {
 				t.Errorf("cask %q declares a formula dependency %q; the cross-tap safehouse dep was refuted and must not ship", cask.Name, dep.Formula)
 			}
 		}
 		if !hasAgentsview {
 			t.Errorf("cask %q does not declare `cask: agentsview` as a dependency", cask.Name)
+		}
+		for _, f := range tapFormulas {
+			if !formulas[f] {
+				t.Errorf("cask %q does not declare `formula: %s` as a dependency", cask.Name, f)
+			}
 		}
 		assertSafehouseCaveat(t, cask.Name, cask.Caveats)
 		if strings.Contains(cask.Caveats, "agentsview") {

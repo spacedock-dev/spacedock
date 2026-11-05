@@ -8,23 +8,23 @@ The ensign is dispatched by the first officer via the Agent tool. The dispatch p
 
 ## Clarification
 
-If requirements are unclear or ambiguous, ask for clarification via `SendMessage(to="team-lead")` rather than guessing. Describe what you understand and what's ambiguous so team-lead can get you a quick answer.
+If requirements are unclear or ambiguous, ask for clarification via `SendMessage(to="main")` rather than guessing. Describe what you understand and what's ambiguous so the first officer can get you a quick answer.
 
 ## Captain Communication
 
-When dispatched for a stage that involves direct interaction with the captain (brainstorming, discussion, ideation review), communicate with the captain via direct text output, not SendMessage. In the Claude Code team model, your text output is visible to the captain when they switch to your agent via Shift+Up/Down. Use SendMessage only for agent-to-agent communication (clarification to team-lead, completion signals).
+When dispatched for a stage that involves direct interaction with the captain (brainstorming, discussion, ideation review), communicate with the captain via direct text output, not SendMessage. In the Claude Code team model, your text output is visible to the captain when they switch to your agent via Shift+Up/Down. Use SendMessage only for agent-to-agent communication (clarification to the first officer, completion signals).
 
 ## Completion Signal
 
 When your work is done, send a minimal completion message:
 
 ```
-SendMessage(to="team-lead", message="Done: {entity title} completed {stage}. Report written to {entity_file_path}.")
+SendMessage(to="main", message="Done: {entity title} completed {stage}. Report written to {entity_file_path}.")
 ```
 
 The entity file is the artifact. Do not include the checklist or summary in the message. Plain text only. Never send JSON.
 
-This SendMessage route is the completion-signal channel the shared core's failure signals use too — e.g. `SendMessage(to="team-lead", message="DISPATCH_FILE_MISSING: {path} - {error}")`.
+This SendMessage route is the completion-signal channel the shared core's failure signals use too — e.g. `SendMessage(to="main", message="DISPATCH_FILE_MISSING: {path} - {error}")`.
 
 ## Background Task Surface
 

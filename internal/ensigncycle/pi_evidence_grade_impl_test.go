@@ -21,6 +21,14 @@ type piBootContractEvidence struct {
 	EnsignSkillReadRank   int
 	FirstOfficerReads     int
 	Transcript            string
+	// Tools is the tool inventory the run actually loaded and used, derived from
+	// the recorded toolCalls in the run's session transcripts. The isolated-home
+	// smoke requires both extension tools (subagent, intercom) here.
+	Tools []string
+	// ChildEnv is the environment the spawned child inherits. Default discovery
+	// requires neither PI_SUBAGENTS_PACKAGE_ROOT nor PI_INTERCOM_PACKAGE_ROOT in
+	// it, not even as an empty assignment.
+	ChildEnv []string
 }
 
 type piSessionEvidence struct {
@@ -45,13 +53,22 @@ type piSpawnGrade struct {
 	FOReads    int      `json:"first_officer_reads"`
 }
 
+// piIsolatedDiscoveryGrade records what the isolated-home default-discovery run
+// actually observed: the tool inventory drawn from the run's recorded toolCalls,
+// and whether the child environment was free of the two package-root overrides.
+type piIsolatedDiscoveryGrade struct {
+	Tools                []string `json:"tools"`
+	PackageRootEnvAbsent bool     `json:"package_root_env_absent"`
+}
+
 type piFrontDoorEvidenceGrade struct {
-	ProofID string            `json:"proof_id"`
-	Verdict string            `json:"verdict"`
-	Claims  piEvidenceClaims  `json:"claims"`
-	Root    piSessionEvidence `json:"root_session"`
-	Child   piSessionEvidence `json:"child_session"`
-	Spawn   piSpawnGrade      `json:"spawn_and_boot_contract"`
+	ProofID   string                   `json:"proof_id"`
+	Verdict   string                   `json:"verdict"`
+	Claims    piEvidenceClaims         `json:"claims"`
+	Root      piSessionEvidence        `json:"root_session"`
+	Child     piSessionEvidence        `json:"child_session"`
+	Spawn     piSpawnGrade             `json:"spawn_and_boot_contract"`
+	Discovery piIsolatedDiscoveryGrade `json:"isolated_discovery"`
 }
 
 func buildPiFrontDoorEvidenceGrade(rootSessionPath, childSessionPath string, durableOutput bool, boot piBootContractEvidence) (piFrontDoorEvidenceGrade, error) {
@@ -75,6 +92,16 @@ func buildPiFrontDoorEvidenceGrade(rootSessionPath, childSessionPath string, dur
 	if boot.FirstOfficerReads != 0 {
 		return piFrontDoorEvidenceGrade{}, fmt.Errorf("grade Pi boot contract: child made %d first-officer reads", boot.FirstOfficerReads)
 	}
+	for _, tool := range []string{"subagent", "intercom"} {
+		if !stringInSlice(tool, boot.Tools) {
+			return piFrontDoorEvidenceGrade{}, fmt.Errorf("grade Pi isolated discovery: tool inventory %v lacks %q", boot.Tools, tool)
+		}
+	}
+	for _, key := range []string{"PI_SUBAGENTS_PACKAGE_ROOT", "PI_INTERCOM_PACKAGE_ROOT"} {
+		if v, ok := envValue(boot.ChildEnv, key); ok {
+			return piFrontDoorEvidenceGrade{}, fmt.Errorf("grade Pi isolated discovery: child environment carries %s=%q; default discovery requires it absent", key, v)
+		}
+	}
 
 	return piFrontDoorEvidenceGrade{
 		ProofID: piFrontDoorProofID,
@@ -94,6 +121,10 @@ func buildPiFrontDoorEvidenceGrade(rootSessionPath, childSessionPath string, dur
 			ReadCalls:  boot.ReadCallCount,
 			EnsignRank: boot.EnsignSkillReadRank,
 			FOReads:    boot.FirstOfficerReads,
+		},
+		Discovery: piIsolatedDiscoveryGrade{
+			Tools:                append([]string(nil), boot.Tools...),
+			PackageRootEnvAbsent: true,
 		},
 	}, nil
 }
@@ -198,17 +229,31 @@ func TestPiFrontDoorEvidenceGradeIncludesClaimsModelsDurationsAndCosts(t *testin
 	if grade.Spawn.Agent != "worker" || len(grade.Spawn.Skills) != 1 || grade.Spawn.Skills[0] != "ensign" {
 		t.Fatalf("spawn grade = %+v", grade.Spawn)
 	}
+	if len(grade.Discovery.Tools) != 2 || !stringInSlice("subagent", grade.Discovery.Tools) || !stringInSlice("intercom", grade.Discovery.Tools) {
+		t.Fatalf("graded tool inventory = %v, want both subagent and intercom", grade.Discovery.Tools)
+	}
+	if !grade.Discovery.PackageRootEnvAbsent {
+		t.Fatal("grade must record that the child environment carried neither package-root override")
+	}
 }
 
 func TestPiFrontDoorEvidenceGradeRejectsMissingClaimGraders(t *testing.T) {
 	root := filepath.Join("testdata", "pi_front_door_grade", "root-session.jsonl")
 	child := filepath.Join("testdata", "pi_front_door_grade", "child-session.jsonl")
 	for name, mutate := range map[string]func(*bool, *piBootContractEvidence){
-		"durable output":  func(durable *bool, _ *piBootContractEvidence) { *durable = false },
-		"child dispatch":  func(_ *bool, boot *piBootContractEvidence) { boot.DispatchFileForwarded = false },
-		"boot skill read": func(_ *bool, boot *piBootContractEvidence) { boot.EnsignSkillReadRank = 0 },
-		"boot read order": func(_ *bool, boot *piBootContractEvidence) { boot.EnsignSkillReadRank = 6 },
-		"boot isolation":  func(_ *bool, boot *piBootContractEvidence) { boot.FirstOfficerReads = 1 },
+		"durable output":        func(durable *bool, _ *piBootContractEvidence) { *durable = false },
+		"child dispatch":        func(_ *bool, boot *piBootContractEvidence) { boot.DispatchFileForwarded = false },
+		"boot skill read":       func(_ *bool, boot *piBootContractEvidence) { boot.EnsignSkillReadRank = 0 },
+		"boot read order":       func(_ *bool, boot *piBootContractEvidence) { boot.EnsignSkillReadRank = 6 },
+		"boot isolation":        func(_ *bool, boot *piBootContractEvidence) { boot.FirstOfficerReads = 1 },
+		"missing subagent tool": func(_ *bool, boot *piBootContractEvidence) { boot.Tools = []string{"intercom"} },
+		"missing intercom tool": func(_ *bool, boot *piBootContractEvidence) { boot.Tools = []string{"subagent"} },
+		"present package root": func(_ *bool, boot *piBootContractEvidence) {
+			boot.ChildEnv = append(boot.ChildEnv, "PI_SUBAGENTS_PACKAGE_ROOT=/override/subagents")
+		},
+		"empty package root assignment": func(_ *bool, boot *piBootContractEvidence) {
+			boot.ChildEnv = append(boot.ChildEnv, "PI_INTERCOM_PACKAGE_ROOT=")
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			durable := true
@@ -230,5 +275,7 @@ func validPiBootContractEvidence() piBootContractEvidence {
 		EnsignSkillReadRank:   1,
 		FirstOfficerReads:     0,
 		Transcript:            "/run/child-transcript.jsonl",
+		Tools:                 []string{"subagent", "intercom"},
+		ChildEnv:              []string{"HOME=/clean/home", "PI_CODING_AGENT_DIR=/clean/home/.pi/agent"},
 	}
 }

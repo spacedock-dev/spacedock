@@ -253,7 +253,9 @@ protocol.
 
 A consumed nonterminal application is ordinary history after it enters its
 non-gated successor. After the worker report is durable, ordinary atomic
-terminal fields can complete that successor without `--force`. Pending,
+terminal fields can complete that successor, or any later stage reached only
+through ungated stages, without `--force`; a gated stage on that path is not
+covered. Pending,
 unreadable, stale, superseded, and terminal-target authority still fails closed.
 
 The model enforces unique gate, stage, attempt, Briefing, and Resolution ids; a unique

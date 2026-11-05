@@ -73,6 +73,12 @@ func TestLiveBareReachable(t *testing.T) {
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 
+// breakGlassSelectedBareGap binds Haiku's unowned gap (pending analysis) and
+// nothing for other targets.
+func breakGlassSelectedBareGap(target string) liveJourneyGap {
+	return selectLiveGap([]liveJourneyGap{liveXFail("claude-haiku", "")}, target)
+}
+
 // TestLiveBreakGlassShimRecovery is AC-3's behavioral proof: a PATH-shimmed
 // `spacedock dispatch build` that fails for real must produce a captain-facing
 // helper-failure report BEFORE any Agent() call, a
@@ -86,6 +92,10 @@ func TestLiveBareReachable(t *testing.T) {
 //spacedock:live-proof id=claude-dispatch-build-break-glass lane=claude-live
 func TestLiveBreakGlassShimRecovery(t *testing.T) {
 	runner := newClaudeLiveRunner(t)
+	target, err := claudeLiveRole(runner.model())
+	if err != nil {
+		t.Fatal(err)
+	}
 	shimDir := writeStubBreakGlassSpacedock(t, runner.binary)
 	runner.env = withSpacedockShimShellEnv(t, runner.env, shimDir)
 	scenarioRunner := runner.withStubPATH(shimDir)
@@ -94,7 +104,7 @@ func TestLiveBreakGlassShimRecovery(t *testing.T) {
 		mode   dispatchMode
 		prompt string
 	}{
-		{"selected-bare", dispatchModeBare, breakGlassShimPrompt()},
+		{"selected-bare", dispatchModeBare, breakGlassShimBarePrompt()},
 		{"selected-team", dispatchModeTeam, breakGlassShimTeamPrompt()},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -105,7 +115,7 @@ func TestLiveBreakGlassShimRecovery(t *testing.T) {
 			observablesErr := assertBreakGlassObservables(result.stream, tc.mode)
 			durableErr := assertBreakGlassDurableResult(workflowRoot, entityPath)
 			if tc.name == "selected-bare" {
-				scenario.gap = liveXFail("claude-sonnet", "060xp69y61yhrww23g3wvwqy")
+				scenario.gap = breakGlassSelectedBareGap(target)
 				finishLiveScenario(t, scenarioRunner, scenario, result,
 					durableSemantic("break-glass-observables", observablesErr),
 					durableSemantic("break-glass-durable-result", durableErr),

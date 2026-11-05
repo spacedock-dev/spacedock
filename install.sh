@@ -25,6 +25,9 @@
 #   * Extracts the bare `spacedock` binary and installs it to SPACEDOCK_INSTALL_DIR
 #     (default ~/.local/bin).
 #
+# SPACEDOCK_PLUGINS=none skips the plugin step; `spacedock update` sets it and
+# refreshes the plugins itself, only on the hosts that already have Spacedock's.
+#
 # SPACEDOCK_PRINT_TARGET=1 runs the detection + URL-construction path and prints
 # the resolved os/arch/asset/tarball/checksums, then exits before any download —
 # the inspection seam the AC-3 live-URL test asserts against.
@@ -135,6 +138,122 @@ asset_name() {
 	fi
 }
 
+EXTRAS='subspace|spacedock-dev/subspace|subspace|subspace-tui subspace-relay-client|subspace-tui:spacedock-review|bin
+compass|spacedock-dev/compass|compass|compass/compass|compass:spacedock-compass|tree'
+
+tree_version() {
+	tlink="$INSTALL_DIR/$(basename "$1")"
+	[ -e "$tlink" ] || return 0
+	ttarget="$(readlink "$tlink" 2>/dev/null)" || return 0
+	troot="${XDG_DATA_HOME:-$HOME/.local/share}/$2/"
+	case "$ttarget" in
+		"$troot"*) trest="${ttarget#"$troot"}"; printf '%s\n' "${trest%%/*}" ;;
+	esac
+}
+
+installed_version() {
+	iver=""
+	for iprog in $2; do
+		if [ "$3" = tree ]; then
+			v="$(tree_version "$iprog" "$1")"
+		else
+			[ -x "$INSTALL_DIR/$iprog" ] || return 0
+			v="$("$INSTALL_DIR/$iprog" --version 2>/dev/null | head -n 1)"
+		fi
+		[ -n "$v" ] && { [ -z "$iver" ] || [ "$iver" = "$v" ]; } || return 0
+		iver="$v"
+	done
+	for l in $4; do
+		[ -e "$INSTALL_DIR/${l#*:}" ] || return 0
+	done
+	printf '%s\n' "$iver"
+}
+
+install_extra() {
+	name="$1" repo="$2" prefix="$3" programs="$4" links="$5" kind="$6" os="$7" arch="$8"
+	dir="$(mktemp -d)"
+	local_from="${SPACEDOCK_EXTRAS_FROM:-}"
+	asset=""
+	if [ -n "$local_from" ]; then
+		asset="$(cd "$local_from" 2>/dev/null && ls ${prefix}_*_${os}_${arch}.tar.gz 2>/dev/null | head -n 1)" || asset=""
+	fi
+	if [ -n "$asset" ]; then
+		ver="${asset#${prefix}_}"; ver="${ver%_${os}_${arch}.tar.gz}"; tag="v$ver (from $local_from)"
+		[ "$(installed_version "$name" "$programs" "$kind" "$links")" = "$ver" ] && { err "$name $ver unchanged"; rm -rf "$dir"; return 0; }
+		cp "$local_from/$asset" "$dir/$asset" && cp "$local_from/checksums.txt" "$dir/checksums.txt" || return 1
+	else
+		if [ "$CHANNEL" = edge ]; then
+			api="https://api.github.com/repos/$repo/releases?per_page=1"
+		else
+			api="https://api.github.com/repos/$repo/releases/latest"
+		fi
+		tag="$(curl -fsSL "$api" \
+			| grep '"tag_name"' | head -n 1 \
+			| sed -E 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')" || tag=""
+		[ -n "$tag" ] || { err "$name: could not resolve the latest release of $repo"; return 1; }
+		ver="${tag#v}"
+		[ "$(installed_version "$name" "$programs" "$kind" "$links")" = "$ver" ] && { err "$name $ver unchanged"; rm -rf "$dir"; return 0; }
+		asset="${prefix}_${ver}_${os}_${arch}.tar.gz"
+		base="https://github.com/$repo/releases/download/$tag"
+		curl -fsSL -o "$dir/$asset" "$base/$asset" && curl -fsSL -o "$dir/checksums.txt" "$base/checksums.txt" \
+			|| { err "$name: download failed — skipped"; return 1; }
+	fi
+	want_sum="$(awk -v f="$asset" '$2 == f {print $1}' "$dir/checksums.txt" | head -n 1)"
+	[ -n "$want_sum" ] && [ "$want_sum" = "$(sha256_of "$dir/$asset")" ] \
+		|| { err "$name: checksum mismatch for $asset — skipped"; return 1; }
+	if [ "$kind" = tree ]; then
+		prev="$(tree_version "${programs%% *}" "$name")"
+		root="${XDG_DATA_HOME:-$HOME/.local/share}/$name"
+		dest="$root/$ver"
+		rm -rf "$dest" && mkdir -p "$dest" && tar -xzf "$dir/$asset" -C "$dest" || return 1
+		for p in $programs; do
+			[ -f "$dest/$p" ] && ln -sf "$dest/$p" "$INSTALL_DIR/$(basename "$p")"
+		done
+		for old in "$root"/*; do
+			[ -n "$prev" ] && [ -d "$old" ] && [ "$(basename "$old")" != "$ver" ] && [ "$(basename "$old")" != "$prev" ] && rm -rf "$old"
+		done
+	else
+		tar -xzf "$dir/$asset" -C "$dir" || return 1
+		for p in $programs; do
+			[ -f "$dir/$p" ] || continue
+			install -m 0755 "$dir/$p" "$INSTALL_DIR/$p" 2>/dev/null \
+				|| { cp "$dir/$p" "$INSTALL_DIR/$p" && chmod 0755 "$INSTALL_DIR/$p"; } || return 1
+		done
+	fi
+	for l in $links; do
+		[ -f "$INSTALL_DIR/${l%%:*}" ] && ln -sf "${l%%:*}" "$INSTALL_DIR/${l#*:}"
+	done
+	rm -rf "$dir"
+	err "installed $name $tag"
+}
+
+# install_plugins uses the spacedock this script just installed, not an older copy
+# that comes first on PATH.
+install_plugins() {
+	[ "${SPACEDOCK_PLUGINS:-}" = none ] && return 0
+	if command -v claude >/dev/null 2>&1; then
+		err "adding the Claude Code plugins (spacedock install --host claude)"
+		"$INSTALL_DIR/spacedock" install --host claude \
+			|| err "the plugin install failed; run: spacedock install --host claude"
+	else
+		err "claude is not on PATH; run \`spacedock install --host claude\` after you install Claude Code"
+	fi
+}
+
+# SPACEDOCK_INSTALL_FROM runs skip the extensions unless SPACEDOCK_EXTRAS asks, so
+# tests and CI stay offline.
+install_extras() {
+	want="${SPACEDOCK_EXTRAS:-}"
+	[ "$want" = none ] && return 0
+	[ -n "${SPACEDOCK_INSTALL_FROM:-}" ] && [ -z "$want" ] && return 0
+	printf '%s\n' "$EXTRAS" | while IFS='|' read -r name repo prefix programs links kind; do
+		[ -n "$name" ] || continue
+		install_extra "$name" "$repo" "$prefix" "$programs" "$links" "${kind:-bin}" "$1" "$2" \
+			|| err "$name failed to install; spacedock works without it"
+	done
+	install_plugins
+}
+
 main() {
 	validate_channel
 	need uname
@@ -228,6 +347,28 @@ main() {
 		*":$INSTALL_DIR:"*) ;;
 		*) err "note: $INSTALL_DIR is not on PATH; add it to run 'spacedock' directly" ;;
 	esac
+
+	first="$(command -v spacedock 2>/dev/null)" || first=""
+	if [ -n "$first" ] && ! [ "$first" -ef "$INSTALL_DIR/spacedock" ]; then
+		err "warning: $first ($("$first" --version 2>/dev/null | head -n 1)) comes first on PATH and will run instead"
+	fi
+
+	# The script on main can precede a stable release of the combined installer.
+	# Preserve the binary-only install for stable launchers before 0.28.0.
+	# Read the resolved asset so local dist directories obey the same boundary.
+	if [ "$CHANNEL" = stable ]; then
+		launcher_version="${asset#spacedock_}"
+		launcher_version="${launcher_version%_${os}_${arch}.tar.gz}"
+		launcher_major="${launcher_version%%.*}"
+		launcher_minor="${launcher_version#*.}"
+		launcher_minor="${launcher_minor%%.*}"
+		if [ "$launcher_major" -eq 0 ] && [ "$launcher_minor" -lt 28 ]; then
+			err "stable $launcher_version installs only the spacedock binary; extensions and plugins require stable 0.28.0 or later"
+			return 0
+		fi
+	fi
+
+	install_extras "$os" "$arch"
 }
 
 main "$@"

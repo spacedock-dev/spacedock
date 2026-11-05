@@ -30,7 +30,7 @@ Agent(
 )
 ```
 
-A name-less dispatch forfeits reuse — `name` is the `«addressable-worker»` handle `SendMessage(to=name)` addresses. The worker→lead **completion** target is pinned to the single name **`team-lead`** — the build helper emits `SendMessage(to="team-lead", …)` in the dispatch's completion-signal block, matching the ensign runtime's completion contract. Do not also accept `to="main"` as the completion signal; pin one name.
+A name-less dispatch forfeits reuse — `name` is the `«addressable-worker»` handle `SendMessage(to=name)` addresses. The worker→lead **completion** target is pinned to the single name **`main`** — the build helper emits `SendMessage(to="main", …)` in the dispatch's completion-signal block, matching the ensign runtime's completion contract. Pin one name.
 
 **Reuse-advance handle (SendMessage):** When advancing a reused ensign (fo-dispatch-core.md `## Reuse and Fresh Dispatch`, "If reuse"), run `${SPACEDOCK_BIN:-spacedock} dispatch build --advance` (the same helper, advance mode: `--workflow-dir`, `--entity-path`, `--stage {next_stage}`, `--checklist-file -` with literal checklist lines on stdin; an existing checklist file is also accepted; `--feedback-context-file` + `--feedback-reflow` when routing rejection findings). On a zero-exit run, send:
 
@@ -40,7 +40,7 @@ SendMessage(to="{live worker handle from session roster}", message=output.prompt
 
 **Break-glass reuse-advance (fallback ONLY when `${SPACEDOCK_BIN:-spacedock} dispatch build --advance` exits non-zero or is unavailable):** Do NOT use this template while the helper is working. Report the helper failure to the captain before proceeding. Use this verbatim-section template as a degraded fallback, now carrying the next-stage completion-signal line the built pointer would have pinned:
 
-SendMessage(to="{agent}-{slug}-{completed_stage}", message="Advancing to next stage: {next_stage_name}\n\n### Stage definition:\n\n[STAGE_DEFINITION — copy the full ### stage subsection from the README verbatim]\n\n### Completion checklist\n\n[CHECKLIST — output of «dispatch.checklist»(entity, stage)]\n\nContinue working on {entity title} at {entity_file_path}. Commit before sending your completion message.\n\n### Completion Signal\n\nSendMessage(to=\"team-lead\", message=\"Done: {entity title} completed {next_stage_name}. Report written to {entity_file_path}.\")")
+SendMessage(to="{agent}-{slug}-{completed_stage}", message="Advancing to next stage: {next_stage_name}\n\n### Stage definition:\n\n[STAGE_DEFINITION — copy the full ### stage subsection from the README verbatim]\n\n### Completion checklist\n\n[CHECKLIST — output of «dispatch.checklist»(entity, stage)]\n\nContinue working on {entity title} at {entity_file_path}. Commit before sending your completion message.\n\n### Completion Signal\n\nSendMessage(to=\"main\", message=\"Done: {entity title} completed {next_stage_name}. Report written to {entity_file_path}.\")")
 
 **Break-Glass Manual Dispatch (ONLY when `spacedock dispatch build` exits non-zero or is unavailable):** first action, report the helper failure (command, exit code, stderr) to the captain. Then `Skill(skill="spacedock:fo-dispatch-recovery")` and fill its `## Break-Glass Manual Dispatch` template; the conditional `model=` slot draws from the canonical enum in `## Context Budget` below.
 

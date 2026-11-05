@@ -115,6 +115,23 @@ green Runtime Live E2E run for its exact SHA. Stamp and push the release commit 
    gh run watch "$(gh run list --workflow 'Runtime Live E2E' --branch main --limit 1 --json databaseId --jq '.[0].databaseId')"
    ```
 
+   **Select a Claude model.** Leave `claude_model` empty for the cadence default,
+   or pass a registry key (not a model ID):
+
+   ```bash
+   gh workflow run "Runtime Live E2E" --ref main -f live_cadence=sonnet -f claude_model=haiku
+   gh workflow run "Runtime Live E2E" --ref main -f live_cadence=opus-pre-release -f claude_model=opus
+   ```
+
+   Model IDs and permitted cadence sets live in `internal/release/live_models.txt`.
+   Register a model and its permitted memberships there, without editing the workflow.
+   Resolution is model-agnostic; cadence gates eligibility, approval environment,
+   and runtime jobs. The offline job rejects unknown keys or forbidden combinations
+   before live approval; use `live_cadence=opus-pre-release` for `claude_model=opus`.
+   Pi dispatches cannot accept a Claude model key. `claude_version` selects the CLI,
+   not the model. Maximum effort is unchanged. Exploratory model runs do not replace
+   required release cadence evidence.
+
    `REL_SHA` is the stamped commit from step 3 (the worktree HEAD you just pushed);
    it is the SHA this run must go green on, and the SHA you tag in step 6. (For an
    emergency cut when the live matrix is unavailable, the gate accepts the auditable

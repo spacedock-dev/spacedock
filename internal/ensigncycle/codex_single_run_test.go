@@ -153,12 +153,12 @@ func codexTranscriptHasTerminal(jsonl string) bool {
 // OS-exit contract; only this Codex adapter recognizes the host-specific terminal
 // event and reaps the process after killing that idle tail.
 func drainCodexToTerminal(w *streamWatcher, budget time.Duration) (string, bool, error) {
-	deadline := time.Now().Add(budget)
+	deadline := w.now().Add(budget)
 	terminalSeen := false
 	for {
 		entries, drained := w.drainEntries()
 		if drained > 0 {
-			deadline = time.Now().Add(budget)
+			deadline = w.now().Add(budget)
 		}
 		for _, entry := range entries {
 			if entry.Type == "turn.completed" {
@@ -184,7 +184,7 @@ func drainCodexToTerminal(w *streamWatcher, budget time.Duration) (string, bool,
 			return w.fullTranscript(), false, nil
 		}
 
-		if time.Now().After(deadline) {
+		if w.now().After(deadline) {
 			w.proc.kill()
 			return w.fullTranscript(), false, &stepTimeout{
 				label: "codex exec",
@@ -192,7 +192,7 @@ func drainCodexToTerminal(w *streamWatcher, budget time.Duration) (string, bool,
 					budget, w.transcriptTail()),
 			}
 		}
-		time.Sleep(w.pollInterval)
+		w.sleep(w.pollInterval)
 	}
 }
 
@@ -333,23 +333,59 @@ func codexProcessFixture(t *testing.T, name, mode string, quietBudget time.Durat
 }
 
 func TestCodexProcessActivityResetsQuietBudget(t *testing.T) {
-	const quietBudget = 250 * time.Millisecond
-	spec, invocations := codexProcessFixture(t, "activity-reset", "progress-then-exit", quietBudget)
-	result, err := runCodexProcess(spec)
-	if err != nil {
-		t.Fatalf("progressing process should stay alive beyond its quiet budget: %v", err)
+	const (
+		budget        = 100 * time.Millisecond
+		step          = 10 * time.Millisecond
+		activityPolls = 30
+	)
+	src := &fakeLineSource{}
+	proc := &fakeProc{} // never exits: only the quiet deadline decides liveness.
+
+	w := newStreamWatcher(src, proc, func(string) {})
+	w.pollInterval = step
+
+	// The test owns BOTH the clock and the activity signal. Each injected sleep
+	// advances the fake clock one poll step and, while the activity window is
+	// open, pushes a progress line through the fake source. The deadline resets
+	// on that drained activity alone — no real timer races a real sleep — so the
+	// assertion is on drainCodexToTerminal's no-progress decision, not on the
+	// runner's speed. The kill-on-silence sibling
+	// (TestCodexProcessQuietTimeoutPreservesFaultEvidence, mode stall) is the
+	// separate deterministic test of the kill path.
+	now := time.Unix(0, 0)
+	polls := 0
+	w.now = func() time.Time { return now }
+	w.sleep = func(d time.Duration) {
+		now = now.Add(d)
+		polls++
+		if polls <= activityPolls {
+			src.push(fmt.Sprintf(`{"type":"item.started","sequence":%d}`, polls))
+		}
 	}
-	if result.duration <= 4*quietBudget {
-		t.Fatalf("helper duration = %s, want more than four quiet budgets (%s)", result.duration, 4*quietBudget)
+
+	transcript, terminal, err := drainCodexToTerminal(w, budget)
+	if terminal {
+		t.Fatalf("activity-only stream must not be classified terminal; transcript=%q", transcript)
 	}
-	if result.exitCode != 0 || result.timedOut {
-		t.Fatalf("process classification = exit %d timeout %t, want exit 0 timeout false", result.exitCode, result.timedOut)
+	var st *stepTimeout
+	if !errors.As(err, &st) {
+		t.Fatalf("a stream that goes silent must trip the quiet budget; got %T: %v", err, err)
 	}
-	if got := strings.Count(strings.TrimSpace(result.jsonl), "\n") + 1; got < 5 {
-		t.Fatalf("complete JSONL events = %d, want at least 5", got)
+	if !proc.wasKilled() {
+		t.Fatal("quiet timeout must kill the silent subprocess")
 	}
-	if got := strings.Fields(readFile(t, invocations)); len(got) != 1 {
-		t.Fatalf("codex invocation records = %v, want exactly one", got)
+	// The kill must land only AFTER the activity window closed. With the deadline
+	// reset on every drained line, the process survives well past budget/step
+	// (~11) polls; a regression that failed to reset the deadline on drained
+	// activity would kill at ~11, at or before the activity window.
+	if polls <= activityPolls {
+		t.Fatalf("process was killed after %d polls; activity through %d polls must keep it alive", polls, activityPolls)
+	}
+	if got := strings.Count(transcript, "\n") + 1; got < activityPolls {
+		t.Fatalf("drained activity lines = %d, want at least %d", got, activityPolls)
+	}
+	if !strings.Contains(err.Error(), "no stream progress within") {
+		t.Fatalf("quiet-timeout error must carry the no-progress diagnostic: %v", err)
 	}
 }
 
@@ -477,13 +513,6 @@ func TestCodexSingleRunHelperProcess(t *testing.T) {
 	}
 	if mode == "exit-23" {
 		os.Exit(23)
-	}
-	if mode == "progress-then-exit" {
-		for sequence := 2; sequence <= 31; sequence++ {
-			time.Sleep(50 * time.Millisecond)
-			fmt.Printf("{\"type\":\"item.started\",\"sequence\":%d,\"item\":{\"type\":\"collab_tool_call\",\"tool\":\"wait_agent\"}}\n", sequence)
-		}
-		os.Exit(0)
 	}
 	if mode == "terminal-then-hang" {
 		finalPath := os.Getenv("GO_WANT_CODEX_FINAL_MESSAGE_PATH")

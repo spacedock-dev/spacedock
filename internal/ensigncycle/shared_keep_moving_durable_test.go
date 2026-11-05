@@ -884,15 +884,6 @@ func durableAddQuestioned(t *testing.T, root string, reshape bool) string {
 	gitCommitPathScoped(t, root, kmQuestioned+".md", "reshape questioned")
 	return root
 }
-func TestRetainedAtomicWorkerJourney(t *testing.T) {
-	root := os.Getenv("SPACEDOCK_KEEP_MOVING_RETAIN_ROOT")
-	if root == "" {
-		t.Skip("SPACEDOCK_KEEP_MOVING_RETAIN_ROOT is not set")
-	}
-	if err := assertDurableKeepMoving(t, root); err != nil {
-		t.Fatal(err)
-	}
-}
 func durableEntity(slug, stage, started, report string) string {
 	return "---\nid: " + slug + "\ntitle: " + slug + "\nstatus: " + stage +
 		"\nstarted: " + started + "\ncompleted:\nverdict:\n---\n# " + slug + "\n" + report

@@ -48,7 +48,7 @@ func TestBuildPiHostPromptShape(t *testing.T) {
 	}
 
 	body := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
-	for _, banned := range []string{"Skill(skill=\"spacedock:ensign\")", "SendMessage(to=\"team-lead\"", "TeamCreate", "TeamDelete", "Agent("} {
+	for _, banned := range []string{"Skill(skill=\"spacedock:ensign\")", "SendMessage(to=\"main\"", "TeamCreate", "TeamDelete", "Agent("} {
 		if strings.Contains(body, banned) {
 			t.Fatalf("pi dispatch body must omit Claude syntax %q:\n%s", banned, body)
 		}
