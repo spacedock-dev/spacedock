@@ -30,7 +30,7 @@ Server options apply to the run you start. Stop and restart Compass to change on
 | --- | --- | --- |
 | `--port PORT` | Port to serve on. Also selects the instance for `--status`, `--stop` and `--forget`. | `4553` |
 | `--window-hours HOURS` | Hides sessions with no activity in this window. | `24` |
-| `--unasked-readings` | Checks eligible sessions with a typed goal for drift without being asked, and raises departures only. Claude Code is preferred for Pi and Antigravity sessions; a Codex reader needs permission for the destination shown in the Drift card. Spends model capacity: at most three checks per session and twelve a day. | Off |
+| `--unasked-readings` | Checks eligible sessions with a typed goal for drift without being asked, and raises departures only. Claude Code runs the check, except on Codex sessions, which Codex checks. If one CLI is not installed, the other checks instead. Codex needs permission first, for the destination shown in the Drift card. A goal saved unchanged from `/goal`, **Use your prompt** or a prompt draft is not checked. Spends model capacity: at most three checks per session and twelve a day. | Off |
 | `--session HARNESS:SESSION_ID` | Selects the session for `--footer`, for example `claude:SESSION_ID`. Used only with `--footer`. | Status-line session ID, then `CLAUDE_CODE_SESSION_ID` |
 | `--claude-reading-model MODEL` | Claude model that reads a Claude Code session when you press Analyze drift. Takes an explicit Sonnet or Opus ID of generation 5 or later. | `claude-sonnet-5-5` |
 | `--claude-monitor-model MODEL` | Claude model that Live monitor asks about once a minute. Takes an explicit Haiku ID of generation 4 or later. | `claude-haiku-5-5` |
@@ -86,7 +86,7 @@ Every session from the ten agent tools shows on the board. The rest depends on w
 | Goal-met claim checked against the record | ✓ | ✓ | | | |
 | Live monitor | ✓ | | | | |
 | Steer back | ✓ | | | | |
-| Unasked checks | ✓ | With the Drift card toggle | ✓; Codex fallback needs permission | ✓; directions only, Codex fallback needs permission | |
+| Unasked checks | ✓ | ✓; once you allow Codex | ✓ | ✓; reads your prompts only | |
 
 ## Drift levels
 

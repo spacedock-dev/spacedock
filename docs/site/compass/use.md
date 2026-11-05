@@ -143,7 +143,9 @@ Compass can also check sessions with a typed goal without being asked, and raise
 spacedock compass --daemon --unasked-readings
 ```
 
-Claude Code checks Claude Code sessions with no further step and is preferred for eligible Pi and Antigravity sessions. When a check uses Codex, turn on **Allow Codex to run unasked checks** in the session's Drift card; Attention points to it when sessions are waiting. A check reads your typed goal, not your outcome lines, and stops at three per session and twelve a day. What Compass raised shows on the session page under **Raised while you were away**, and in the Intent log.
+Claude Code runs these checks with no further step, except on Codex sessions. Codex runs them on Codex sessions, and on any session when `claude` is not installed. Before Codex can run a check, turn on **Allow Codex to run unasked checks** in the session's Drift card; Attention points to it when sessions are waiting.
+
+A goal saved unchanged from `/goal`, **Use your prompt** or a prompt draft is not checked; edit it or type your own, then press **Save intent**. A check reads your goal, not your outcome lines. On Antigravity it reads only the prompts you sent, so it can catch your own directions moving away from the goal, but not the agent's work. Unasked checks stop at three per session and twelve a day. What Compass raised shows on the session page under **Raised while you were away**, and in the Intent log.
 
 ## Get alerted when work reaches a step
 
