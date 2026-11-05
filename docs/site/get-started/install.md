@@ -53,4 +53,8 @@ Spacedock works with Claude Code and Codex.
 
 In Codex, run `spacedock doctor --host codex`. Follow the instructions in the doctor output.
 
+## Keep it up to date
+
+Run `spacedock update`. It updates Spacedock, Review, Compass and their plugins together. A Homebrew install prints the `brew upgrade` command to run instead.
+
 [Your first review](../review/use.md).

@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/release"
 )
 
 type liveJourneyGap struct{ kind, target, owner string }
@@ -33,14 +35,9 @@ func liveJourney[Builder, Assertion any](t *testing.T, id, fixtureID string, bui
 	build, buildCalls := countedLiveFunction(t, builder)
 	assert, assertionCalls := countedLiveFunction(t, assertion)
 	newDriver, target := liveDriverForRuntime(t, id)
-	var selected liveJourneyGap
-	for _, gap := range gaps {
-		if gap.target == target {
-			selected = gap
-			if gap.kind == "todo" {
-				t.Skipf("TODO(%s): %s/%s lacks passing live evidence", gap.owner, target, id)
-			}
-		}
+	selected := selectLiveGap(gaps, target)
+	if selected.kind == "todo" {
+		t.Skipf("TODO(%s): %s/%s lacks passing live evidence", selected.owner, target, id)
 	}
 	if liveRuntimeRunsParallel(os.Getenv("SPACEDOCK_LIVE_RUNTIME")) && !strings.HasPrefix(t.Name(), "TestLiveScheduled/") {
 		t.Parallel()
@@ -50,6 +47,16 @@ func liveJourney[Builder, Assertion any](t *testing.T, id, fixtureID string, bui
 	if *buildCalls == 0 || *assertionCalls == 0 {
 		t.Fatalf("live journey %s executed builder/assertion %d/%d times", id, *buildCalls, *assertionCalls)
 	}
+}
+
+// selectLiveGap returns the gap bound to exactly this runtime target, or none.
+func selectLiveGap(gaps []liveJourneyGap, target string) (selected liveJourneyGap) {
+	for _, gap := range gaps {
+		if gap.target == target {
+			selected = gap
+		}
+	}
+	return selected
 }
 
 func countedLiveFunction[Function any](t *testing.T, function Function) (Function, *int) {
@@ -90,53 +97,95 @@ func liveDriverForRuntime(t *testing.T, id string) (func() liveDriver, string) {
 }
 
 func claudeLiveRole(model string) (string, error) {
-	switch model {
-	case "sonnet", "claude-sonnet-5":
+	if model == "sonnet" {
 		return "claude-sonnet", nil
-	case "claude-opus-4-8":
-		return "claude-opus", nil
-	default:
-		return "", fmt.Errorf("SPACEDOCK_LIVE_MODEL=%q, want sonnet, claude-sonnet-5, or claude-opus-4-8", model)
+	}
+	for key, id := range release.LiveModels {
+		if strings.HasPrefix(key, "claude.") && model == id {
+			return "claude-" + strings.TrimPrefix(key, "claude."), nil
+		}
+	}
+	return "", fmt.Errorf("SPACEDOCK_LIVE_MODEL=%q, want a registered Claude model ID or sonnet", model)
+}
+
+func TestClaudeLiveRole(t *testing.T) {
+	original := release.LiveModels
+	release.LiveModels = map[string]string{
+		"claude.sonnet": "fixture-sonnet", "claude.opus": "fixture-opus",
+		"claude.haiku": "fixture-haiku", "claude.future": "fixture-future", "codex.exec": "fixture-codex",
+	}
+	defer func() { release.LiveModels = original }()
+	for model, want := range map[string]string{
+		"sonnet": "claude-sonnet", "fixture-sonnet": "claude-sonnet", "fixture-opus": "claude-opus",
+		"fixture-haiku": "claude-haiku", "fixture-future": "claude-future", "fixture-codex": "", "unknown": "",
+	} {
+		t.Run(model, func(t *testing.T) {
+			got, err := claudeLiveRole(model)
+			if got != want || (err != nil) != (want == "") {
+				t.Fatalf("claudeLiveRole(%q) = %q, %v; want %q (error iff empty)", model, got, err, want)
+			}
+		})
 	}
 }
 
+// The Pi binding on this journey flips between XFAIL and XPASS and has no
+// single-repair owner; owned by psvqjf0w8xh2txp9604gsvmz
+// (pi-live-journey-flakiness).
+//
 //spacedock:live-journey id=owned-conflict-owner-handoff fixture=conflict-owner/stamped-checkout
 func TestLiveCommonOwnedConflictOwnerHandoff(t *testing.T) {
-	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyGap{liveXFail("pi", "fe7bfjz9sb8wyckmnnm3ncjx")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
+	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyGap{liveXFail("pi", "psvqjf0w8xh2txp9604gsvmz")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
 }
 
-// The pi XFAIL below is registered because the Pi rejection-flow target times out
-// before completing the expected stop (registered owner p17swb3375rt525fn7f8xt7e).
-// Pi-dialect extractors now exist (piRecordedRejectionRound, etc.) so the XFAIL
-// can XPASS once the timeout repair lets the FO complete the two-validation cycle.
+// The pi XFAIL below is registered for the Pi rejection-worker topology fault,
+// a separate semantic from the timeout repair that archived
+// finish-pi-rejection-flow already passed (registered owner
+// 6h3teccccn3qh71yqcmjbjx4). Pi-dialect extractors now exist
+// (piRecordedRejectionRound, etc.) so the XFAIL can XPASS once the topology fault
+// is repaired.
 //
 //spacedock:live-journey id=rejection-flow fixture=rejection/before-validation-1
 func TestLiveCommonRejectionFlow(t *testing.T) {
-	liveJourney(t, "rejection-flow", "rejection/before-validation-1", writeRejectionWorkflow, []liveJourneyGap{liveXFail("pi", "p17swb3375rt525fn7f8xt7e")}, runClaudeRejectionFlowScenario, assertRejectionFlow)
+	liveJourney(t, "rejection-flow", "rejection/before-validation-1", writeRejectionWorkflow, []liveJourneyGap{liveXFail("pi", "6h3teccccn3qh71yqcmjbjx4")}, runClaudeRejectionFlowScenario, assertRejectionFlow)
 }
 
+// The claude-sonnet red is the completion-observation gap: run 37421110550's
+// claude-live leg recorded `validation-worker-not-dispatched`
+// (spawns=1 completed=62 validation=-1 report=<nil>) while the final message
+// reported the validator finished and recommended PASSED, with the stage report
+// committed as cbf74b1; the validator's SendMessage to team-lead failed. Owner:
+// jfdrr2dbdtt952s4cvvy74k8 (claude-live-completion-observation-gap).
+//
+// The Pi red on this journey is `validation-worker-not-dispatched`, the shared
+// worker-lifecycle observation defect. Sole owner:
+// s0gq9p69nztejw8xp3by4k7f (pi-live-auto-continue-dispatch-red).
+//
 //spacedock:live-journey id=auto-continue-after-implementation fixture=auto-continue/single-root,auto-continue/split-root
 func TestLiveCommonAutoContinueAfterImplementation(t *testing.T) {
-	liveJourney(t, "auto-continue-after-implementation", "auto-continue/single-root,auto-continue/split-root", autoContinueFixtureVariants, nil, runAutoContinueJourney, assertAutoContinue)
+	liveJourney(t, "auto-continue-after-implementation", "auto-continue/single-root,auto-continue/split-root", autoContinueFixtureVariants, []liveJourneyGap{liveXFail("claude-sonnet", "jfdrr2dbdtt952s4cvvy74k8"), liveXFail("pi", "s0gq9p69nztejw8xp3by4k7f")}, runAutoContinueJourney, assertAutoContinue)
 }
 
+// The Pi binding on this journey flips between runs; re-bound under
+// psvqjf0w8xh2txp9604gsvmz (pi-live-journey-flakiness).
+//
 //spacedock:live-journey id=keep-moving-posture fixture=keep-moving/mixed-events
 func TestLiveCommonKeepMovingPosture(t *testing.T) {
-	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "060xp69y61yhrww23g3wvwqy"), liveXFail("pi", "x02375wsg6q61xek7p0t36j2")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
+	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "060xp69y61yhrww23g3wvwqy"), liveXFail("pi", "psvqjf0w8xh2txp9604gsvmz"), liveXFail("claude-haiku", "")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
 }
 
+// The Pi red on this journey mixes the shared gate assertion failing
+// (`gate-hold-violation` and `gate-not-held`) with the worker-lifecycle
+// observation defect `implementation-worker-not-dispatched`. Sole owner:
+// penfp034pt9s3cgwp7wg3ykk (pi-live-default-headless-gate-stop-red).
+//
 //spacedock:live-journey id=default-headless-gate-stop fixture=recorded-gate/pre-gate
 func TestLiveCommonDefaultHeadlessGateStop(t *testing.T) {
-	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, nil, runGateStopScenario, assertGateHeld)
+	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyGap{liveXFail("pi", "penfp034pt9s3cgwp7wg3ykk"), liveXFail("claude-haiku", "")}, runGateStopScenario, assertGateHeld)
 }
 
-// AUDIT(2026-08-16): finding 5 — the direct-commit marker matches ANY git commit and
-// no assertion checks the strategy doc landed. The pi XFAIL below is structural
-// (finding 11): a claude-dialect trace reads the pi stream, so it can never XPASS.
-//
 //spacedock:live-journey id=smallest-sufficient-mechanism fixture=mechanism-choice/mixed-authority
 func TestLiveCommonSmallestSufficientMechanism(t *testing.T) {
-	liveJourney(t, "smallest-sufficient-mechanism", "mechanism-choice/mixed-authority", writeSmallestMechanismWorkflow, []liveJourneyGap{liveXFail("pi", "h30c9jrfcf21fdh2qs5z58sd")}, runClaudeSmallestSufficientMechanismScenario, assertDurableSmallestMechanism)
+	liveJourney(t, "smallest-sufficient-mechanism", "mechanism-choice/mixed-authority", writeSmallestMechanismWorkflow, nil, runClaudeSmallestSufficientMechanismScenario, assertDurableSmallestMechanism)
 }
 
 //spacedock:live-journey id=recorded-gate-lifecycle fixture=recorded-gate/prepared
@@ -153,14 +202,19 @@ func TestLiveCommonFullEnsignCycle(t *testing.T) {
 	liveJourney(t, "full-ensign-cycle", "realistic-lifecycle", writeRealisticLifecycleFixture, nil, runFullEnsignCycleJourney, someCommitNamesOnly)
 }
 
+// The Pi red on this journey flips between runs and previously had no binding;
+// owned by psvqjf0w8xh2txp9604gsvmz (pi-live-journey-flakiness).
+//
 //spacedock:live-journey id=ac-value-reanchor fixture=ac-reanchor/means-pass-value-regressed
 func TestLiveCommonACValueReanchor(t *testing.T) {
-	liveJourney(t, "ac-value-reanchor", "ac-reanchor/means-pass-value-regressed", authorACReanchorScenario, nil, runACValueReanchorJourney, assertACReanchorScenario)
+	liveJourney(t, "ac-value-reanchor", "ac-reanchor/means-pass-value-regressed", authorACReanchorScenario, []liveJourneyGap{liveXFail("pi", "psvqjf0w8xh2txp9604gsvmz")}, runACValueReanchorJourney, assertACReanchorScenario)
 }
+
+var withdrawnGateRecoveryGaps = []liveJourneyGap{liveXFail("claude-haiku", "")}
 
 //spacedock:live-journey id=withdrawn-gate-recovery fixture=recorded-gate/withdrawn
 func TestLiveCommonWithdrawnGateRecovery(t *testing.T) {
-	liveJourney(t, "withdrawn-gate-recovery", "recorded-gate/withdrawn", writeWithdrawnGateFixture, nil, runClaudeWithdrawnGateRecoveryScenario, assertWithdrawnGateRecovery)
+	liveJourney(t, "withdrawn-gate-recovery", "recorded-gate/withdrawn", writeWithdrawnGateFixture, withdrawnGateRecoveryGaps, runClaudeWithdrawnGateRecoveryScenario, assertWithdrawnGateRecovery)
 }
 
 //spacedock:live-journey id=gate-guardrail fixture=recorded-gate/held

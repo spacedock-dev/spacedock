@@ -40,6 +40,7 @@ func TestInitTargetsNextWhenDevBranchPinned(t *testing.T) {
 // AC-1 and AC-3. The sibling ids below are independent literals for each channel,
 // never derived from otherChannelMarketplace.
 func TestInstallArgvSequence(t *testing.T) {
+	withNoExtensions(t)
 	wantEdge := []installStep{
 		{argv: []string{"plugin", "uninstall", "spacedock@spacedock-edge"}, tolerateExit: true},
 		{argv: []string{"plugin", "uninstall", "spacedock@spacedock"}, tolerateExit: true},

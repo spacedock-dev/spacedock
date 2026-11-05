@@ -160,6 +160,13 @@ type streamWatcher struct {
 	exitBudget   time.Duration
 	pollInterval time.Duration
 
+	// now and sleep are the watcher's clock seam. Production leaves them at the
+	// real wall clock; the offline unit test substitutes a test-controlled clock
+	// so drainCodexToTerminal's no-progress decision is exercised without racing
+	// a real timer against a real sleep.
+	now   func() time.Time
+	sleep func(time.Duration)
+
 	transcript     []string
 	openDispatches map[string]*openDispatch
 	closedCount    int
@@ -177,6 +184,8 @@ func newStreamWatcher(src lineSource, proc procPoller, tee func(string)) *stream
 		quietBudget:    quietBudgetDefault,
 		exitBudget:     exitBudgetDefault,
 		pollInterval:   pollIntervalDefault,
+		now:            time.Now,
+		sleep:          time.Sleep,
 		openDispatches: map[string]*openDispatch{},
 	}
 }

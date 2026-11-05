@@ -189,7 +189,7 @@ The harness did this:
 5. Launch `pi --print` with explicit local resources:
 
    ```text
-   --extension ~/.pi/agent/npm/node_modules/pi-subagents/src/extension/index.ts
+   --extension ~/.pi/agent/npm/node_modules/pi-subagents/index.js
    --skill ~/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
    --skill <spacedock checkout>/skills/first-officer
    --skill <spacedock checkout>/skills/ensign
@@ -244,7 +244,7 @@ For Pi, `spacedock pi` launches the proven front door by loading local resources
 <spacedock checkout>/skills/first-officer
 <spacedock checkout>/skills/ensign
 ~/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
-~/.pi/agent/npm/node_modules/pi-subagents/src/extension/index.ts
+~/.pi/agent/npm/node_modules/pi-subagents/index.js
 ```
 
 `spacedock install --host pi` installs Spacedock as a Pi package via `pi install` (idempotent; pass `--check` for a readiness check without installing). It is not a Claude/Codex-style marketplace plugin, and it accepts `--plugin-dir` as the dev-override install source (defaulting to the published package otherwise). Resolve the local skill checkout by running it from the checkout or setting `SPACEDOCK_REPO_ROOT`. `spacedock doctor --host pi` reports the Pi CLI, auth file, `pi-subagents` extension/skill, local Spacedock skill health, and supervisor-talkback setup prerequisites: the `pi-subagents` intercom bridge source, the resolved `PI_INTERCOM_PACKAGE_ROOT` package root, and the `pi-intercom` skill resource. Current `pi-subagents`/`pi-intercom` packages do not expose stable `pi-intercom` or `subagents-doctor` PATH commands, so readiness is based on package/resource paths instead of command shims. These doctor/install checks are necessary setup checks but insufficient to prove live supervisor talkback. Live proof still requires the cq-style `pi-intercom-supervisor-talkback` probe: progress update -> decision request -> supervisor reply -> child resume -> durable marker evidence. Live tests should not mutate global `~/.pi/agent`; they should keep using isolated Pi homes with copied auth.

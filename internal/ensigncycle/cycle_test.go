@@ -34,7 +34,7 @@ var (
 	// completionEmit anchors the completion-signal emit line at its four-space
 	// indentation. The bare prose warning ("Do NOT paraphrase SendMessage(...)")
 	// is NOT four-space-indented and cannot satisfy this regex.
-	completionEmit = regexp.MustCompile(`(?m)^    SendMessage\(to="team-lead", message="Done: `)
+	completionEmit = regexp.MustCompile(`(?m)^    SendMessage\(to="main", message="Done: `)
 	// stageReportHeading anchors the appended stage-report section heading.
 	stageReportHeading = regexp.MustCompile(`(?m)^## Stage Report: backlog$`)
 	// doneMarker anchors a DONE checklist-accounting marker.
@@ -204,14 +204,14 @@ func TestEnsignCycleGoesRedOnBrokenOutput(t *testing.T) {
 	t.Run("regressed_emit_line_renamed_to_Notify", func(t *testing.T) {
 		f := stageFixture(t)
 		regressed := strings.Replace(f.body,
-			`    SendMessage(to="team-lead", message="Done: `,
-			`    Notify(to="team-lead", message="Done: `, 1)
+			`    SendMessage(to="main", message="Done: `,
+			`    Notify(to="main", message="Done: `, 1)
 
 		if completionEmit.MatchString(regressed) {
 			t.Fatal("anchored emit regex must NOT match the regressed body")
 		}
 		// Demonstrate the trap: a bare Contains is fooled by the prose warning.
-		if !strings.Contains(regressed, `SendMessage(to="team-lead"`) {
+		if !strings.Contains(regressed, `SendMessage(to="main"`) {
 			t.Fatal("bare Contains expected to be fooled by the prose warning line " +
 				"(this is the prose-grep trap the anchored regex avoids)")
 		}

@@ -39,7 +39,7 @@ func TestBuildCodexHostPromptShape(t *testing.T) {
 	assertCodexFreshPrompt(t, out.Prompt, dispatchPath)
 
 	body := readDispatchBody(t, dispatchPath)
-	for _, banned := range []string{"Skill(skill=\"spacedock:ensign\")", "SendMessage(to=\"team-lead\""} {
+	for _, banned := range []string{"Skill(skill=\"spacedock:ensign\")", "SendMessage(to=\"main\""} {
 		if strings.Contains(body, banned) {
 			t.Fatalf("codex dispatch body must omit %q:\n%s", banned, body)
 		}

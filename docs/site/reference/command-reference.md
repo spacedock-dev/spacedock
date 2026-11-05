@@ -30,8 +30,9 @@ Put agent-specific options after `--`. See [Supported sandboxes](sandbox.md) for
 | --- | --- |
 | `spacedock install` | Install or refresh the agent integration |
 | `spacedock doctor` | Check installation and compatibility |
+| `spacedock update` | Update Spacedock, Review, Compass and their plugins to the newest release on this binary's channel |
 
-Both accept `--host claude`, `--host codex` or `--host pi`. The default is Claude Code. Follow the doctor output to resolve setup problems.
+`install` and `doctor` accept `--host claude`, `--host codex` or `--host pi`. The default is Claude Code. Follow the doctor output to resolve setup problems.
 
 See [Installation](../get-started/install.md) for the manual setup path.
 

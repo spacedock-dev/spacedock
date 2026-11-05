@@ -200,9 +200,9 @@ func runACValueReanchorJourney(t *testing.T, driver liveDriver, scenario sharedR
 	spec.Assert = func(before, after livescenario.EntityState, observed string) error {
 		return assert(authored, before, after, observed)
 	}
-	if err := livescenario.Run(context.Background(), t.TempDir(), spec, sharedLiveScenarioAdapter{t: t, driver: driver, scenario: scenario}); err != nil {
-		t.Fatalf("AC value re-anchor durable branch graded FAIL: %v", err)
-	}
+	var result liveResult
+	err := livescenario.Run(context.Background(), t.TempDir(), spec, sharedLiveScenarioAdapter{t: t, driver: driver, scenario: scenario, result: &result})
+	finishLiveGrade(t, driver, scenario, result, liveScenarioGrade(scenario, durableSemantic("ac-value-reanchor-violation", err)))
 }
 
 //spacedock:live-fixture id=ac-reanchor/means-pass-value-regressed

@@ -23,6 +23,7 @@ Launch
 Setup
   install  [--host claude|codex|pi]  Install the Spacedock plugin for a host, then check it
   doctor   [--host claude|codex|pi]  Check the installed plugin and this binary are compatible
+  update                             Update Spacedock, its extensions and their plugins
 Workflow
   status      [args]                 Show or update workflow state
   new         [--folder] SLUG        Create an entity from a stdin body (auto-discovers the workflow)

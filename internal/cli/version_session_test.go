@@ -292,6 +292,12 @@ func TestVersionExecutesNoHostCLI(t *testing.T) {
 // every session where a nested runtime leaks a second marker. Driven through Run,
 // so the exit code is the real one.
 func TestVersionAmbiguousMarkersExitZero(t *testing.T) {
+	// Scrub the operator's ambient host markers so the only set markers are the
+	// two this test controls. An ambient PI_CODING_AGENT (set by a Pi host, e.g.
+	// this repo's own Pi runtime) would otherwise leak a third marker and change
+	// the expected ambiguity line — reading the operator's machine, not our logic.
+	t.Setenv("PI_CODING_AGENT", "")
+	t.Setenv("PI_CODING_AGENT_DIR", "")
 	t.Setenv("CODEX_THREAD_ID", "01937f2a")
 	t.Setenv("CLAUDECODE", "1")
 
