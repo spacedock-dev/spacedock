@@ -26,7 +26,7 @@ Your agent picks up your feedback and acts on your decision. No need to copy it 
 
 === "Browser"
 
-    [review.spacedock.md](https://review.spacedock.md) is Spacedock’s hosted review service, free with [limits](reference.md#limits). Create an account for higher limits.
+    [review.spacedock.md](https://review.spacedock.md) is Spacedock’s hosted review service, free with [limits](reference.md#limits). Create an account and pair your computer for higher limits.
 
     People you invite can comment through the link you share with them.
 

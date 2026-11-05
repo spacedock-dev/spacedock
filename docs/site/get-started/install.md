@@ -1,6 +1,6 @@
 # Installation
 
-Spacedock works with most coding agents.
+Spacedock works with Claude Code and Codex.
 
 <a id="1-install-spacedock"></a>
 
@@ -51,6 +51,6 @@ Spacedock works with most coding agents.
   <button type="button" class="sd-prompt-copy" aria-label="Copy command" aria-live="polite" hidden>copy</button>
 </div>
 
-Follow the instructions in the doctor output.
+In Codex, run `spacedock doctor --host codex`. Follow the instructions in the doctor output.
 
 [Your first review](../review/use.md).

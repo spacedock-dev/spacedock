@@ -22,7 +22,7 @@ Only the owner decides. Finishing with a decision closes the review to further c
 
 Spacedock’s hosted service stores the uploaded document, comments and decision. Anyone holding the share link can read the entire document, so share it only with people who should have access.
 
-Share links expire after seven days by default. [Review the limits](reference.md#limits) and create an account for higher limits. Ask your agent to [revoke the link](reference.md#commands-your-agent-runs-for-web-reviews) to end access sooner. For example: "Revoke the share link for plan.md."
+Share links expire after seven days by default. [Review the limits](reference.md#limits) and create an account and pair your computer for higher limits. Ask your agent to [revoke the link](reference.md#commands-your-agent-runs-for-web-reviews) to end access sooner. For example: "Revoke the share link for plan.md."
 
 **Related guides**
 
