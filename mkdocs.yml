@@ -12,8 +12,6 @@ docs_dir: docs/site
 exclude_docs: |
   AGENTS.md
   contributing/
-  compass/use.md
-  compass/reference.md
 
 theme:
   name: material
@@ -98,7 +96,10 @@ nav:
       - Sharing: review/sharing.md
       - Comments and decisions: review/decisions.md
       - Reference: review/reference.md
-  - Compass: compass/index.md
+  - Compass:
+      - Overview: compass/index.md
+      - Use Compass: compass/use.md
+      - Reference: compass/reference.md
   - Workflow:
       - Overview: workflow/index.md
       - Workflow design: running-workflows/commission.md
