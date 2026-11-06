@@ -1,35 +1,55 @@
 # Spacedock
 
-> A multi-agent orchestrator where nothing ships without a decision.
+> Your agents are waiting on you. Spacedock brings you the calls that need you, keeps your agents on the goal, and lets you decide in one place.
 
-Documentation for Spacedock, a multi-agent orchestrator where nothing ships without a decision. It lives within your existing coding harness (Claude Code, Codex, or Pi), breaks work into stages, and surfaces an evidenced decision at each gate. This index links the product docs; llms-full.txt is every page concatenated into one file for a single fetch.
+Documentation for Spacedock, which runs inside your existing coding agent (Claude Code, Codex, or Pi) and has three features. Spacedock Review puts your agent's work in front of you and sends your comments back. Spacedock Compass shows whether your agents are still on the goal. Spacedock Workflow breaks work into stages and surfaces an evidenced decision at each gate. This index links the product docs; llms-full.txt is every page concatenated into one file for a single fetch.
 
 ## Get started
 
 - [Welcome](https://spacedock.md/docs/index.md)
+- [Installation](https://spacedock.md/docs/get-started/install/index.md)
+
+## Review
+
+- [Overview](https://spacedock.md/docs/review/index.md)
+- [In Browser](https://spacedock.md/docs/review/browser/index.md)
+- [Comments and decisions](https://spacedock.md/docs/review/decisions/index.md)
+- [Reference](https://spacedock.md/docs/review/reference/index.md)
+- [Sharing](https://spacedock.md/docs/review/sharing/index.md)
+- [In Terminal](https://spacedock.md/docs/review/terminal/index.md)
+- [First review](https://spacedock.md/docs/review/use/index.md)
+
+## Compass
+
+- [Overview](https://spacedock.md/docs/compass/index.md)
+
+## Workflow, what it is
+
+- [Overview](https://spacedock.md/docs/workflow/index.md)
+- [Review standards](https://spacedock.md/docs/workflow/standards/index.md)
+
+## Workflow, use it
+
 - [Your first workflow](https://spacedock.md/docs/get-started/first-workflow/index.md)
-- [Install](https://spacedock.md/docs/get-started/install/index.md)
-- [Survey your project](https://spacedock.md/docs/get-started/survey/index.md)
+- [Project survey](https://spacedock.md/docs/get-started/survey/index.md)
+- [Workflow design](https://spacedock.md/docs/running-workflows/commission/index.md)
+- [Session debrief](https://spacedock.md/docs/running-workflows/debrief/index.md)
+- [Workflow operation](https://spacedock.md/docs/running-workflows/operating/index.md)
 
 ## Concepts
 
-- [Gates & decisions](https://spacedock.md/docs/concepts/gates-and-decisions/index.md)
+- [Gates and decisions](https://spacedock.md/docs/concepts/gates-and-decisions/index.md)
 - [The operating model](https://spacedock.md/docs/concepts/operating-model/index.md)
 - [The stage lifecycle](https://spacedock.md/docs/concepts/stage-lifecycle/index.md)
 - [Workflows & entities](https://spacedock.md/docs/concepts/workflows-and-entities/index.md)
 
-## Running workflows
-
-- [Commission a workflow](https://spacedock.md/docs/running-workflows/commission/index.md)
-- [Debrief a session](https://spacedock.md/docs/running-workflows/debrief/index.md)
-- [Operate a workflow](https://spacedock.md/docs/running-workflows/operating/index.md)
-
 ## Advanced topics
 
-- [Bridge an external tracker](https://spacedock.md/docs/advanced/external-tracker/index.md)
+- [External trackers](https://spacedock.md/docs/advanced/external-tracker/index.md)
 - [Mods & standing teammates](https://spacedock.md/docs/advanced/mods-and-standing-teammates/index.md)
 - [Multiple workflows](https://spacedock.md/docs/advanced/multi-workflow/index.md)
-- [Refit a workflow](https://spacedock.md/docs/advanced/refit/index.md)
+- [Local plugin development](https://spacedock.md/docs/advanced/plugin-development/index.md)
+- [Workflow refits](https://spacedock.md/docs/advanced/refit/index.md)
 - [Split-root state](https://spacedock.md/docs/advanced/split-root-state/index.md)
 
 ## Reference

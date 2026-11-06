@@ -1,22 +1,29 @@
 ---
-title: "Debrief a session"
-description: "A multi-agent orchestrator where nothing ships without a decision."
+title: "Session debrief"
+description: "Your agents are waiting on you. Spacedock brings you the calls that need you, keeps your agents on the goal, and lets you decide in one place."
 doc_version: "0.20.2"
-last_updated: "2026-11-04 16:40:58"
+last_updated: "2026-11-06 00:33:04"
 ---
 
-# Debrief a session
+# Session debrief
 
-A workflow improves when friction is recorded and revisited instead of lost when the session ends. `/spacedock:debrief` captures the session into a chronological record of the work completed: what shipped, what you decided at the gates, and where it rubbed. Run it before you stop; the next session's first officer reads the latest debrief and starts with context instead of cold.
+A debrief records completed work, decisions and follow-up items for the next session.
 
-The friction splits two ways:
+## Record the session
 
-- **Workflow friction stays local.** Quirks in your pipeline, fixed by tightening the workflow's README.
-- **Spacedock friction goes upstream.** For each framework issue, debrief offers to file an anonymized GitHub issue: the body carries the bug, repro steps, and scale, never your mission, entity titles, or domain. You approve, edit, or decline each one before anything is filed.
+In Claude Code, run:
 
-Debrief drafts everything from git and the workflow files, and pauses for you three times: confirm where the session starts, add the why behind decisions and observations, approve each upstream issue. It commits the record, and the next debrief picks up where this one ended.
+```
+/spacedock:debrief
+```
+
+The agent drafts the record from Git history and workflow files. You confirm the session's scope and add context behind decisions.
+
+## Follow-up work
+
+Workflow improvements stay with the project. For Spacedock bugs, the agent offers to file an anonymized GitHub issue. You approve or edit each issue before it sends it.
 
 ## Sitemap
 
-- [Commission a workflow](../commission/index.md)
-- [Operate a workflow](../operating/index.md)
+- [Project survey](../../get-started/survey/index.md)
+- [Your first workflow](../../get-started/first-workflow/index.md)

@@ -6,14 +6,14 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="A multi-agent orchestrator where nothing ships without a decision.">
+        <meta name="description" content="Your agents are waiting on you. Spacedock brings you the calls that need you, keeps your agents on the goal, and lets you decide in one place.">
       
       
       
         <link rel="canonical" href="https://spacedock.md/docs/reference/command-reference/">
       
       
-        <link rel="prev" href="../../advanced/refit/">
+        <link rel="prev" href="../../advanced/plugin-development/">
       
       
         <link rel="next" href="../frontmatter-contract/">
@@ -59,7 +59,7 @@
   <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
   <link rel="stylesheet" href="https://fonts.bunny.net/css2?family=hanken-grotesk:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=jetbrains-mono:ital,wght@0,400;0,700;1,400;1,700&display=fallback">
   <meta property="og:title" content="Command reference - Spacedock">
-  <meta property="og:description" content="A multi-agent orchestrator where nothing ships without a decision.">
+  <meta property="og:description" content="Your agents are waiting on you. Spacedock brings you the calls that need you, keeps your agents on the goal, and lets you decide in one place.">
   <meta property="og:type" content="article">
   <meta property="og:url" content="https://spacedock.md/docs/reference/command-reference/">
   <script type="application/ld+json">
@@ -69,18 +69,20 @@
       {
         "@type": "TechArticle",
         "headline": "Command reference",
-        "description": "A multi-agent orchestrator where nothing ships without a decision.",
+        "description": "Your agents are waiting on you. Spacedock brings you the calls that need you, keeps your agents on the goal, and lets you decide in one place.",
         "url": "https://spacedock.md/docs/reference/command-reference/",
-        "dateModified": "2026-11-04 16:40:58",
+        "dateModified": "2026-11-06 00:33:04",
         "isPartOf": { "@type": "WebSite", "name": "Spacedock", "url": "https://spacedock.md/docs/" }
       },
       {
         "@type": "BreadcrumbList",
         "itemListElement": [
           
-          { "@type": "ListItem", "position": 1, "name": "Reference" },
+          { "@type": "ListItem", "position": 1, "name": "Workflow" },
           
-          { "@type": "ListItem", "position": 2, "name": "Command reference", "item": "https://spacedock.md/docs/reference/command-reference/" }
+          { "@type": "ListItem", "position": 2, "name": "Reference" },
+          
+          { "@type": "ListItem", "position": 3, "name": "Command reference", "item": "https://spacedock.md/docs/reference/command-reference/" }
         ]
       }
     ]
@@ -122,9 +124,9 @@
 
   
 
-<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+<header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="https://spacedock.md" title="Spacedock" class="md-header__button md-logo" aria-label="Spacedock" data-md-component="logo">
+    <a href="/" title="Spacedock" class="md-header__button md-logo" aria-label="Spacedock" data-md-component="logo">
       
   <img src="../../brand/logo.svg" alt="logo">
 
@@ -237,130 +239,19 @@
       </div>
     
     <nav class="sd-nav-links" aria-label="Spacedock site navigation">
-  <a href="/#how-it-works">How it works</a>
-  <a href="/#who">Who it's for</a>
+  <a href="/#review">Features</a>
+  <a href="/use-cases/">Use cases</a>
   <a href="/blog/">Blog</a>
 </nav>
   </nav>
-  
-    
-      
-<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
-  <div class="md-grid">
-    <ul class="md-tabs__list">
-      
-        
-  
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="../.." class="md-tabs__link">
-          
-  
-  
-  Get started
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../concepts/operating-model/" class="md-tabs__link">
-          
-  
-  
-  Concepts
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../running-workflows/commission/" class="md-tabs__link">
-          
-  
-  
-  Running workflows
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../advanced/mods-and-standing-teammates/" class="md-tabs__link">
-          
-  
-  
-  Advanced topics
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-    
-  
-  
-    
-    
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="./" class="md-tabs__link">
-          
-  
-  
-  Reference
-
-        </a>
-      </li>
-    
-  
-
-      
-    </ul>
-  </div>
-</nav>
-    
   
 </header>
     
     <div class="md-container" data-md-component="container">
       
       
+        
+          
         
       
       <main class="md-main" data-md-component="main">
@@ -374,10 +265,10 @@
                     
 
 
+
   
 
-
-<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="Spacedock" class="md-nav__button md-logo" aria-label="Spacedock" data-md-component="logo">
       
@@ -407,50 +298,10 @@
   
   
   
-    
-    
-    
-    
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
-        
-          
-          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    Get started
-    
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_1">
-            <span class="md-nav__icon md-icon"></span>
-            Get started
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
     <li class="md-nav__item">
       <a href="../.." class="md-nav__link">
         
+  
   
   
   <span class="md-ellipsis">
@@ -463,10 +314,9 @@
     </li>
   
 
-              
-            
-              
-                
+    
+      
+      
   
   
   
@@ -476,8 +326,77 @@
         
   
   
+  
   <span class="md-ellipsis">
-    Install
+    Installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+        
+          <div class="md-nav__link md-nav__container">
+            <a href="../../review/" class="md-nav__link">
+              
+  
+  
+  
+    <img class="sd-nav-product-mark" src="../../brand/products/review.svg" alt="" width="18" height="18" aria-hidden="true">
+  
+  <span class="md-ellipsis">
+    Review
+    
+  </span>
+  
+
+            </a>
+            <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0" aria-label="Toggle Review navigation">
+              <span class="md-nav__icon md-icon"></span>
+            </label>
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Review
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../review/" class="md-nav__link">
+        
+  
+  
+  
+  <span class="md-ellipsis">
+    Overview
     
   </span>
   
@@ -495,12 +414,13 @@
   
   
     <li class="md-nav__item">
-      <a href="../../get-started/survey/" class="md-nav__link">
+      <a href="../../review/use/" class="md-nav__link">
         
   
   
+  
   <span class="md-ellipsis">
-    Survey your project
+    First review
     
   </span>
   
@@ -518,12 +438,109 @@
   
   
     <li class="md-nav__item">
-      <a href="../../get-started/first-workflow/" class="md-nav__link">
+      <a href="../../review/terminal/" class="md-nav__link">
         
   
   
+  
   <span class="md-ellipsis">
-    Your first workflow
+    In Terminal
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../review/browser/" class="md-nav__link">
+        
+  
+  
+  
+  <span class="md-ellipsis">
+    In Browser
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../review/sharing/" class="md-nav__link">
+        
+  
+  
+  
+  <span class="md-ellipsis">
+    Sharing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../review/decisions/" class="md-nav__link">
+        
+  
+  
+  
+  <span class="md-ellipsis">
+    Comments and decisions
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../review/reference/" class="md-nav__link">
+        
+  
+  
+  
+  <span class="md-ellipsis">
+    Reference
     
   </span>
   
@@ -551,19 +568,429 @@
     
     
     
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+        
+          <div class="md-nav__link md-nav__container">
+            <a href="../../compass/" class="md-nav__link">
+              
+  
+  
+  
+    <img class="sd-nav-product-mark" src="../../brand/products/compass.svg" alt="" width="18" height="18" aria-hidden="true">
+  
+  <span class="md-ellipsis">
+    Compass
+    
+  </span>
+  
+
+            </a>
+            <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0" aria-label="Toggle Compass navigation">
+              <span class="md-nav__icon md-icon"></span>
+            </label>
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Compass
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../compass/" class="md-nav__link">
+        
+  
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../compass/use/" class="md-nav__link">
+        
+  
+  
+  
+  <span class="md-ellipsis">
+    Use Compass
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../compass/reference/" class="md-nav__link">
+        
+  
+  
+  
+  <span class="md-ellipsis">
+    Reference
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
       
       
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+        
+          <div class="md-nav__link md-nav__container">
+            <a href="../../workflow/" class="md-nav__link">
+              
+  
+  
+  
+    <img class="sd-nav-product-mark" src="../../brand/products/workflow.svg" alt="" width="18" height="18" aria-hidden="true">
+  
+  <span class="md-ellipsis">
+    Workflow
+    
+  </span>
+  
+
+            </a>
+            <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0" aria-label="Toggle Workflow navigation">
+              <span class="md-nav__icon md-icon"></span>
+            </label>
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Workflow
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../workflow/" class="md-nav__link">
+        
+  
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../running-workflows/commission/" class="md-nav__link">
+        
+  
+  
+  
+  <span class="md-ellipsis">
+    Workflow design
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../running-workflows/operating/" class="md-nav__link">
+        
+  
+  
+  
+  <span class="md-ellipsis">
+    Workflow operation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/gates-and-decisions/" class="md-nav__link">
+        
+  
+  
+  
+  <span class="md-ellipsis">
+    Gates and decisions
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../workflow/standards/" class="md-nav__link">
+        
+  
+  
+  
+  <span class="md-ellipsis">
+    Review standards
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
     
     
     <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
             
+  
+  
+  
+  <span class="md-ellipsis">
+    Guides
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
+            <span class="md-nav__icon md-icon"></span>
+            Guides
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../get-started/survey/" class="md-nav__link">
+        
+  
+  
+  
+  <span class="md-ellipsis">
+    Project survey
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../get-started/first-workflow/" class="md-nav__link">
+        
+  
+  
+  
+  <span class="md-ellipsis">
+    Your first workflow
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../running-workflows/debrief/" class="md-nav__link">
+        
+  
+  
+  
+  <span class="md-ellipsis">
+    Session debrief
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
+        
+        
+          
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+            
+  
   
   
   <span class="md-ellipsis">
@@ -575,8 +1002,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
             <span class="md-nav__icon md-icon"></span>
             Concepts
           </label>
@@ -591,6 +1018,7 @@
     <li class="md-nav__item">
       <a href="../../concepts/operating-model/" class="md-nav__link">
         
+  
   
   
   <span class="md-ellipsis">
@@ -616,6 +1044,7 @@
         
   
   
+  
   <span class="md-ellipsis">
     Workflows & entities
     
@@ -639,6 +1068,7 @@
         
   
   
+  
   <span class="md-ellipsis">
     The stage lifecycle
     
@@ -651,38 +1081,16 @@
 
               
             
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../concepts/gates-and-decisions/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Gates & decisions
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
           </ul>
         </nav>
       
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
@@ -690,137 +1098,19 @@
     
     
     
-    
-      
-      
     
     
     <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" >
+        
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
             
   
-  
-  <span class="md-ellipsis">
-    Running workflows
-    
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
-            <span class="md-nav__icon md-icon"></span>
-            Running workflows
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../running-workflows/commission/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Commission a workflow
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../running-workflows/operating/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Operate a workflow
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../running-workflows/debrief/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Debrief a session
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-    
-    
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
-            
   
   
   <span class="md-ellipsis">
@@ -832,8 +1122,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_8">
             <span class="md-nav__icon md-icon"></span>
             Advanced topics
           </label>
@@ -848,6 +1138,7 @@
     <li class="md-nav__item">
       <a href="../../advanced/mods-and-standing-teammates/" class="md-nav__link">
         
+  
   
   
   <span class="md-ellipsis">
@@ -873,6 +1164,7 @@
         
   
   
+  
   <span class="md-ellipsis">
     Multiple workflows
     
@@ -894,6 +1186,7 @@
     <li class="md-nav__item">
       <a href="../../advanced/split-root-state/" class="md-nav__link">
         
+  
   
   
   <span class="md-ellipsis">
@@ -919,8 +1212,9 @@
         
   
   
+  
   <span class="md-ellipsis">
-    Bridge an external tracker
+    External trackers
     
   </span>
   
@@ -942,8 +1236,33 @@
         
   
   
+  
   <span class="md-ellipsis">
-    Refit a workflow
+    Workflow refits
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../advanced/plugin-development/" class="md-nav__link">
+        
+  
+  
+  
+  <span class="md-ellipsis">
+    Local plugin development
     
   </span>
   
@@ -960,9 +1279,10 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
     
@@ -973,22 +1293,18 @@
     
     
     
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_9" checked>
         
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+          <label class="md-nav__link" for="__nav_5_9" id="__nav_5_9_label" tabindex="0">
             
+  
   
   
   <span class="md-ellipsis">
@@ -1000,8 +1316,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_9_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_9">
             <span class="md-nav__icon md-icon"></span>
             Reference
           </label>
@@ -1027,6 +1343,7 @@
           
   
   
+  
   <span class="md-ellipsis">
     Command reference
     
@@ -1038,6 +1355,7 @@
       
       <a href="./" class="md-nav__link md-nav__link--active">
         
+  
   
   
   <span class="md-ellipsis">
@@ -1064,9 +1382,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#-version" class="md-nav__link">
+  <a href="#version" class="md-nav__link">
     <span class="md-ellipsis">
-      --version
+      Version
     </span>
   </a>
   
@@ -1097,21 +1415,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Workflow">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#state-commit" class="md-nav__link">
-    <span class="md-ellipsis">
-      state commit
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
     </ul>
@@ -1132,6 +1435,7 @@
     <li class="md-nav__item">
       <a href="../frontmatter-contract/" class="md-nav__link">
         
+  
   
   
   <span class="md-ellipsis">
@@ -1157,6 +1461,7 @@
         
   
   
+  
   <span class="md-ellipsis">
     Glossary
     
@@ -1178,6 +1483,7 @@
     <li class="md-nav__item">
       <a href="../sandbox/" class="md-nav__link">
         
+  
   
   
   <span class="md-ellipsis">
@@ -1203,6 +1509,7 @@
         
   
   
+  
   <span class="md-ellipsis">
     Contributing
     
@@ -1210,6 +1517,14 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -1229,83 +1544,6 @@
               </div>
             
             
-              
-              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
-                <div class="md-sidebar__scrollwrap">
-                  <div class="md-sidebar__inner">
-                    
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#-version" class="md-nav__link">
-    <span class="md-ellipsis">
-      --version
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#launch" class="md-nav__link">
-    <span class="md-ellipsis">
-      Launch
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#setup" class="md-nav__link">
-    <span class="md-ellipsis">
-      Setup
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#workflow" class="md-nav__link">
-    <span class="md-ellipsis">
-      Workflow
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Workflow">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#state-commit" class="md-nav__link">
-    <span class="md-ellipsis">
-      state commit
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-                  </div>
-                </div>
-              </div>
-            
           
           
             <div class="md-content" data-md-component="content">
@@ -1319,178 +1557,104 @@
 
 
 <h1 id="command-reference">Command reference<a class="headerlink" href="#command-reference" title="Permanent link">&para;</a></h1>
-<p>The <code>spacedock</code> binary groups its subcommands into Launch, Setup, and Workflow, plus a top-level <code>spacedock --version</code> (the binary version, the host OS/arch, and release channel, and — inside an agent session — that session's runtime and sandbox state). For the exact flags of any command, run <code>spacedock &lt;command&gt; --help</code>, the always-current source of truth; <code>spacedock</code> with no arguments prints the grouped help.</p>
-<p><code>dispatch build</code> names fresh workers <code>&lt;slug&gt;-&lt;stage&gt;</code>. Names reserve room for retry/cycle suffixes; long slugs keep a readable prefix plus a deterministic eight-character suffix. <code>dispatch build --stamp</code> creates new code branches named <code>&lt;slug&gt;</code> and preserves the branch of an existing registered worktree. An occupied new branch or ambiguous generated worker name is refused before mutation. Choose a distinct task slug to resolve a fresh-name collision. Legacy worker names remain valid for reconciliation and reuse.</p>
-<p><code>spacedock dispatch name --workflow-dir DIR --entity-path FILE --stage STAGE</code> prints the same validated canonical base name without a checklist, assignment artifact, stamp, commit or worktree change. It rejects missing inputs, undeclared stages and unsafe or ambiguous names. Use it for selected named recovery when build fails before any envelope exists. It requires the executable and readable workflow/entity files; it does not repair complete executable absence. Existing suffix-budget and occupied-name checks still apply before spawn.</p>
-<h2 id="-version">--version<a class="headerlink" href="#-version" title="Permanent link">&para;</a></h2>
-<p><code>spacedock --version</code> reports the binary version, the host OS/arch, and the release channel the binary drives (<code>stable</code> installs <code>spacedock@spacedock</code>; <code>edge</code> installs <code>spacedock@spacedock-edge</code>), and — when it is running inside an agent session — that session's runtime and sandbox state. Outside any session it prints three lines:</p>
-<pre class="highlight"><code>spacedock 0.26.0
-OS: darwin/arm64
-Channel: stable (spacedock@spacedock)</code></pre>
-<p>Inside a session it also names the host OS/arch, the runtime it detected, the marker that proved it, and whether this process is running inside a sandbox:</p>
-<pre class="highlight"><code>spacedock 0.26.0
-OS: darwin/arm64
-Channel: stable (spacedock@spacedock)
-Runtime: claude (CLAUDECODE)
-Sandbox: agent-safehouse
-contract 3</code></pre>
-<p>A host detected by more than one marker reports all of them:</p>
-<pre class="highlight"><code>Runtime: pi (PI_CODING_AGENT, PI_CODING_AGENT_DIR)</code></pre>
-<p>When markers for more than one runtime are set — a nested session can leak them — it reports the ambiguity rather than guessing, and still exits 0:</p>
-<pre class="highlight"><code>Runtime: ambiguous (CODEX_THREAD_ID, CLAUDECODE)</code></pre>
-<p>Nothing on this surface fails, so it names no remedy. The one command the ambiguity does block is <code>spacedock dispatch build</code>, which refuses and prints the remedy with all three valid values.</p>
-<p>Being outside every runtime is a normal state, not a fault — it means a human at a terminal. There is no <code>Runtime:</code> line at all in that case, because there is no session to report: the output is the three lines shown above (the version line, the <code>OS:</code> line, and the <code>Channel:</code> line).</p>
-<p>The <code>Sandbox:</code> line answers one question — is this process sandboxed? Sandboxed, the value is the sandbox's name and nothing else; otherwise it is <code>none</code>, followed by whether safehouse is available to sandbox future launches:</p>
-<pre class="highlight"><code>Sandbox: agent-safehouse
-Sandbox: none (safehouse available)
-Sandbox: none (safehouse not installed)</code></pre>
-<p><code>spacedock status --boot</code> reports the same three. The pre-launch banner answers the neighbouring but different question — whether the launch it is about to perform will be wrapped — so its <code>Sandbox:</code> line reads in terms of that launch.</p>
-<p>The trailing <code>contract 3</code> is a frozen compatibility sentinel read only by skill versions predating the current version gate. It prints inside a session only. Use <code>spacedock doctor --host &lt;host&gt;</code> to compare this binary with the selected channel plugin. If another channel is enabled, doctor names both plugins and reports the load conflict without changing it. A normal launch repairs that conflict before starting the host; under <code>--no-install</code>, run <code>spacedock install --host &lt;host&gt;</code> manually.</p>
+<p>Run <code>spacedock &lt;command&gt; --help</code> for the full options. Run <code>spacedock</code> for the command list.</p>
+<h2 id="version">Version<a class="headerlink" href="#version" title="Permanent link">&para;</a></h2>
+<p><code>spacedock --version</code> reports the version, platform and release channel. Inside an agent session, it also reports the runtime and sandbox.</p>
 <h2 id="launch">Launch<a class="headerlink" href="#launch" title="Permanent link">&para;</a></h2>
-<p><code>spacedock claude</code>, <code>spacedock codex</code>, and <code>spacedock pi</code> start a host with the first officer loaded. Claude Code is the primary surface; Codex and Pi are experimental. The grammar is the same for all three:</p>
-<pre class="highlight"><code class="language-bash">spacedock claude [task] [spacedock-flags] [-- host-flags]</code></pre>
-<p>The task comes first and becomes the launch prompt. Supported host arguments
-after <code>--</code> forward verbatim (<code>--model</code>, <code>resume</code>, and the like). For Codex,
-Spacedock keeps its normal launch banner, default approval posture, and bootstrap
-prompt unless the forwarded token slice contains an exact token equal to
-<code>resume</code>. It does not parse Codex option grammar: <code>spacedock codex -- --model
-gpt-5.6-sol</code> remains a fresh first-officer launch, while <code>spacedock codex --
---model gpt-5.6-sol resume &lt;id&gt;</code> stays prompt-free. Use bare <code>spacedock codex</code> to
-start the first officer. When no plugin is installed, the launcher auto-installs
-it and launches, so the single command yields a working session; a contract
-mismatch fails fast. The sandbox flags (<code>--safehouse</code> and its knobs) and the
-contract-gate flags are listed by <code>spacedock claude --help</code>.</p>
-<p>For Claude and Codex, a valid Spacedock plugin checkout beside the resolved
-launcher is selected automatically. <code>--plugin-dir &lt;checkout&gt;</code> before <code>--</code> is an
-explicit Spacedock override and takes precedence. Claude treats a post-<code>--</code>
-<code>--plugin-dir</code> as an additional native session plugin, so the installed or
-adjacent Spacedock provider is still gated normally. Codex has no native
-session-local flag: a post-<code>--</code> <code>--plugin-dir</code> is rejected, and additional Codex
-plugins must be installed persistently with <code>codex plugin add</code>.</p>
-<p>Every Codex launch, including local-plugin, Safehouse, and <code>resume</code>, puts one Spacedock-owned collaboration layer immediately after the inner <code>codex</code> token: <code>-c agents.enabled=true</code>, <code>-c features.multi_agent=true</code>, and <code>-c 'features.multi_agent_v2={max_concurrent_threads_per_session=16,tool_namespace="agents",hide_spawn_agent_metadata=false}'</code>. The first two settings are Codex's supported enablement controls; the exact v2 table pins the requested thread limit, tool namespace, and visible spawn metadata. A <code>multi_agent_v2=false</code> feature-list label does not disprove that table or replace an observed spawn/follow-up/list/wait lifecycle proof.</p>
-<p>Spacedock reserves <code>agents.enabled</code>, <code>features.multi_agent</code>, and the complete <code>features.multi_agent_v2</code> path. Forwarding any of them with <code>-c</code>, <code>--config</code>, <code>--enable</code>, or <code>--disable</code> fails before plugin installation or host launch. Hosts that do not accept the owned settings exit nonzero from their native config parser before a first-officer session opens; Spacedock does not fall back to a prompt-only or downgraded collaboration mode.</p>
-<p>An unsandboxed bootstrap launch carries no safehouse isolation, so per-action permission prompting is friction without a matching safety gain: <code>spacedock claude</code> starts in <code>--permission-mode auto</code> and Codex starts in <code>--ask-for-approval on-request</code> unless you supply an approval mode. A sandboxed bootstrap launch instead skips/bypasses approvals (<code>--dangerously-skip-permissions</code> for claude, <code>--dangerously-bypass-approvals-and-sandbox</code> for codex) since the sandbox is the gate. Claude suppresses its defaults when you pass your own mode or a resume. Codex suppresses its banner and bootstrap prompt only when its forwarded argv contains the exact <code>resume</code> token; an explicit approval mode prevents only a duplicate automatic approval flag.</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Agent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>spacedock claude</code></td>
+<td>Claude Code</td>
+</tr>
+<tr>
+<td><code>spacedock codex</code></td>
+<td>Codex</td>
+</tr>
+<tr>
+<td><code>spacedock pi</code></td>
+<td>Pi</td>
+</tr>
+</tbody>
+</table>
+<p>Claude Code is the primary Workflow host. Codex and Pi support is experimental.</p>
+<p>Launch from your project directory. You can include a task:</p>
+<pre class="highlight"><code class="language-bash">spacedock claude "continue the workflow"</code></pre>
+<p>Put agent-specific options after <code>--</code>. See <a href="../sandbox/">Supported sandboxes</a> for sandbox options and <a href="../../advanced/plugin-development/">Local plugin development</a> for local checkouts.</p>
 <h2 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
 <th>Command</th>
-<th>What it does</th>
+<th>Purpose</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>spacedock install</code></td>
-<td>Install the per-host plugin, then run the compatibility check</td>
+<td>Install or refresh the agent integration</td>
 </tr>
 <tr>
 <td><code>spacedock doctor</code></td>
-<td>Run the compatibility check alone, and list the version of each installed piece</td>
+<td>Check installation and compatibility</td>
 </tr>
 <tr>
 <td><code>spacedock update</code></td>
-<td>Update Spacedock, its extensions and their plugins to the newest release on the channel of this binary</td>
+<td>Update Spacedock, Review, Compass and their plugins to the newest release on this binary's channel</td>
 </tr>
 </tbody>
 </table>
-<p><code>install</code> and <code>doctor</code> take <code>--host claude|codex|pi</code> (default <code>claude</code>). The version list and <code>update</code> are edge only until a stable release carries them, and <code>update</code> refreshes the plugins of Claude Code and Codex, whichever is on PATH and has the Spacedock plugin; the version list shows the extension plugin rows of each of Claude Code and Codex that is on PATH and has the Spacedock plugin. When <code>doctor</code> reports the plugin is out of date, refresh it with <code>spacedock install</code>. When the plugin is still contract-compatible but a newer one is available, <code>doctor</code> and the front-door launch print an opt-in upgrade hint (<code>run spacedock install --host &lt;host&gt; to refresh</code>); the hint never blocks the launch. See <a href="../../get-started/install/">Install Spacedock</a> for the full setup path.</p>
-<p>The launcher and plugin are a version-gated bundle. During a gate lifecycle, the real <code>gate prepare</code> invocation is the capability check: a nonzero result halts before presentation or later state effects. Refresh the installed bundle or build the current checkout and select that executable with <code>SPACEDOCK_BIN</code>; do not scrape help output or hand-edit gate frontmatter as a fallback. Selected-source inputs may be absolute, launch-working-directory-relative, or state-checkout-relative. A relative spelling that names different existing paths under the launch directory and state checkout is refused; use an absolute path. Relative room inputs continue to resolve from the launch working directory.</p>
+<p><code>install</code> and <code>doctor</code> accept <code>--host claude</code>, <code>--host codex</code> or <code>--host pi</code>. The default is Claude Code. Follow the doctor output to resolve setup problems.</p>
+<p>See <a href="../../get-started/install/">Installation</a> for the manual setup path.</p>
 <h2 id="workflow">Workflow<a class="headerlink" href="#workflow" title="Permanent link">&para;</a></h2>
-<p>The first officer runs these against workflow state as it moves entities; you operate through it, not by hand. They are documented here for completeness and for the rare direct use (scripting, debugging, restoring a state checkout on a fresh clone).</p>
+<p>Your agent uses these commands to operate the workflow.</p>
 <table>
 <thead>
 <tr>
 <th>Command</th>
-<th>What it does</th>
+<th>Purpose</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>spacedock status</code></td>
-<td>Read or mutate the state: the default entity table is sorted by later workflow stage first then score descending, paginated to 25 rows by default in the human table (<code>--page N</code>, <code>--limit N</code>, <code>--limit 0</code> for all) while <code>--json</code> returns every row unless <code>--page</code>/<code>--limit</code> selects a window, omits the SOURCE column by default (<code>--fields source</code> or <code>--all-fields</code> restores it), <code>--next</code>, <code>--where</code>, <code>--set</code>, <code>--validate</code> (which resolves canonical <code>@review/...</code> refs for both entity forms and warns when a retained ref no longer resolves), <code>--boot</code> (with <code>--identify</code>, the first officer's Startup identify — discovers the managed workflow(s), folds in the stage taxonomy and canonical ready-gate scheduling rows, and reports the boot sections; each row carries only <code>id</code>, <code>slug</code>, <code>current</code>, and <code>readiness</code>, while entity read and gate commands provide the complete decision record at engage; a gate stage alone is not ready; PR_STATE is a local <code>pr:</code> view, live PR state is checked at engage; local reads only, no mutation), <code>--read &lt;ref-or-path&gt;</code> (a file's structured frontmatter — including the nested <code>stages:</code> taxonomy, and projectable with <code>--fields</code> — plus a heading offset/lines map, for section-scoped reads; with <code>--checklist</code> / <code>--ac-scan</code> it extracts a stage report's checklist items with line ranges and per-AC evidence citations for the first officer's gate prep; <code>--stage</code> defaults to the entity's current <code>status</code> when omitted (so a bare <code>--read &lt;entity&gt; --checklist</code> reads the current stage's report), and <code>--stage X</code> reads a non-current stage)</td>
-</tr>
-<tr>
-<td><code>spacedock gate prepare &lt;entity&gt; --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...]</code></td>
-<td>At an actionable current workflow stage (<code>gate: true</code> and nonterminal), derive and bind a recorder-ready room for folder or flat form at <code>&lt;slug&gt;/review/...</code>, storing the form-independent <code>@review/...</code> ref. Frozen <code>./&lt;slug&gt;/review/...</code> and <code>./review/...</code> bindings retain their historical meaning; no migration or rewrite occurs. A declared <code>entity-form: folder</code> still refuses the first flat companion and grandfathers an existing one. At an ungated or terminal stage, preparation exits nonzero before changing the entity or review tree and names the rejected stage. Immediately after successful preparation the room contains exactly <code>index.json</code>, the canonical Briefing, with no copied sources or association. Selected files are exact local <code>git-root://&lt;main\|state&gt;/&lt;full-commit&gt;/&lt;path&gt;</code> objects with raw SHA-256 revisions; there is no fetch, ref requirement, or worktree fallback. Success prints <code>room</code>, <code>briefing</code>, <code>digest</code>, and <code>state=open</code>; the caller commits this prepared binding once before presentation.</td>
-</tr>
-<tr>
-<td><code>spacedock gate withdraw &lt;entity&gt; --reason TEXT</code></td>
-<td>Retire the selected current-stage open prepared attempt without a Resolution, provider evidence, application, room write, or status change. Attribution is always <code>agent:first-officer</code>; the next <code>gate prepare</code> appends a successor.</td>
-</tr>
-<tr>
-<td><code>spacedock gate record &lt;entity&gt; --decision approve\|revise\|hold --actor ID [--reason TEXT] [--consume]</code></td>
-<td>Record a chat decision and, for approve only, its derived one-use application. Supported chat actor IDs are <code>person:captain</code> and <code>agent:first-officer</code>. Delegated First Officer decisions require an evidence reason; the recorder does not accept or authenticate Captain-message text. A standalone close never advances status or dispatches. The current workflow stage must be an actionable gate, and the bound Briefing must use the canonical v1 stage-qualified identity and name that stage; malformed or mismatched identity fails without mutation. <code>--consume</code> is the shortest approval path: it sequences close, sync, consume, and sync in one call (usage error with <code>--decision revise\|hold</code>), each write appending a <code>sync=... phase=record\|consume</code> line. Do not run a separate state commit after a successful split-root close or consume write. Delegated First Officer decisions also require <code>--conn-quote</code> (the grant verbatim) and <code>--conn-source</code> (where it was given); citation flags are refused with <code>--actor person:captain</code>.</td>
-</tr>
-<tr>
-<td><code>spacedock gate record &lt;entity&gt; --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl</code></td>
-<td>For flat or folder form, publish one complete workflow-neutral correction round to <code>&lt;slug&gt;/review/&lt;stage&gt;/round-&lt;cycle&gt;</code> and store <code>@review/&lt;stage&gt;/round-&lt;cycle&gt;</code>. Frozen folder <code>./review/...</code> pointers replay unchanged; no entity migration is needed. The recorder retains canonical Briefing/log bytes and does not classify findings or write workflow body projections; <code>STAGE</code> must exist in the workflow taxonomy but may differ from current status for historical backfill. Relative Artifacts must stay inside the ticket review home and cannot name the mutable entity. Exact replay is a no-op; divergence is refused.</td>
-</tr>
-<tr>
-<td><code>spacedock gate consume &lt;entity&gt;</code></td>
-<td>Spend a binding pending approval once and advance status atomically; stale approvals become superseded. A consumed nonterminal application becomes ordinary stage history. After the worker report is durable, one atomic terminal status write can complete that stage without <code>--force</code>. On an approval whose target stage is terminal, consume spends nothing and writes no status: it leaves the application <code>pending</code> and returns the route <code>approved-awaiting-merge</code> (idempotently, on repeat), and <code>merge guard</code> discovers/arms the delivery mechanism when it acts. For an ungated current-stage-to-terminal transition, finalize directly with <code>spacedock status --workflow-dir DIR --set SLUG status=TERMINAL completed verdict=PASSED worktree=</code>; do not use that route for a pending terminal-target approval, whose sole consumer remains <code>merge guard</code>. In a split-root workflow, a write (an advance or a stale-pending supersede) commits and syncs itself, appending a <code>sync=... phase=consume</code> line; a refusal or a terminal route performs no sync and emits no sync line.</td>
-</tr>
-<tr>
-<td><code>spacedock merge guard &lt;slug&gt; --verdict passed\|rejected</code></td>
-<td>Run the terminal merge ceremony and, with delivery proven, finalize: the sole terminal consumer of a pending terminal-target approval — the <code>mod-block</code> is cleared in its own step, then <code>application.state: consumed</code>, the terminal status, <code>verdict</code>, and <code>completed</code> move in one locked write, and the <code>pr</code> merge sentinel is retained through archive as durable delivery proof. It also finalizes an entity whose only gate history is a consumed nonterminal approval, after the entity has moved on through ungated stages or a terminal <code>status --set</code> has already landed.</td>
-</tr>
-<tr>
-<td><code>spacedock merge guard &lt;slug&gt; --rework</code></td>
-<td>Delivery requires rework: write the pending terminal-target approval <code>pending→superseded</code>, route the entity through the record stage's declared <code>feedback-to</code>, and clear <code>pr</code>/<code>mod-block</code>. Refuses without a pending terminal approval, or with a missing/undefined/terminal <code>feedback-to</code>.</td>
+<td>Read or update work item state</td>
 </tr>
 <tr>
 <td><code>spacedock new</code></td>
-<td>Create an entity (<code>new [--folder] SLUG</code>) from a body on stdin</td>
+<td>Create a work item</td>
 </tr>
 <tr>
 <td><code>spacedock dispatch</code></td>
-<td>Build pointer-transport worker dispatch artifacts with resolved full-path bootstrap commands (<code>dispatch build</code>), or inspect a stage/context package directly (<code>dispatch show-stage-def</code>). <code>dispatch build --stamp</code> folds the ordinary post-gate dispatch steps — <code>started</code>/<code>worktree=</code> frontmatter stamps, a state commit+sync, and worktree creation — into the build call itself, before assembling the envelope. The exact <code>dispatch: &lt;slug&gt; entering &lt;stage&gt;</code> commit contains the entered status and a nonempty <code>started</code> field. Do not put another status write or state commit between gate consume and this stamped build. It refuses (no mutation) unless the entity's status already equals <code>--stage</code>, and is incompatible with <code>--advance</code>. A stamp/sync failure writes a <code>dispatch build --stamp:</code>-prefixed stderr diagnostic and emits no envelope, distinct from an ordinary assembly failure. Normal dispatch passes checklist lines on stdin with <code>--checklist-file -</code>; all other assignment identifiers and controls remain flags, with ordinary scope instructions optionally appended directly after the intact helper pointer sent to the worker. <code>--scope-notes-file</code> remains optional; feedback uses the existing opaque <code>--feedback-context-file</code>. The artifact holds the standard assignment, and supplemental notes live in the worker conversation. The FO retains its checklist for report verification without rereading input files. The checklist format is one item per non-empty line, identical for file and stdin. JSON request input, <code>--print-schema</code> and <code>--validate-only</code> are retired; stdout is still the same JSON envelope. Existing <code>--checklist-file FILE</code> calls remain supported.</td>
+<td>Prepare worker assignments</td>
+</tr>
+<tr>
+<td><code>spacedock gate</code></td>
+<td>Prepare reviews and record decisions</td>
+</tr>
+<tr>
+<td><code>spacedock merge guard</code></td>
+<td>Complete delivery and record the outcome</td>
 </tr>
 <tr>
 <td><code>spacedock state</code></td>
-<td>Manage a <a href="../../advanced/split-root-state/">split-root workflow</a>'s state checkout (<code>state init</code> resumes one on a fresh clone, <code>state new</code> births one)</td>
+<td>Manage the workflow state checkout</td>
 </tr>
 <tr>
 <td><code>spacedock completion</code></td>
-<td>Print a bash or zsh completion script</td>
+<td>Generate shell completions</td>
 </tr>
 </tbody>
 </table>
-<p>Machine <code>status --next --json</code> returns one envelope with the unchanged
-<code>dispatchable</code> array and canonical ordered <code>ready_gates</code> array. Ready rows include
-the mechanical <code>needs-preparation</code> candidate and
-<code>withdrawn-awaiting-prepare</code>; they retain the four keys <code>id</code>, <code>slug</code>, <code>current</code>,
-and <code>readiness</code>. The First Officer applies ready-gate-first priority on every
-read, including the post-idle read. Preparation uses the existing <code>gate prepare</code>
-command; <code>gate record --briefing</code> is not a recovery route.</p>
-<h3 id="state-commit"><code>state commit</code><a class="headerlink" href="#state-commit" title="Permanent link">&para;</a></h3>
-<p><code>spacedock state commit &lt;slug&gt;</code> commits and synchronizes one active or clean
-archived entity. In a split-root workflow it commits and pushes in the state
-checkout. In an inline workflow it commits the same entity paths in the
-workflow's own repository and pushes nothing; if the workflow directory is not
-inside a git work tree, it reports that and does nothing.
-The operand is one canonical top-level entity slug,
-not a nested path. A flat entity commits exactly <code>&lt;slug&gt;.md</code> plus its <code>&lt;slug&gt;/</code>
-companion directory when present or tracked; a folder-form entity
-commits every changed, new, or deleted non-ignored path below <code>&lt;slug&gt;/</code>, including
-reports and artifacts. Dirty sibling entities and unrelated top-level state paths
-remain untouched. Archived scope is publish-only: dirt or identity/shape collisions refuse before movement; clean unpublished history is pushed, and fully published state is a no-op.
-Because archived recovery never creates or amends a commit, <code>-m MSG</code> applies only
-to active entities and has no effect for an archived slug.</p>
-<p>The gate <code>record</code>/<code>consume</code> verbs (their close/consume forms — chat-decision and
-standalone <code>consume</code>; NOT the <code>--round</code> advisory-publication
-form, which is out of mechanism 1's scope and still needs an explicit <code>state
-commit</code> afterward, same as before. In an inline workflow that <code>state commit</code> is
-what makes the entity's recorded round visible to <code>gate prepare</code> and to the
-<code>needs-preparation</code> scheduler row; both read committed bytes only) and
-<code>dispatch build --stamp</code> run this same
-commit+publish sequence themselves whenever they write in a split-root workflow
-(their own <code>sync=.../phase=...</code> line, or <code>--stamp</code>'s stderr/exit, is the
-result) — do not re-run <code>state commit</code> after them. Recovering a <code>sync=failed</code>
-or a HALTed <code>sync=halted</code> (after its manual resolution) is the one case that
-still needs it:
-<code>spacedock state commit &lt;slug&gt;</code> publishes whatever that verb already committed
-locally but could not push, regardless of which command wrote it.</p>
-<p><a href="../../running-workflows/operating/">Operate a workflow</a> covers how the first officer uses <code>status</code> on your behalf. Run <code>spacedock status --help</code> (and the same for each command) for the full flag list, the mutation guards, and the exit codes.</p>
+<p>See <a href="../../running-workflows/operating/">Workflow operation</a> for the conversation you use to direct the work.</p>
+<p><a id="-version"></a>
+<a id="state-commit"></a></p>
 
 
 
@@ -1511,7 +1675,7 @@ locally but could not push, regardless of which command wrote it.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="November 4, 2026 16:40:58 UTC">2026-11-04 16:40:58</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="November 6, 2026 00:33:04 UTC">2026-11-06 00:33:04</span>
   </span>
 
     
@@ -1568,11 +1732,14 @@ locally but could not push, regardless of which command wrote it.</p>
     
     
       
-      <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.copy", "content.tabs.link", "search.suggest", "search.highlight", "navigation.tabs", "navigation.tabs.sticky", "navigation.instant"], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.copy", "content.tabs.link", "search.suggest", "search.highlight", "navigation.instant", "toc.integrate"], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
+  
       <script src="../../assets/javascripts/bundle.f55a23d4.min.js"></script>
       
     
+  <script src="../../javascripts/agent-prompt.js"></script>
+
   </body>
 </html>

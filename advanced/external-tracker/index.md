@@ -1,26 +1,22 @@
 ---
-title: "Bridge an external tracker"
-description: "A multi-agent orchestrator where nothing ships without a decision."
+title: "External trackers"
+description: "Your agents are waiting on you. Spacedock brings you the calls that need you, keeps your agents on the goal, and lets you decide in one place."
 doc_version: "0.20.2"
-last_updated: "2026-11-04 16:40:58"
+last_updated: "2026-11-06 00:33:04"
 ---
 
-# Bridge an external tracker
+# External trackers
 
-Your backlog may already live somewhere else: Linear, GitHub Issues, another ticket ledger. The bridge is asking, not configuring: tell the first officer to intake an external item ("intake GitHub PR #134") and it files an entity carrying the reference. The external system keeps owning intake, discussion, and assignment; Spacedock stays the execution workflow.
+Your backlog can stay in GitHub Issues, Linear or another tracker.
 
-Two frontmatter fields carry the reference:
+Ask your agent to create a workflow item from an external issue. For example: “Intake GitHub issue #134.”
 
-```
-issue: ENG-123
-source: linear
-```
-
-`issue` is the human-facing external reference; `source` records where the entity came from. Keep the tracker out of Spacedock's stage semantics: sync through entity creation, state changes, and stage reports, not tracker-specific stage rules.
+The workflow item keeps a reference to the source. The tracker remains the place for intake and discussion; Spacedock coordinates execution.
 
 ## Sitemap
 
 - [Mods & standing teammates](../mods-and-standing-teammates/index.md)
 - [Multiple workflows](../multi-workflow/index.md)
 - [Split-root state](../split-root-state/index.md)
-- [Refit a workflow](../refit/index.md)
+- [Workflow refits](../refit/index.md)
+- [Local plugin development](../plugin-development/index.md)

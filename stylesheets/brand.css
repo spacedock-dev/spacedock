@@ -90,8 +90,82 @@
   color: var(--md-default-fg-color);
 }
 
+/* Copyable agent instruction, matching the landing page's featured prompt. */
+.md-typeset .sd-agent-prompt {
+  position: relative;
+  margin: 1em 0;
+  padding: 18px 84px 18px 24px;
+  border: 1px solid color-mix(in oklch, var(--gold) 45%, transparent);
+  border-radius: var(--radius-xl);
+  background: color-mix(in oklch, var(--gold) 5%, var(--bg-inset));
+  box-shadow: 0 0 32px -12px color-mix(in oklch, var(--gold) 45%, transparent);
+}
+
+.md-typeset .sd-agent-prompt code {
+  padding: 0;
+  background: transparent;
+  color: var(--gold);
+  font-family: var(--font-read);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.md-typeset .sd-command-prompt code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.sd-prompt-copy {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  cursor: pointer;
+}
+
+.sd-prompt-copy:hover,
+.sd-prompt-copy:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.sd-prompt-copy.done {
+  color: var(--green);
+  border-color: var(--green);
+}
+
+@media (max-width: 480px) {
+  .md-typeset .sd-agent-prompt { padding: 14px 72px 14px 16px; }
+  .md-typeset .sd-agent-prompt code { font-size: 13px; }
+}
+
 @media (max-width: 600px) {
   .sd-nav-links {
     display: none;
   }
+}
+
+/* Product marks connect the top-level docs sections to the landing page. */
+.md-nav__link .sd-nav-product-mark {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  object-fit: contain;
+}
+
+/* Keep a readable line length with the page outline in the left navigation. */
+@media (min-width: 1220px) {
+  .md-content { max-width: 38rem; }
 }
