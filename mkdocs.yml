@@ -1,5 +1,5 @@
 site_name: Spacedock
-site_description: A multi-agent orchestrator where nothing ships without a decision.
+site_description: Your agents are waiting on you. Spacedock brings you the calls that need you, keeps your agents on the goal, and lets you decide in one place.
 site_url: https://spacedock.md/docs/
 repo_url: https://github.com/spacedock-dev/spacedock
 repo_name: spacedock-dev/spacedock
@@ -39,9 +39,8 @@ theme:
     - content.tabs.link
     - search.suggest
     - search.highlight
-    - navigation.tabs
-    - navigation.tabs.sticky
     - navigation.instant
+    - toc.integrate
 
 plugins:
   - search
@@ -58,51 +57,76 @@ plugins:
   - llmstxt:
       full_output: llms-full.txt
       markdown_description: >-
-        Documentation for Spacedock, a multi-agent orchestrator where nothing
-        ships without a decision. It lives within your existing coding harness
-        (Claude Code, Codex, or Pi), breaks work into stages, and surfaces an
-        evidenced decision at each gate. This index links the product docs;
-        llms-full.txt is every page concatenated into one file for a single fetch.
+        Documentation for Spacedock, which runs inside your existing coding
+        agent (Claude Code, Codex, or Pi) and has three features. Spacedock
+        Review puts your agent's work in front of you and sends your comments
+        back. Spacedock Compass shows whether your agents are still on the goal.
+        Spacedock Workflow breaks work into stages and surfaces an evidenced
+        decision at each gate. This index links the product docs; llms-full.txt
+        is every page concatenated into one file for a single fetch.
       sections:
         Get started:
           - index.md
-          - get-started/*.md
+          - get-started/install.md
+        Review:
+          - review/*.md
+        Compass:
+          - compass/index.md
+        Workflow, what it is:
+          - workflow/*.md
+        Workflow, use it:
+          - get-started/survey.md
+          - get-started/first-workflow.md
+          - running-workflows/*.md
         Concepts:
           - concepts/*.md
-        Running workflows:
-          - running-workflows/*.md
         Advanced topics:
           - advanced/*.md
         Reference:
           - reference/*.md
 
 nav:
-  - Get started:
-      - Welcome: index.md
-      - Install: get-started/install.md
-      - Survey your project: get-started/survey.md
-      - Your first workflow: get-started/first-workflow.md
-  - Concepts:
-      - The operating model: concepts/operating-model.md
-      - Workflows & entities: concepts/workflows-and-entities.md
-      - The stage lifecycle: concepts/stage-lifecycle.md
-      - Gates & decisions: concepts/gates-and-decisions.md
-  - Running workflows:
-      - Commission a workflow: running-workflows/commission.md
-      - Operate a workflow: running-workflows/operating.md
-      - Debrief a session: running-workflows/debrief.md
-  - Advanced topics:
-      - Mods & standing teammates: advanced/mods-and-standing-teammates.md
-      - Multiple workflows: advanced/multi-workflow.md
-      - Split-root state: advanced/split-root-state.md
-      - Bridge an external tracker: advanced/external-tracker.md
-      - Refit a workflow: advanced/refit.md
-  - Reference:
-      - Command reference: reference/command-reference.md
-      - Frontmatter contract: reference/frontmatter-contract.md
-      - Glossary: reference/glossary.md
-      - Supported sandboxes: reference/sandbox.md
-      - Contributing: https://github.com/spacedock-dev/spacedock/blob/main/CONTRIBUTING.md
+  - Welcome: index.md
+  - Installation: get-started/install.md
+  - Review:
+      - Overview: review/index.md
+      - First review: review/use.md
+      - In Terminal: review/terminal.md
+      - In Browser: review/browser.md
+      - Sharing: review/sharing.md
+      - Comments and decisions: review/decisions.md
+      - Reference: review/reference.md
+  - Compass:
+      - Overview: compass/index.md
+      - Use Compass: compass/use.md
+      - Reference: compass/reference.md
+  - Workflow:
+      - Overview: workflow/index.md
+      - Workflow design: running-workflows/commission.md
+      - Workflow operation: running-workflows/operating.md
+      - Gates and decisions: concepts/gates-and-decisions.md
+      - Review standards: workflow/standards.md
+      - Guides:
+          - Project survey: get-started/survey.md
+          - Your first workflow: get-started/first-workflow.md
+          - Session debrief: running-workflows/debrief.md
+      - Concepts:
+          - The operating model: concepts/operating-model.md
+          - Workflows & entities: concepts/workflows-and-entities.md
+          - The stage lifecycle: concepts/stage-lifecycle.md
+      - Advanced topics:
+          - Mods & standing teammates: advanced/mods-and-standing-teammates.md
+          - Multiple workflows: advanced/multi-workflow.md
+          - Split-root state: advanced/split-root-state.md
+          - External trackers: advanced/external-tracker.md
+          - Workflow refits: advanced/refit.md
+          - Local plugin development: advanced/plugin-development.md
+      - Reference:
+          - Command reference: reference/command-reference.md
+          - Frontmatter contract: reference/frontmatter-contract.md
+          - Glossary: reference/glossary.md
+          - Supported sandboxes: reference/sandbox.md
+          - Contributing: https://github.com/spacedock-dev/spacedock/blob/main/CONTRIBUTING.md
 
 hooks:
   # Enriches the per-page .md mirrors emitted by mkdocs-llmstxt with YAML

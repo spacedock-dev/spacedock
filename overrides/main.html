@@ -1,5 +1,10 @@
 {% extends "base.html" %}
 
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ 'javascripts/agent-prompt.js' | url }}"></script>
+{% endblock %}
+
 <!--
   Webfonts load from Bunny Fonts (fonts.bunny.net) instead of Material's
   built-in Google Fonts. theme.font is false in mkdocs.yml, which suppresses
