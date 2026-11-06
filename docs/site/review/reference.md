@@ -60,7 +60,7 @@ Your agent receives `approve`, `revise` or `hold` for Approve, Request changes a
 
 ## Agent commands
 
-Installing Spacedock adds `subspace-relay-client`; a Homebrew install also names it `rr`. Your agent runs these for you.
+Installing Spacedock adds `subspace-relay-client`; a Homebrew install also names it `rr`, which the table uses. After a curl install, type `subspace-relay-client` in place of `rr`. Your agent runs these for you.
 
 | Command | Action |
 | --- | --- |
