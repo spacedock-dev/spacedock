@@ -2,7 +2,7 @@
 title: "In Browser"
 description: "Your agents are waiting on you. Spacedock brings you the calls that need you, keeps your agents on the goal, and lets you decide in one place."
 doc_version: "0.20.2"
-last_updated: "2026-11-06 00:33:04"
+last_updated: "2026-11-06 02:11:11"
 ---
 
 # Browser review
@@ -21,9 +21,9 @@ Or ask your agent:
 
 > Send plan.md to me in Spacedock Review in the browser for a decision.
 
-Agree to the upload. The first time, your agent runs `rr pair` for you to pair this computer with your account: sign in and approve in the browser page it opens. You pair once per computer.
+Agree to the upload. The first time, your agent runs `subspace-relay-client pair` for you to pair this computer with your account: sign in and approve in the browser page it opens. You pair once per computer.
 
-Over SSH, the terminal shows a link and a code instead. Open the link in a browser on any device, sign in, enter the code and approve. Then confirm in the terminal: answer `y`. If your agent started the pairing and reports `paired: not yet`, run `rr pair --confirm` in your own terminal on that computer and answer `y` there.
+Over SSH, the terminal shows a link and a code instead. Open the link in a browser on any device, sign in, enter the code and approve. Then confirm in the terminal: answer `y`. If your agent started the pairing and reports `paired: not yet`, run `subspace-relay-client pair --confirm` in your own terminal on that computer and answer `y` there.
 
 Your agent then opens the review. Signed in, you are the owner and make the decision. Send the same share link to [invite others](../sharing/); they comment, and only you decide.
 

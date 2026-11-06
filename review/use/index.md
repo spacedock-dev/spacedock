@@ -2,7 +2,7 @@
 title: "First review"
 description: "Your agents are waiting on you. Spacedock brings you the calls that need you, keeps your agents on the goal, and lets you decide in one place."
 doc_version: "0.20.2"
-last_updated: "2026-11-06 00:33:04"
+last_updated: "2026-11-06 02:11:11"
 ---
 
 # Your first review
@@ -25,7 +25,7 @@ No active plan right now? Try this:
 
 Choose **Terminal** to review on your machine, or **Web** to review in your browser. Your agent remembers the choice for this project.
 
-For Web, agree to the upload the first time in a project. The first time on a computer, your agent runs `rr pair` for you to pair this computer with your account: sign in and approve in your browser. After that, your agent opens the review and you decide while signed in.
+For Web, agree to the upload the first time in a project. The first time on a computer, your agent runs `subspace-relay-client pair` for you to pair this computer with your account: sign in and approve in your browser. After that, your agent opens the review and you decide while signed in.
 
 ## Add a comment
 

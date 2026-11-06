@@ -2,7 +2,7 @@
 title: "Reference"
 description: "Your agents are waiting on you. Spacedock brings you the calls that need you, keeps your agents on the goal, and lets you decide in one place."
 doc_version: "0.20.2"
-last_updated: "2026-11-06 00:33:04"
+last_updated: "2026-11-06 02:11:11"
 ---
 
 # Review reference
@@ -59,7 +59,7 @@ Your agent receives `approve`, `revise` or `hold` for Approve, Request changes a
 
 ## Agent commands
 
-Installing Spacedock adds `subspace-relay-client`; a Homebrew install also names it `rr`. Your agent runs these for you.
+Installing Spacedock adds `subspace-relay-client`; a Homebrew install also names it `rr`, which the table uses. After a curl install, type `subspace-relay-client` in place of `rr`. Your agent runs these for you.
 
 | Command                                   | Action                                                                                        |
 | ----------------------------------------- | --------------------------------------------------------------------------------------------- |
