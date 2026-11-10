@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:cvrwyn3xynbwg4wkgc5khyfq:backlog:attempt-1:revision-1",
+  "question": "Is the pi-live codemode export drift seed ready for ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:cvrwyn3xynbwg4wkgc5khyfq:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/f7df4dccd2901810f1825f1c40236936625fb2be/pi-live-codemode-export-drift/index.md",
+      "rev": "sha256:f55093a2f4e9d2e3e7fcce8942e15b5e44f3699ea25940374458d1c0c202ad54",
+      "mediaType": "text/markdown",
+      "summary": "Seed carries the diagnosed root cause (stale Pi 1.0.2 pin plus lockless install resolving pi-codemode 1.5.0), local evidence that Pi 1.5.0 loads and passes 16 of 18 tests, the two unproven journeys, and an outcome bounded to a pin bump plus a drift check, shipped as a PR stacked on the haiku harness branch."
+    }
+  ]
+}

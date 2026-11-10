@@ -11,6 +11,17 @@ worktree:
 issue:
 pr:
 mod-block:
+gates:
+    version: 1
+    records:
+        - id: gate:cvrwyn3xynbwg4wkgc5khyfq:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:cvrwyn3xynbwg4wkgc5khyfq-backlog-1
+              briefing:
+                id: briefing:cvrwyn3xynbwg4wkgc5khyfq:backlog:attempt-1:revision-1
+                digest: sha256:2544a2af2281e604befe554972fd7e5132abba4caacdc03bb0991794ec9bc943
+                room-ref: '@review/backlog/briefing-1'
 ---
 
 The pi-live job of Runtime Live E2E has not passed since 2026-10-07. Worker launches die before a child session exists with a Pi package mismatch, so no commit on `main` can be greened on the Pi lane. This blocks the 0.28.0 release, which must green its exact release SHA.
