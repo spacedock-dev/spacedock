@@ -45,10 +45,21 @@ Your agent uses these commands to operate the workflow.
 | `spacedock status` | Read or update work item state |
 | `spacedock new` | Create a work item |
 | `spacedock dispatch` | Prepare worker assignments |
-| `spacedock gate` | Prepare reviews and record decisions |
+| `spacedock gate` | Prepare reviews, record decisions and read gate history |
 | `spacedock merge guard` | Complete delivery and record the outcome |
 | `spacedock state` | Manage the workflow state checkout |
 | `spacedock completion` | Generate shell completions |
+
+`spacedock gate read <ref-or-path> --json` returns the stored `gates` object, including every attempt and its application state.
+References and paths use the same resolution as `status --read`, including archived entities. The command changes no files.
+Records and attempts retain their stored order. Scalar values retain their stored values.
+An entity without gate history returns `{"records":[],"version":1}`.
+Invalid gate data exits nonzero without JSON output.
+
+```bash
+spacedock gate read gate-history-json-reader --json --workflow-dir docs/dev
+spacedock gate read archive:finished-task --json --workflow-dir docs/dev
+```
 
 See [Workflow operation](../running-workflows/operating.md) for the conversation you use to direct the work.
 

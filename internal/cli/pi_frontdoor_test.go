@@ -31,6 +31,9 @@ type fakePiRuntimeOps struct {
 	piInstalls    []string // sources captured by PiInstall
 	piInstallOut  string
 	piInstallErr  error
+	piCalls       []string // "remove SRC" and "install SRC", in call order
+	piFailing     string   // a source whose PiInstall fails
+	listing       []byte   // the extension listing; nil fails the read like an unreachable one
 	packageStatus piPackageStatus
 	// piVersionOut/Err fake `pi --version`. Empty out with nil err means a
 	// healthy current binary, above the launcher floor, so the many
@@ -63,7 +66,23 @@ func (f *fakePiRuntimeOps) Launch(argv []string, env []string) (int, error) {
 
 func (f *fakePiRuntimeOps) PiInstall(source string) (string, error) {
 	f.piInstalls = append(f.piInstalls, source)
+	f.piCalls = append(f.piCalls, "install "+source)
+	if source == f.piFailing {
+		return "", errors.New("exit status 1")
+	}
 	return f.piInstallOut, f.piInstallErr
+}
+
+func (f *fakePiRuntimeOps) PiRemove(source string) (string, error) {
+	f.piCalls = append(f.piCalls, "remove "+source)
+	return "", nil
+}
+
+func (f *fakePiRuntimeOps) ReadExtensionListing(string) ([]byte, error) {
+	if f.listing == nil {
+		return nil, errors.New("no listing")
+	}
+	return f.listing, nil
 }
 
 func (f *fakePiRuntimeOps) SpacedockPackageStatus(agentDir, home string) piPackageStatus {
@@ -337,8 +356,8 @@ func TestPiInstallRunsPiInstallAndDoesNotUsePluginCommands(t *testing.T) {
 		t.Fatalf("exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
 	// install --host pi runs `pi install <published source>`, not the host plugin seam.
-	if len(piOps.piInstalls) != 1 || piOps.piInstalls[0] != piSpacedockPackageSource {
-		t.Fatalf("expected pi install %q, got %v", piSpacedockPackageSource, piOps.piInstalls)
+	if want := piSpacedockPackageSource + "@main"; len(piOps.piInstalls) != 1 || piOps.piInstalls[0] != want {
+		t.Fatalf("expected pi install %q, got %v", want, piOps.piInstalls)
 	}
 	if len(ops.installCmds) != 0 {
 		t.Fatalf("install --host pi called host plugin install seam: %v", ops.installCmds)
