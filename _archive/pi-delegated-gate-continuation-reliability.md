@@ -1,6 +1,6 @@
 ---
 title: "Make Pi delegated gate approval continue reliably through successor dispatch"
-status: validation
+status: done
 source: "se0 exact-tip Pi recorded-gate proof on 2026-07-28: one run invented the Briefing digest before reading it; the single retry presented the correct bound gate but stopped before recording or consuming the delegated approval."
 score: 0.9
 sprint: pi-ux
@@ -76,10 +76,13 @@ gates:
                     source: captain, pi session 2026-10-03
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-10-03T04:04:50Z
 worktree: .worktrees/spacedock-ensign-pi-delegated-gate-continuation-reliability
 pr: pr-merge:820
+verdict: PASSED
+completed: 2026-11-10T16:57:28Z
+archived: 2026-11-10T16:57:28Z
 ---
 
 ## Problem
