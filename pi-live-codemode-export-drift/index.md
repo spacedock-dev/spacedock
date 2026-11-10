@@ -1,7 +1,7 @@
 ---
 id: cvrwyn3xynbwg4wkgc5khyfq
 title: pi-live fails because pi-codemode no longer exports MCP_TYPESCRIPT_PREAMBLE
-status: backlog
+status: ideation
 source: "Captain directive, 2026-11-10: the pi-live lane is red on main; pin-refresh already merged, so the repair is a new task."
 started:
 completed:
@@ -35,7 +35,7 @@ gates:
                     source: captain chat, 2026-11-10
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 The pi-live job of Runtime Live E2E has not passed since 2026-10-07. Worker launches die before a child session exists with a Pi package mismatch, so no commit on `main` can be greened on the Pi lane. This blocks the 0.28.0 release, which must green its exact release SHA.
