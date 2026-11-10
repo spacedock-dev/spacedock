@@ -3,7 +3,7 @@ id: cvrwyn3xynbwg4wkgc5khyfq
 title: pi-live fails because pi-codemode no longer exports MCP_TYPESCRIPT_PREAMBLE
 status: ideation
 source: "Captain directive, 2026-11-10: the pi-live lane is red on main; pin-refresh already merged, so the repair is a new task."
-started:
+started: 2026-11-10T18:37:11Z
 completed:
 verdict:
 score: 0.9
