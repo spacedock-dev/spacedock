@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/spacedock-dev/spacedock/internal/statesync"
 )
 
 // roots carries the two directory roles the status units consume. In single-root
@@ -133,4 +135,37 @@ func spellingOr(spelling, fallback string) string {
 		return spelling
 	}
 	return fallback
+}
+
+// checkStorageOrExit is a read-only boundary for entity reads and filing. Archive
+// mutations use their own rebase-aware preflight instead.
+func checkStorageOrExit(roots roots, asJSON bool, stdout, stderr io.Writer) int {
+	mode, _, err := ClassifyState(ParseFrontmatter(filepath.Join(roots.definitionDir, "README.md"))["state"])
+	if err != nil {
+		return errExit(stderr, err.Error())
+	}
+	if mode == StateInline {
+		return 0
+	}
+	branch, err := StateBranch(roots.definitionDir)
+	detail := ""
+	code := "state-checkout-invalid"
+	if _, statErr := os.Stat(roots.entityDir); os.IsNotExist(statErr) {
+		code = "state-checkout-missing"
+		detail = "run spacedock state init (or state new for a newly declared workflow)"
+	} else if err != nil {
+		detail = err.Error()
+	} else {
+		outcome := statesync.CheckCheckout(roots.entityDir, branch)
+		if outcome.Result == statesync.ResultReady {
+			return 0
+		}
+		detail = outcome.Detail
+	}
+	message := fmt.Sprintf("%s: %s; expected branch %s; %s", code, roots.entityDir, branch, detail)
+	if asJSON {
+		emitJSON(stdout, newJSONObj().set("error", code).set("state_path", roots.entityDir).set("expected_branch", branch).set("message", message))
+		return 1
+	}
+	return errExit(stderr, message)
 }

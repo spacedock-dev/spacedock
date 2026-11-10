@@ -226,7 +226,7 @@ func TestBootJSONStateBackendSplitRoot(t *testing.T) {
 
 // TestBootJSONStateBackendEntityDirAbsent (AC-1 diagnostic) asserts the
 // absent-state-checkout case is observable: a split-root workflow whose state
-// dir does NOT exist on disk reports entity_dir_present false, so the FO can
+// dir does NOT exist on disk reports a storage error, so the FO can
 // distinguish a 2nd-host un-bootstrapped checkout from an empty workflow.
 func TestBootJSONStateBackendEntityDirAbsent(t *testing.T) {
 	root := t.TempDir()
@@ -235,11 +235,8 @@ func TestBootJSONStateBackendEntityDirAbsent(t *testing.T) {
 	}
 	// Deliberately do NOT create the .spacedock-state dir.
 
-	b := bootStateOf(t, root)
-	if b.StateBackend != "split-root" {
-		t.Fatalf("state_backend = %q, want split-root", b.StateBackend)
-	}
-	if b.EntityDirPresent != "false" {
-		t.Fatalf("entity_dir_present = %q, want false (state dir absent)", b.EntityDirPresent)
+	out, errOut, code := runNative(t, root, pinnedEnv(t), "--workflow-dir", root, "--boot", "--json")
+	if code != 1 || !strings.Contains(out, `"error":"state-checkout-missing"`) {
+		t.Fatalf("missing checkout: %d %s %s", code, out, errOut)
 	}
 }

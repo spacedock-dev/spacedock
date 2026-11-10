@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 var (
@@ -119,7 +121,12 @@ A folder-form entity driven through the launcher.
 	if err := os.WriteFile(entityPath, []byte(body), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	writeFile(t, filepath.Join(defDir, ".gitignore"), ".spacedock-state/\n")
 	gitInitFixture(t, defDir)
+	testgit.InitRepo(t, stateDir, "-q")
+	git(t, stateDir, "add", "-A")
+	git(t, stateDir, "commit", "-q", "-m", "init")
+	git(t, stateDir, "branch", "-M", "spacedock-state/"+filepath.Base(defDir))
 	return defDir, stateDir, slug
 }
 

@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // writeFile writes content to path, creating parent dirs, failing the test on
@@ -95,6 +97,7 @@ func buildSplitRoot(t *testing.T, readme string, entities map[string]string) (st
 	for name, content := range entities {
 		writeFile(t, filepath.Join(state, name), content)
 	}
+	initStateFixture(t, def, state)
 	return def, state
 }
 
@@ -228,6 +231,8 @@ func TestSplitRootArchiveMovesOnlyState(t *testing.T) {
 		"refactor-dispatch/index.md":     "---\nstatus: ideation\n---\n",
 		"refactor-dispatch/reports/x.md": "ideation notes\n",
 	})
+	gitC(t, state, "add", ".")
+	gitC(t, state, "commit", "-qm", "seed archive entities")
 	env := pinnedEnv(t)
 	defSnap := snapshotDir(t, def, state)
 
@@ -475,4 +480,14 @@ func (s dirSnapshot) diff(t *testing.T, root, exclude string) string {
 		}
 	}
 	return b.String()
+}
+
+func initStateFixture(t *testing.T, def, state string) {
+	t.Helper()
+	testgit.InitRepo(t, state, "-q")
+	branch, err := StateBranch(def)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gitC(t, state, "symbolic-ref", "HEAD", "refs/heads/"+branch)
 }

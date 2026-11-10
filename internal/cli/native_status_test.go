@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/spacedock-dev/spacedock/internal/status"
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // TestNativeRunnerSelectableThroughCLI proves the native runner backs the same
@@ -55,6 +56,7 @@ func TestRunDefaultsToNativeRunner(t *testing.T) {
 	if err := os.MkdirAll(state, 0o755); err != nil {
 		t.Fatal(err)
 	}
+	testgit.InitRepo(t, state, "-q", "-b", "spacedock-state/"+filepath.Base(def))
 	writeFile(t, filepath.Join(state, "add-login.md"), "---\nstatus: backlog\n---\n")
 
 	// Guard: the state subdir has no README of its own — the native runner must
