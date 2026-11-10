@@ -26,10 +26,23 @@ On the claude-haiku live lane, journeys that complete their work are killed as h
 
 ## Unknowns
 
-- That a pending wakeup is what holds `claude -p` open rests on the 3-of-3 versus 0-of-41 correlation; it has not been reproduced in isolation.
-- Whether the three killed journeys pass their assertions once they exit cleanly.
+- That a pending wakeup is what holds `claude -p` open rests on a correlation: 4 kills across three CI attempts, each in a stream with a scheduling call, and no scheduling call in any stream that exited cleanly. It has not been reproduced in isolation.
 - Whether the restriction applies to the haiku lane only or to every Claude live lane. Sonnet does not schedule wakeups, so an all-lane restriction would need no per-model branch.
+
+## Evidence with the restriction applied
+
+A local run on `main` @ `5785dbed7` with `--disallowedTools ScheduleWakeup` appended to the `claude` argument list for haiku (Claude Code 2.1.317, 2026-11-10): `ScheduleWakeup` was absent from the session tool list, none of 22 streams called it, and no journey was killed for stream silence. `owned-conflict-owner-handoff` and `smallest-sufficient-mechanism` passed.
+
+Failures that remain on haiku once the kill is gone:
+
+- `rejection-flow`: graded `rejection-worker-topology` — the reuse/implementation dispatch is followed by reuse/validation before its own completion. CI attempts 2 and 3 killed this journey before grading.
+- `TestLiveBareReachable`: no bare-shaped `Agent()` call observed, in the one local run. It passed in all three CI attempts.
+- `ac-value-reanchor`: failed in CI attempt 1 (the first officer recorded `revise` and stopped at `validation`), passed in attempts 2 and 3 and locally.
+
+Haiku xfail bindings that passed in all four runs: `default-headless-gate-stop`, `withdrawn-gate-recovery`, dispatch recovery selected-bare. `keep-moving-posture` failed once and passed three times.
 
 ## Outcome
 
-The Claude live harness withholds or disallows `ScheduleWakeup` for haiku runs, a deterministic test pins the injected restriction in the built `claude` argument list, and a haiku live run shows no "no stream progress" kill that follows a `ScheduleWakeup` call. First-officer skill text is unchanged.
+The Claude live harness disallows `ScheduleWakeup` for haiku runs, and a deterministic test pins the injected restriction in the built `claude` argument list. Haiku journeys that still fail with the restriction applied carry `claude-haiku` xfail bindings, so the haiku lane reports them as known gaps. A haiku live run in CI shows no "no stream progress" kill that follows a `ScheduleWakeup` call. First-officer skill text is unchanged.
+
+The change ships as a pull request stacked on `ci/go-126-workflows` (PR #849).
