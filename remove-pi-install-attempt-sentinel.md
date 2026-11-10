@@ -52,7 +52,7 @@ gates:
                 target-stage: done
                 state: pending
 worktree: .worktrees/spacedock-ensign-remove-pi-install-attempt-sentinel
-pr: "#822"
+pr: pr-merge:822
 ---
 
 ## Problem
