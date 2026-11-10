@@ -8,7 +8,7 @@ verdict:
 score: 0.95
 worktree: .worktrees/spacedock-ensign-state-durability
 issue: spacedock-dev/spacedock#689
-pr: "#803"
+pr: pr-merge:803
 mod-block: merge:pr-merge
 id: 3tzfv0rrctdb066xt942zjbd
 gates:
