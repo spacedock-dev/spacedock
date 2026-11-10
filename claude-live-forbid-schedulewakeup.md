@@ -44,6 +44,20 @@ gates:
                 id: briefing:ef4p1sbvkk9zxjxm0ez9npdr:ideation:attempt-1:revision-1
                 digest: sha256:f286fba584c01092850dbcf7db9842e94668d7a85a04a039d912ce6bcff1c379
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ef4p1sbvkk9zxjxm0ez9npdr:ideation:1
+                briefing: briefing:ef4p1sbvkk9zxjxm0ez9npdr:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-11-10T18:43:33.306267Z"
+                decision: approve
+                reason: Design is the captain's harness-only haiku restriction pinned by a deterministic test, binds only journeys graded red with the restriction applied, measures the end-value on a CI haiku run against the 7-kill baseline, and declares a 5-file +30 LOC surface on the ci/go-126-workflows base.
+                conn:
+                    quote: for haiku - dispatch this with the disallowed tool change the remaining failing marked as xpass. create PR onto the current stack and we can run ci
+                    source: captain chat, 2026-11-10
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 On the claude-haiku live lane, journeys that complete their work are killed as hung. The haiku first officer calls the host tool `ScheduleWakeup` as a fallback heartbeat while waiting on background workers; after the work finishes and the final turn ends, the pending wakeup keeps the `claude -p` process alive and silent, and the harness kills it after its 60-second no-progress budget, before grading.
