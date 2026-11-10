@@ -176,8 +176,11 @@ func TestCompatExportLoadsPropagatesNodeFailure(t *testing.T) {
 	}
 }
 
-func TestInstallVerifiesAndRegistersThePinnedFamily(t *testing.T) {
-	agentDir, globalRoot, packDir := t.TempDir(), t.TempDir(), filepath.Join(os.TempDir(), "pi-live-npm-packs")
+// installFixture lays out an installed pinned family and a runner that answers
+// npm pack/root/install for the pins, recording each npm install's arguments.
+func installFixture(t *testing.T) (agentDir, globalRoot string, installs *[][]string, r fakeRunner) {
+	t.Helper()
+	agentDir, globalRoot, installs = t.TempDir(), t.TempDir(), &[][]string{}
 	writeFile(t, filepath.Join(globalRoot, PiCodingAgentSpec, "package.json"),
 		`{"name":"`+PiCodingAgentSpec+`","version":"`+PiCodingAgentVersion+`"}`)
 	subRoot := filepath.Join(agentDir, "npm", "node_modules", PiSubagentsSpec)
@@ -187,8 +190,7 @@ func TestInstallVerifiesAndRegistersThePinnedFamily(t *testing.T) {
 	writeFile(t, filepath.Join(icRoot, "package.json"), `{"name":"pi-intercom","version":"`+PiIntercomVersion+`"}`)
 	writeFile(t, filepath.Join(icRoot, "skills/pi-intercom/SKILL.md"), "x")
 
-	var installs [][]string
-	r := fakeRunner{run: func(name string, args ...string) ([]byte, error) {
+	r = fakeRunner{run: func(name string, args ...string) ([]byte, error) {
 		switch {
 		case name == "npm" && args[0] == "pack":
 			spec := args[1][:strings.LastIndex(args[1], "@")]
@@ -201,14 +203,23 @@ func TestInstallVerifiesAndRegistersThePinnedFamily(t *testing.T) {
 		case name == "npm" && args[0] == "root":
 			return []byte(globalRoot + "\n"), nil
 		case name == "npm" && args[0] == "install":
-			installs = append(installs, args)
+			*installs = append(*installs, args)
 			return nil, nil
 		}
 		return nil, fmt.Errorf("unexpected command %s %v", name, args)
 	}}
+	return agentDir, globalRoot, installs, r
+}
+
+func TestInstallVerifiesAndRegistersThePinnedFamily(t *testing.T) {
+	agentDir, _, recorded, r := installFixture(t)
+	packDir := filepath.Join(os.TempDir(), "pi-live-npm-packs")
+	subRoot := filepath.Join(agentDir, "npm", "node_modules", PiSubagentsSpec)
+	icRoot := filepath.Join(agentDir, "npm", "node_modules", PiIntercomSpec)
 	if err := install(r, agentDir); err != nil {
 		t.Fatalf("install: %v", err)
 	}
+	installs := *recorded
 	if len(installs) != 2 || installs[0][1] != "-g" || installs[0][2] != filepath.Join(packDir, PiCodingAgentSpec+"@"+PiCodingAgentVersion+".tgz") {
 		t.Fatalf("global install = %v, want exactly the pinned pi-coding-agent tarball", installs)
 	}
@@ -247,5 +258,46 @@ func TestInstallVerifiesAndRegistersThePinnedFamily(t *testing.T) {
 	}
 	if err := install(r, agentDir); err == nil {
 		t.Fatal("install must fail when a declared runtime file is missing")
+	}
+}
+
+// TestInstallRefusesAFloatingPiDependencyTree covers the drift guard: Pi's own
+// dependencies and its first-party packages' first-party dependencies must be
+// exact versions installed under Pi as declared. Each case breaks one edge of
+// an exact tree; the unbroken tree, with a third-party caret inside pi-ai,
+// must install.
+func TestInstallRefusesAFloatingPiDependencyTree(t *testing.T) {
+	agentDir, globalRoot, _, r := installFixture(t)
+	piRoot := filepath.Join(globalRoot, PiCodingAgentSpec)
+	manifest := func(dir, name, version, deps string) {
+		writeFile(t, filepath.Join(dir, "package.json"),
+			`{"name":"`+name+`","version":"`+version+`","dependencies":{`+deps+`}}`)
+	}
+	pi := func(deps string) { manifest(piRoot, PiCodingAgentSpec, PiCodingAgentVersion, deps) }
+	nested := func(name, version, deps string) {
+		manifest(filepath.Join(piRoot, "node_modules", "@earendil-works", name), "@earendil-works/"+name, version, deps)
+	}
+	for _, tc := range []struct {
+		name   string
+		mutate func()
+		want   string
+	}{
+		{"the 1.0.2 caret on pi-codemode", func() { pi(`"@earendil-works/pi-codemode":"^1.0.2"`) },
+			`@earendil-works/pi-coding-agent declares @earendil-works/pi-codemode "^1.0.2", not an exact version`},
+		{"an installed copy that differs from its declaration", func() { nested("pi-codemode", "1.5.2", "") },
+			`installed @earendil-works/pi-codemode version "1.5.2", want "1.5.0"`},
+		{"a nested first-party caret", func() { nested("pi-ai", "1.5.0", `"@earendil-works/pi-schema":"^1.5.0"`) },
+			`@earendil-works/pi-ai declares @earendil-works/pi-schema "^1.5.0", not an exact version`},
+		{"an exact tree", func() {}, ""},
+	} {
+		pi(`"@earendil-works/pi-ai":"1.5.0","@earendil-works/pi-codemode":"1.5.0","@earendil-works/pi-schema":"1.5.0"`)
+		nested("pi-codemode", "1.5.0", "")
+		nested("pi-schema", "1.5.0", "")
+		nested("pi-ai", "1.5.0", `"@earendil-works/pi-schema":"1.5.0","openai":"^6.0.0"`)
+		tc.mutate()
+		err := install(r, agentDir)
+		if tc.want == "" && err != nil || tc.want != "" && (err == nil || !strings.Contains(err.Error(), tc.want)) {
+			t.Fatalf("%s: err=%v, want %q", tc.name, err, tc.want)
+		}
 	}
 }
