@@ -9,7 +9,7 @@ verdict:
 score: 0.6
 worktree: .worktrees/spacedock-ensign-claude-live-forbid-schedulewakeup
 issue:
-pr:
+pr: "#873"
 mod-block:
 gates:
     version: 1
@@ -196,11 +196,11 @@ The design is small. It moves the `claude` argument list into an untagged helper
 
 - DONE: The Claude live harness appends --disallowedTools ScheduleWakeup for haiku models only, through claudeFrontDoorArgs, and TestClaudeFrontDoorArgs fails under each falsifying edit named in the test plan
   Commit `ebf5dccfa`. `TestClaudeFrontDoorArgs` (untagged) checks that the pair is forwarded after `--`, and that `--model <model>` is present, for the haiku ID, `haiku`, the sonnet ID, `sonnet` and the opus ID. Each falsifying edit was applied and the test failed. Deleting the haiku branch fails both haiku cases. Making the append unconditional fails the sonnet and opus cases. Moving the pair before `--` fails the haiku cases. Renaming `claude.haiku` to `claude-small-5-5` in `live_models.txt` fails the registry case.
-- FAILED: rejection-flow and bare-reachable carry claude-haiku xfail bindings with matching registry rows, and go test ./..., go test ./... -race, and go vet -tags live ./internal/ensigncycle pass
-  The bindings and rows are done, and `TestRuntimeLiveRegistryMatchesBindings` passes. Deleting the `bareReachableGap` row makes it fail with "has no registry row". `go test ./...` passes (exit 0), and so does `go vet -tags live ./internal/ensigncycle`. `go test ./... -race` could not finish. The host disk is at 100% (176–602 MiB free, and other processes are filling it). The race run failed in `internal/cli` and `internal/ensigncycle` with ENOSPC errors only: no `DATA RACE` and no panic. A race run of only `internal/contractlint` passes. The race run must be repeated after disk space is freed.
+- DONE: rejection-flow and bare-reachable carry claude-haiku xfail bindings with matching registry rows, and go test ./..., go test ./... -race, and go vet -tags live ./internal/ensigncycle pass
+  The bindings and rows are in place, and `TestRuntimeLiveRegistryMatchesBindings` passes. Deleting the `bareReachableGap` row makes it fail with "has no registry row". At `ebf5dccfa`: `go test ./...` passes, `go vet -tags live ./internal/ensigncycle` passes, and `go test ./... -race` passes (exit 0, 21 packages ok, no FAIL and no `DATA RACE`; cold build).
 - DONE: The branch is based on origin/ci/go-126-workflows and the diff against it stays within the declared 5-file, +30 net LOC (±15) surface
   The worktree was fast-forwarded to `eef2d1302`. `git diff --numstat origin/ci/go-126-workflows`: 5 files, +46/−17, net +29. These are the 5 declared files, and `skills/` is unchanged.
 
 ### Summary
 
-The `spacedock claude` argument list moved into the untagged `claudeFrontDoorArgs` helper. The helper forwards `--disallowedTools ScheduleWakeup` after `--` when the model name contains `haiku`, and `run` calls it. `rejection-flow` gained `liveXFail("claude-haiku", "")`. `TestLiveBareReachable` now grades through `finishLiveScenario` with the new `bareReachableGap`, and an unbound red still fails it. The registry has the two rows from the design. The first draft of the helper was +54 net, outside tolerance, so the helper and test were compacted to +29 before commit. Open items: `go test ./... -race` must be run again once the machine has free disk space, and this report is not yet committed or pushed to the state checkout because the permission system denied that step. Separately, `gofmt -l` reports an unrelated file on the base, `internal/release/runtime_live_evidence_workflow_test.go`. That file was left as is so that the diff stays within the 5 declared files.
+The `spacedock claude` argument list moved into the untagged `claudeFrontDoorArgs` helper. The helper forwards `--disallowedTools ScheduleWakeup` after `--` when the model name contains `haiku`, and `run` calls it. `rejection-flow` gained `liveXFail("claude-haiku", "")`. `TestLiveBareReachable` now grades through `finishLiveScenario` with the new `bareReachableGap`, and an unbound red still fails it. The registry has the two rows from the design. The first draft of the helper was +54 net, outside tolerance, so the helper and test were compacted to +29 before commit. `gofmt -l` reports an unrelated file on the base, `internal/release/runtime_live_evidence_workflow_test.go`. That file was left as is so that the diff stays within the 5 declared files.
