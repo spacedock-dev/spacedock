@@ -44,6 +44,20 @@ gates:
                 id: briefing:cvrwyn3xynbwg4wkgc5khyfq:ideation:attempt-1:revision-1
                 digest: sha256:4121c52326b6aa8912a3ceabaf9299121f7906575e8cf7e6c8681a7f1f1f5035
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:cvrwyn3xynbwg4wkgc5khyfq:ideation:1
+                briefing: briefing:cvrwyn3xynbwg4wkgc5khyfq:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-11-10T18:47:57.648811Z"
+                decision: approve
+                reason: Design pins the locally proven Pi family, guards the transitive float with a deterministic exact-pin check shown to flag the 1.0.2 tree and pass the 1.5.0 tree, measures the fix on a Linux pi-live run against the failing baseline, and keeps unrelated journey failures out of scope with named dispositions.
+                conn:
+                    quote: dispatch pi drift one too and approve toward PR stack on top of the haiku one.
+                    source: captain chat, 2026-11-10
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 The pi-live job of Runtime Live E2E has not passed since 2026-10-07. Worker launches die before a child session exists with a Pi package mismatch, so no commit on `main` can be greened on the Pi lane. This blocks the 0.28.0 release, which must green its exact release SHA.
