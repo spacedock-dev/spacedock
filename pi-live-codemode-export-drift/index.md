@@ -7,7 +7,7 @@ started: 2026-11-10T18:37:11Z
 completed:
 verdict:
 score: 0.9
-worktree:
+worktree: .worktrees/spacedock-ensign-pi-live-codemode-export-drift
 issue:
 pr:
 mod-block:
