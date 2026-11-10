@@ -2,7 +2,7 @@
 title: "Your first workflow"
 description: "Your agents are waiting on you. Spacedock brings you the calls that need you, keeps your agents on the goal, and lets you decide in one place."
 doc_version: "0.20.2"
-last_updated: "2026-11-10 16:50:35"
+last_updated: "2026-11-10 16:50:56"
 ---
 
 # Your first workflow
