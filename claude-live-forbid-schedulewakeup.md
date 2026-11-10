@@ -1,7 +1,7 @@
 ---
 id: ef4p1sbvkk9zxjxm0ez9npdr
 title: Claude live harness forbids ScheduleWakeup so haiku runs exit when the work is done
-status: ideation
+status: implementation
 source: "Captain directive, 2026-11-10: the fix is a test-harness injection on haiku that forbids the tool, not a first-officer instruction."
 started: 2026-11-10T18:36:35Z
 completed:
@@ -57,7 +57,7 @@ gates:
                     source: captain chat, 2026-11-10
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 On the claude-haiku live lane, journeys that complete their work are killed as hung. The haiku first officer calls the host tool `ScheduleWakeup` as a fallback heartbeat while waiting on background workers; after the work finishes and the final turn ends, the pending wakeup keeps the `claude -p` process alive and silent, and the harness kills it after its 60-second no-progress budget, before grading.
