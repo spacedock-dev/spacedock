@@ -1,16 +1,16 @@
 ---
 id: kc1rvn663yt8qkzqbakzda1v
 title: The FO contract's load triggers cause re-reads of resident, unchanged files
-status: validation
+status: done
 source: "email-triage codex session audit 2026-08-26: 59 skill-file reads in one FO day — fo-write-core.md 14x, fo-gate-lifecycle 10x — about 34% of the FO's tool calls, against files that never changed; only two compactions occurred, so at most three reads per file were mandated"
 started: 2026-08-27T06:56:34Z
-completed:
-verdict:
+completed: 2026-11-10T16:52:05Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-fo-contract-reread-churn
 issue:
 pr: pr-merge:841
-mod-block: merge:pr-merge
+mod-block:
 gates:
     version: 1
     records:
@@ -78,7 +78,8 @@ gates:
                 reason: 'Captain, 2026-10-07: "accept. and we can still do the interactive tests from the worktree"'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-11-10T16:52:06Z
 ---
 
 The contract's deferred load points phrase their triggers per occurrence: "load before every selected gate", "read immediately before the first FO-authored mutation". The contract never states that a file already resident in context satisfies the precondition. A literal reader therefore re-reads unchanged bodies at later triggers inside one context. That qualitative ambiguity is the problem; the exact quantitative risk evidence is the reproducible transcript slice in `## Risk evidence`, not the original seed estimate preserved in frontmatter.
