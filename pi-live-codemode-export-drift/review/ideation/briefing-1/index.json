@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:cvrwyn3xynbwg4wkgc5khyfq:ideation:attempt-1:revision-1",
+  "question": "Approve pinning pi-live to Pi 1.5.0 / pi-subagents 0.84.0 / pi-intercom 0.18.1 with an exact-pin drift guard in spacedock-release install, for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:cvrwyn3xynbwg4wkgc5khyfq:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/3d89dbe972f7b5b6436f380a6976ce18237138f8/pi-live-codemode-export-drift/index.md",
+      "rev": "sha256:23c5b19aed4c706edc5a30b7a90fd4f78362876b505c710115d62153041597aa",
+      "mediaType": "text/markdown",
+      "summary": "Pin the locally proven Pi 1.5.0 family; add an install-time check that refuses a Pi tree whose first-party dependencies are not exact-pinned or whose installed copies differ from declared versions; no lockfile. About +75 net LOC across 3 files. Proof is a dispatched pi-cadence Runtime Live E2E run on the fix tip; journeys failing for other causes are named, not repaired."
+    }
+  ]
+}
