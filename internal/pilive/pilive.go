@@ -253,9 +253,18 @@ var exactVersion = regexp.MustCompile(`^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$`)
 // is stable and lists the whole drift.
 func verifyExactDependencies(piRoot string) error {
 	const firstParty = "@earendil-works/"
+	scope := filepath.Join(piRoot, "node_modules", strings.TrimSuffix(firstParty, "/"))
+	nested, err := os.ReadDir(scope)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	roots := []string{piRoot}
+	for _, entry := range nested {
+		roots = append(roots, filepath.Join(scope, entry.Name()))
+	}
 	type edge struct{ from, dep, want string }
 	var edges []edge
-	collect := func(root string, firstPartyOnly bool) error {
+	for i, root := range roots {
 		var m struct {
 			Name         string            `json:"name"`
 			Dependencies map[string]string `json:"dependencies"`
@@ -264,23 +273,9 @@ func verifyExactDependencies(piRoot string) error {
 			return err
 		}
 		for dep, want := range m.Dependencies {
-			if !firstPartyOnly || strings.HasPrefix(dep, firstParty) {
+			if i == 0 || strings.HasPrefix(dep, firstParty) {
 				edges = append(edges, edge{m.Name, dep, want})
 			}
-		}
-		return nil
-	}
-	if err := collect(piRoot, false); err != nil {
-		return err
-	}
-	scope := filepath.Join(piRoot, "node_modules", strings.TrimSuffix(firstParty, "/"))
-	nested, err := os.ReadDir(scope)
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	for _, entry := range nested {
-		if err := collect(filepath.Join(scope, entry.Name()), true); err != nil {
-			return err
 		}
 	}
 	slices.SortFunc(edges, func(a, b edge) int {
