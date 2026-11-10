@@ -36,6 +36,14 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:ef4p1sbvkk9zxjxm0ez9npdr:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:ef4p1sbvkk9zxjxm0ez9npdr-ideation-1
+              briefing:
+                id: briefing:ef4p1sbvkk9zxjxm0ez9npdr:ideation:attempt-1:revision-1
+                digest: sha256:f286fba584c01092850dbcf7db9842e94668d7a85a04a039d912ce6bcff1c379
+                room-ref: '@review/ideation/briefing-1'
 ---
 
 On the claude-haiku live lane, journeys that complete their work are killed as hung. The haiku first officer calls the host tool `ScheduleWakeup` as a fallback heartbeat while waiting on background workers; after the work finishes and the final turn ends, the pending wakeup keeps the `claude -p` process alive and silent, and the harness kills it after its 60-second no-progress budget, before grading.

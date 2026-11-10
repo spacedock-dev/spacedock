@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ef4p1sbvkk9zxjxm0ez9npdr:ideation:attempt-1:revision-1",
+  "question": "Approve the haiku-only ScheduleWakeup restriction design, with xfail bindings for rejection-flow and TestLiveBareReachable, for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:ef4p1sbvkk9zxjxm0ez9npdr:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/f9f762e83ed95dffd4582b95c378e06db525c384/claude-live-forbid-schedulewakeup.md",
+      "rev": "sha256:9950f61fd108973f3f4f7b78e7ff63ee15966d84da84f7849d61969fd64343e1",
+      "mediaType": "text/markdown",
+      "summary": "Haiku-only --disallowedTools ScheduleWakeup injected through a new claudeFrontDoorArgs helper pinned by an untagged test; claude-haiku xfail bindings added for rejection-flow and TestLiveBareReachable; ac-value-reanchor left unbound; existing haiku bindings kept. Net +30 LOC across 5 files, PR based on ci/go-126-workflows."
+    }
+  ]
+}
