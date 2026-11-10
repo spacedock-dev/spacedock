@@ -1,15 +1,15 @@
 ---
 title: Make state transitions durable
-status: validation
+status: done
 source: Captain-approved combined durability work, 2026-09-15
 started: 2026-09-15T20:07:01Z
-completed:
-verdict:
+completed: 2026-11-10T16:52:21Z
+verdict: PASSED
 score: 0.95
 worktree: .worktrees/spacedock-ensign-state-durability
 issue: spacedock-dev/spacedock#689
 pr: pr-merge:803
-mod-block: merge:pr-merge
+mod-block:
 id: 3tzfv0rrctdb066xt942zjbd
 gates:
     version: 1
@@ -51,7 +51,8 @@ gates:
                 reason: Captain approved validation in Subspace resolution:binding-1789524492886473000; accepts direction and presented evidence.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-11-10T16:52:21Z
 ---
 
 Prevent false completion and silent loss of workflow state. One task covers GitHub issues #689, #790 and #630 with separate behavioral acceptance criteria.
