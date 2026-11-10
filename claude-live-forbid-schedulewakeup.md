@@ -3,7 +3,7 @@ id: ef4p1sbvkk9zxjxm0ez9npdr
 title: Claude live harness forbids ScheduleWakeup so haiku runs exit when the work is done
 status: ideation
 source: "Captain directive, 2026-11-10: the fix is a test-harness injection on haiku that forbids the tool, not a first-officer instruction."
-started:
+started: 2026-11-10T18:36:35Z
 completed:
 verdict:
 score: 0.6
