@@ -678,17 +678,7 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 	streamPath := filepath.Join(artifactDir, "claude-stream.jsonl")
 	finalPath := filepath.Join(artifactDir, "claude-final-message.txt")
 
-	frontDoorArgs := []string{"claude",
-		"--plugin-dir", r.pluginDir,
-		"--skip-compat-check",
-		"--",
-		"-p", prompt + " " + antiShutdownOverride,
-		"--permission-mode", "bypassPermissions",
-		"--output-format", "stream-json",
-		"--verbose",
-		"--model", r.modelName,
-	}
-	cmd := exec.Command(r.binary, frontDoorArgs...)
+	cmd := exec.Command(r.binary, claudeFrontDoorArgs(r.pluginDir, prompt+" "+antiShutdownOverride, r.modelName)...)
 	cmd.Dir = workflowRoot
 	// Per-scenario CLAUDE_CONFIG_DIR keeps parallel scenarios isolated.
 	cmd.Env = r.env

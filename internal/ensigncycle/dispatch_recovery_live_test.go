@@ -62,15 +62,24 @@ func writeStubBreakGlassSpacedock(t *testing.T, realBinary string) string {
 //spacedock:live-proof id=claude-bare-dispatch lane=claude-live
 func TestLiveBareReachable(t *testing.T) {
 	runner := newClaudeLiveRunner(t)
+	target, err := claudeLiveRole(runner.model())
+	if err != nil {
+		t.Fatal(err)
+	}
 	workflowRoot := t.TempDir()
 	writeDispatchRecoveryWorkflow(t, workflowRoot)
 
-	scenario := sharedRuntimeScenario{name: "bare-reachable"}
+	scenario := sharedRuntimeScenario{name: "bare-reachable", gap: bareReachableGap(target)}
 	result := runner.run(t, scenario, workflowRoot, bareReachablePrompt())
-	if err := assertBareReachableObservables(result.stream); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-	}
-	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+	finishLiveScenario(t, runner, scenario, result,
+		durableSemantic("bare-reachable-observables", assertBareReachableObservables(result.stream)),
+	)
+}
+
+// bareReachableGap binds Haiku's unowned gap (pending analysis) and nothing for
+// other targets.
+func bareReachableGap(target string) liveJourneyGap {
+	return selectLiveGap([]liveJourneyGap{liveXFail("claude-haiku", "")}, target)
 }
 
 // breakGlassSelectedBareGap binds Haiku's unowned gap (pending analysis) and

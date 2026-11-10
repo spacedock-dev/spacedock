@@ -26,3 +26,5 @@ that runtime target. Removing a binding claims the journey is green there.
 | default-headless-gate-stop | claude-haiku | unowned (blank; pending analysis) | claude-haiku reds `gate-hold-violation`, `gate-not-held`, `implementation-worker-not-dispatched` |
 | withdrawn-gate-recovery | claude-haiku | unowned (blank; pending analysis) | claude-haiku red `withdrawn-recovery-boundary` |
 | `breakGlassSelectedBareGap` (break-glass selected-bare, `dispatch_recovery_live_test.go`) | claude-haiku | unowned (blank; pending analysis) | claude-haiku red `break-glass-observables` |
+| rejection-flow | claude-haiku | unowned (blank; pending analysis) | claude-haiku red `rejection-worker-topology` |
+| `bareReachableGap` (bare-reachable, `dispatch_recovery_live_test.go`) | claude-haiku | unowned (blank; pending analysis) | claude-haiku red `bare-reachable-observables`: no bare-shaped `Agent()` call |
