@@ -23,10 +23,11 @@ must be treated as operator activity, not idle wake evidence.
 1. Dispatch a worker with the exact no-write prompt and record its handle.
 2. When the live Codex tool surface binds `«completion-signal»`, use async idle monitoring only when there is no ready workflow work.
 3. Record whether the call returns a timeout or a final status.
-4. If captain input resumes the FO's active loop, record the worker as unchanged
-   and continue useful active-scope work. When the FO becomes idle again, resume
-   monitoring the same unresolved worker. The harness return label is not worker
-   completion, failure, closure, redispatch, or idle-wake evidence.
+4. If a status/report/why question resumes the FO, record its commentary answer
+   and same-turn return to monitoring after ready work. An explicit
+   pause/stop/cancel/replacement instead ends or redirects the authorized drive.
+   Record raw host events and durable state; a later captain nudge is not
+   autonomous continuation.
 5. Classify a final status observed through this explicit wait path as
    `async_idle_monitoring`.
 

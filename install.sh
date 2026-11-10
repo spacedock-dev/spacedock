@@ -39,6 +39,7 @@ set -eu
 REPO="spacedock-dev/spacedock"
 INSTALL_DIR="${SPACEDOCK_INSTALL_DIR:-$HOME/.local/bin}"
 CHANNEL="${SPACEDOCK_CHANNEL:-stable}"
+LOOKUP_FAILED=""
 
 err() { printf 'install.sh: %s\n' "$*" >&2; }
 die() { err "$*"; exit 1; }
@@ -105,22 +106,61 @@ fetch() {
 	esac
 }
 
-# resolve_latest_tag asks the GitHub API for the newest release tag on the
-# selected channel (e.g. v0.20.0). `/releases/latest` EXCLUDES prereleases, which
-# is exactly the stable channel; the edge line ships as `-pre` tags, so edge
-# reads the newest entry of the created_at-descending releases list instead.
-# Unauthenticated and one request either way, and `tag_name` appears only at
-# release level in both responses, so the same first-match parse serves both.
-resolve_latest_tag() {
+# release_tag prints the newest release tag of a repo on the selected channel.
+# Stable reads the redirect of github.com/REPO/releases/latest, which skips
+# prereleases and is outside the API's 60-an-hour limit; edge reads the API.
+release_tag() {
+	rt_repo="$1"
+	rt_tag=""
 	if [ "$CHANNEL" = edge ]; then
-		api="https://api.github.com/repos/$REPO/releases?per_page=1"
+		rt_tag="$(curl -fs "https://api.github.com/repos/$rt_repo/releases?per_page=1" 2>/dev/null \
+			| grep '"tag_name"' | head -n 1 \
+			| sed -E 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')" || rt_tag=""
 	else
-		api="https://api.github.com/repos/$REPO/releases/latest"
+		rt_to="$(curl -fs -o /dev/null -w '%{redirect_url}' "https://github.com/$rt_repo/releases/latest" 2>/dev/null)" || rt_to=""
+		case "$rt_to" in
+			*/releases/tag/*) rt_tag="${rt_to##*/releases/tag/}" ;;
+		esac
 	fi
-	curl -fsSL "$api" \
-		| grep '"tag_name"' \
-		| head -n 1 \
-		| sed -E 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/'
+	if [ -z "$rt_tag" ]; then
+		err "GitHub did not answer the latest-release lookup for $rt_repo; reading the tags with git ls-remote"
+		rt_tag="$(newest_tag "$rt_repo")"
+	fi
+	[ -n "$rt_tag" ] || {
+		err "could not resolve the latest release tag for $rt_repo ($CHANNEL channel): GitHub's rate limit (60 API requests an hour per address) may have been reached and git ls-remote found no release tag; wait up to an hour and run again, or use another network"
+		return 1
+	}
+	printf '%s\n' "$rt_tag"
+}
+
+# newest_tag prints the highest vMAJOR.MINOR.PATCH[-PRERELEASE] tag of a repo,
+# skipping prereleases on stable. It ranks with a zero-padded key and a C-locale
+# sort because `sort -V` on macOS puts a release before its own prereleases.
+newest_tag() {
+	GIT_TERMINAL_PROMPT=0 git ls-remote --tags --refs "https://github.com/$1.git" 2>/dev/null \
+		| awk -v stable="$([ "$CHANNEL" = stable ] && echo 1 || echo 0)" '
+			function pad(s) { while (length(s) < 9) s = "0" s; return s }
+			function padruns(s,   out) {
+				out = ""
+				while (match(s, /[0-9]+/)) {
+					out = out substr(s, 1, RSTART - 1) pad(substr(s, RSTART, RLENGTH))
+					s = substr(s, RSTART + RLENGTH)
+				}
+				return out s
+			}
+			{
+				name = $2
+				sub(/^refs\/tags\//, "", name)
+				if (name !~ /^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$/) next
+				v = substr(name, 2)
+				pre = ""
+				d = index(v, "-")
+				if (d) { pre = substr(v, d + 1); v = substr(v, 1, d - 1) }
+				if (pre != "" && stable == 1) next
+				split(v, n, ".")
+				print pad(n[1]) pad(n[2]) pad(n[3]) (pre == "" ? "1" : "0" padruns(pre)) " " name
+			}' \
+		| LC_ALL=C sort | tail -n 1 | cut -d' ' -f2
 }
 
 # asset_name builds the goreleaser archive name for a version/os/arch on the
@@ -182,15 +222,7 @@ install_extra() {
 		[ "$(installed_version "$name" "$programs" "$kind" "$links")" = "$ver" ] && { err "$name $ver unchanged"; rm -rf "$dir"; return 0; }
 		cp "$local_from/$asset" "$dir/$asset" && cp "$local_from/checksums.txt" "$dir/checksums.txt" || return 1
 	else
-		if [ "$CHANNEL" = edge ]; then
-			api="https://api.github.com/repos/$repo/releases?per_page=1"
-		else
-			api="https://api.github.com/repos/$repo/releases/latest"
-		fi
-		tag="$(curl -fsSL "$api" \
-			| grep '"tag_name"' | head -n 1 \
-			| sed -E 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')" || tag=""
-		[ -n "$tag" ] || { err "$name: could not resolve the latest release of $repo"; return 1; }
+		tag="$(release_tag "$repo")" || { LOOKUP_FAILED=1; return 1; }
 		ver="${tag#v}"
 		[ "$(installed_version "$name" "$programs" "$kind" "$links")" = "$ver" ] && { err "$name $ver unchanged"; rm -rf "$dir"; return 0; }
 		asset="${prefix}_${ver}_${os}_${arch}.tar.gz"
@@ -246,12 +278,15 @@ install_extras() {
 	want="${SPACEDOCK_EXTRAS:-}"
 	[ "$want" = none ] && return 0
 	[ -n "${SPACEDOCK_INSTALL_FROM:-}" ] && [ -z "$want" ] && return 0
-	printf '%s\n' "$EXTRAS" | while IFS='|' read -r name repo prefix programs links kind; do
+	while IFS='|' read -r name repo prefix programs links kind; do
 		[ -n "$name" ] || continue
 		install_extra "$name" "$repo" "$prefix" "$programs" "$links" "${kind:-bin}" "$1" "$2" \
 			|| err "$name failed to install; spacedock works without it"
-	done
+	done <<TABLE
+$EXTRAS
+TABLE
 	install_plugins
+	[ -z "$LOOKUP_FAILED" ]
 }
 
 main() {
@@ -295,8 +330,7 @@ main() {
 				;;
 		esac
 	else
-		tag="$(resolve_latest_tag)"
-		[ -n "$tag" ] || die "could not resolve the latest release tag for $REPO"
+		tag="$(release_tag "$REPO")" || exit 1
 		# Say which version this run resolved, before anything is downloaded, so a
 		# channel skew is visible at install time instead of surfacing later as a
 		# first-officer boot abort. stderr and `=`-free, so the print-target
