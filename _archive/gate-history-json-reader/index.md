@@ -1,6 +1,6 @@
 ---
 title: Expose complete gate history as machine-readable JSON
-status: validation
+status: done
 source: "Captain authorized issue 814 on 2026-11-03: Proceed with the 3. You have the conn to approve gate and open pr"
 issue: spacedock-dev/spacedock#814
 sprint: paseo-integration
@@ -73,11 +73,14 @@ gates:
                     source: Captain message in this Codex conversation on 2026-11-03
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-11-04T07:47:25Z
 worktree: .worktrees/spacedock-ensign-gate-history-json-reader
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:860
+verdict: PASSED
+completed: 2026-11-10T16:51:41Z
+archived: 2026-11-10T16:51:42Z
 ---
 Paseo can show gate history from the binary-owned schema without parsing Markdown itself.
 
