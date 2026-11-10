@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ef4p1sbvkk9zxjxm0ez9npdr:validation:attempt-1:revision-1",
+  "question": "Accept the haiku ScheduleWakeup restriction (PR #873) as validated and ready to merge with the stack?",
+  "artifacts": [
+    {
+      "id": "artifact:ef4p1sbvkk9zxjxm0ez9npdr:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/34d543a7344dd9dc8c3168ce0029c69098bc327d/claude-live-forbid-schedulewakeup.md",
+      "rev": "sha256:99c527351b706f3fef2024fa1f8c9163f2ff17fa6589f74fef39c6e441661f39",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED at ebf5dccfa. Haiku live run 42882274740: claude-live job success, 0 no-stream-progress kills against a baseline of 7, ScheduleWakeup absent from every haiku stream; 26 tests passed. Deterministic tests fail under falsifying edits; surface is 5 files, net +29 LOC."
+    }
+  ]
+}

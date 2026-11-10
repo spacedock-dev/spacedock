@@ -58,6 +58,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:ef4p1sbvkk9zxjxm0ez9npdr:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:ef4p1sbvkk9zxjxm0ez9npdr-validation-1
+              briefing:
+                id: briefing:ef4p1sbvkk9zxjxm0ez9npdr:validation:attempt-1:revision-1
+                digest: sha256:39434e79be4d88b573ea12f3f2e1433dc7bd27a1efc3e4afa269744969ce3304
+                room-ref: '@review/validation/briefing-1'
 ---
 
 On the claude-haiku live lane, journeys that complete their work are killed as hung. The haiku first officer calls the host tool `ScheduleWakeup` as a fallback heartbeat while waiting on background workers; after the work finishes and the final turn ends, the pending wakeup keeps the `claude -p` process alive and silent, and the harness kills it after its 60-second no-progress budget, before grading.
