@@ -77,6 +77,11 @@ gates:
                 conn:
                     quote: do it as part of the pr with continue-on-error
                     source: captain chat, 2026-11-10
+            - id: gate-attempt:ef4p1sbvkk9zxjxm0ez9npdr-validation-2
+              briefing:
+                id: briefing:ef4p1sbvkk9zxjxm0ez9npdr:validation:attempt-2:revision-1
+                digest: sha256:54abbe4acb6bdabd09e4d7a26d200b99bac34a47f272e6265695243cfa31015a
+                room-ref: '@review/validation/briefing-2'
 ---
 
 On the claude-haiku live lane, journeys that complete their work are killed as hung. The haiku first officer calls the host tool `ScheduleWakeup` as a fallback heartbeat while waiting on background workers; after the work finishes and the final turn ends, the pending wakeup keeps the `claude -p` process alive and silent, and the harness kills it after its 60-second no-progress budget, before grading.

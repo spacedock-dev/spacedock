@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ef4p1sbvkk9zxjxm0ez9npdr:validation:attempt-2:revision-1",
+  "question": "Approve validation of the haiku ScheduleWakeup restriction plus the non-blocking haiku pull-request leg (PR #873, tip 5c862c23c) for merge as part of the stack?",
+  "artifacts": [
+    {
+      "id": "artifact:ef4p1sbvkk9zxjxm0ez9npdr:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/50d0f8f9886fd73f11a945fa9120d3d933833037/claude-live-forbid-schedulewakeup.md",
+      "rev": "sha256:d60b0cec2266d4620153bc513e8fb0cbf7fee85e0187ef333a05964ac49b93d2",
+      "mediaType": "text/markdown",
+      "summary": "Cycle 2 re-review recommends PASSED. ebf5dccfa unchanged and CI-proven (run 42882274740: 0 haiku kills). 5c862c23c adds a continue-on-error haiku claude-live leg on pull requests only; dispatch paths keep one blocking leg. go test and -race pass; 7 of 10 reviewer breaking edits caught. Open: three untested artifact/metrics-naming properties (correct by inspection); haiku records will enter the journey-cost ledger from PR runs; two-leg matrix unproven until a PR into main runs."
+    }
+  ]
+}
