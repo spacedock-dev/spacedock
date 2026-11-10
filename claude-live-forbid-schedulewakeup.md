@@ -22,6 +22,20 @@ gates:
                 id: briefing:ef4p1sbvkk9zxjxm0ez9npdr:backlog:attempt-1:revision-1
                 digest: sha256:ecbd5ac3e78d627a49fcd0be234df9b0515c0f45e3a56dc8c7d4e50863ec533b
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ef4p1sbvkk9zxjxm0ez9npdr:backlog:1
+                briefing: briefing:ef4p1sbvkk9zxjxm0ez9npdr:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-11-10T18:34:22.537219Z"
+                decision: approve
+                reason: Seed states the problem with run evidence, a bounded harness-only scope, and the captain's chosen mechanism; ready for ideation.
+                conn:
+                    quote: for haiku - dispatch this with the disallowed tool change the remaining failing marked as xpass. create PR onto the current stack and we can run ci
+                    source: captain chat, 2026-11-10
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 On the claude-haiku live lane, journeys that complete their work are killed as hung. The haiku first officer calls the host tool `ScheduleWakeup` as a fallback heartbeat while waiting on background workers; after the work finishes and the final turn ends, the pending wakeup keeps the `claude -p` process alive and silent, and the harness kills it after its 60-second no-progress budget, before grading.
