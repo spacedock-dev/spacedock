@@ -1,6 +1,6 @@
 ---
 title: The Pi install offer is suppressed in every session after one failed attempt
-status: validation
+status: done
 score: 0.8
 source: "FO review of task ekw, 2026-10-03: the install-attempt sentinel has no session key, and its only measured effect is to suppress the offer."
 sprint: pi-ux
@@ -50,9 +50,12 @@ gates:
                     source: captain, pi session 2026-10-03
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 worktree: .worktrees/spacedock-ensign-remove-pi-install-attempt-sentinel
 pr: pr-merge:822
+verdict: PASSED
+completed: 2026-11-10T16:57:36Z
+archived: 2026-11-10T16:57:36Z
 ---
 
 ## Problem
