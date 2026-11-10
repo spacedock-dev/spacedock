@@ -1,6 +1,6 @@
 ---
 title: Preserve orchestrator control in launcher passthrough mode
-status: validation
+status: done
 source: "Captain authorized issue 813 on 2026-11-03: Proceed with the 3. You have the conn to approve gate and open pr"
 issue: spacedock-dev/spacedock#813
 sprint: paseo-integration
@@ -73,11 +73,14 @@ gates:
                     source: Captain message in this Codex conversation on 2026-11-03
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-11-04T07:48:58Z
 worktree: .worktrees/spacedock-ensign-paseo-provider-passthrough
-mod-block: merge:pr-merge
+mod-block:
 pr: "#861"
+verdict: REJECTED
+completed: 2026-11-10T14:31:46Z
+archived: 2026-11-10T14:31:46Z
 ---
 Paseo can use Spacedock as a provider command while retaining control of its protocol, agent identity, prompts, and permission UI.
 
