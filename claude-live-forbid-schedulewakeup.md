@@ -198,6 +198,24 @@ The implementation branch starts from `ci/go-126-workflows` (PR #849, tip `eef2d
 - **Instruct the first officer not to schedule wakeups (skill text).** The captain ruled this out. It would also change product behavior to fix a harness-only symptom.
 - **Raise the no-progress quiet budget.** A 1200 s wakeup outlasts any reasonable budget, and a longer budget weakens hang detection for every journey.
 
+## Scope amendment
+
+Captain decision, 2026-11-10: the same pull request also adds a non-blocking haiku leg to pull-request runs of Runtime Live E2E.
+
+Outcome: a pull-request run executes `claude-live` on the selected sonnet model (blocking, check name unchanged) and on the registered `claude.haiku` model with `continue-on-error`, so a haiku failure is visible on its leg but does not fail the run conclusion or the release gate. Every `workflow_dispatch` path stays one blocking leg on the selected model, including `claude_model=haiku`. The haiku ID comes from the offline resolver's `claude_haiku` output, and the resolver refuses a pull-request registry without `claude.haiku`.
+
+Added acceptance criterion:
+
+5. The workflow defines two `claude-live` legs for `pull_request` (selected model blocking, `claude.haiku` continue-on-error) and one blocking leg for `workflow_dispatch`. Tested by `TestClaudeLiveKeepsCadenceBoundaryAndSelectedModel`, which expands both event branches of the `claude-live` model axis into legs and classifies each by the job's `continue-on-error` rule: pull request is `[selected blocking, haiku continue-on-error]`, dispatch is `[selected blocking]`. It fails when `continue-on-error` is dropped or set to `true`, when the dispatch branch gains the haiku leg, and when an include entry names a model. `TestLiveModelResolverEmitsPullRequestLegs` runs the resolver step and fails when the `claude.haiku` guard is removed.
+
+Amended expected surface: 3 more files, net +107 (+120/−13).
+
+| File | Change | +/− |
+|---|---|---|
+| `.github/workflows/runtime-live-e2e.yml` | model axis per event, `continue-on-error`, explicit job name, `claude_haiku` output, resolver guard, header comment | +14 / −4 |
+| `internal/release/livemodels_test.go` | the two tests above | +105 / −8 |
+| `docs/runtime-live-ci.md` | the pull-request lane bullet names the haiku leg | +1 / −1 |
+
 ## Stage Report: ideation
 
 - DONE: Acceptance criteria name the measured end-value (a haiku CI live run with no no-stream-progress kill following a ScheduleWakeup call) and the deterministic test that pins the injected restriction in the built claude argument list
@@ -248,3 +266,16 @@ The `spacedock claude` argument list moved into the untagged `claudeFrontDoorArg
 ### Summary
 
 Recommendation: PASSED. All four acceptance criteria have reproduced evidence at `ebf5dccfa`, and there is no material finding and no deferred risk. The haiku CI run had no no-progress kill and no `ScheduleWakeup` in any restricted stream, against a baseline of 7 kills, and it is a single run. The deterministic tests each failed under a falsifying edit, and an adversarial matrix over model names and grading targets held. The candidate worktree was not modified; falsifying edits ran in a throwaway export that has been removed. The run's `codex-live` job was still in progress when validation ended and is outside this task.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Pull-request runs execute a second claude-live leg on the registered haiku model with continue-on-error, while the sonnet leg and every workflow_dispatch path are unchanged
+  Commit `5c862c23c` on top of `ebf5dccfa` (not pushed). The `claude-live` matrix `model` axis is `fromJSON(format(...))` over `claude_selected` plus `claude_haiku` on `pull_request`, and `claude_selected` alone otherwise. A single model-free include entry carries cadence, effort and environment. `continue-on-error: ${{ matrix.model != needs.offline.outputs.claude_selected }}`, so only the extra leg is non-blocking, and an explicit job `name:` reproduces the include-only check name (`claude-live (pull-request, claude-sonnet-5-5, max, CI-E2E)`). Artifact names, config dirs and metrics dirs are per `matrix.model`, so the legs do not collide. `journey-delta-comment` still reads only the sonnet artifact. The release gate reads the run conclusion, which a continue-on-error failure does not turn red. `main` has no required status checks.
+- DONE: The workflow-shape test pins the new matrix and fails when continue-on-error is dropped or the haiku leg leaks onto dispatch; go test ./... and go test ./... -race pass
+  `TestClaudeLiveKeepsCadenceBoundaryAndSelectedModel` expands both event branches into legs through the offline outputs and classifies each by the continue-on-error rule. Five falsifying edits each failed: dropping `continue-on-error`, setting it to `true`, adding the haiku leg to the dispatch branch, adding a haiku include entry, and removing the resolver guard (`TestLiveModelResolverEmitsPullRequestLegs`, which runs the resolver step on the shipped registry and on one without `claude.haiku`). `go test ./...` and `go test ./... -race` exit 0. `actionlint` v1.7.7 (`-shellcheck= -pyflakes=`) reports no issue, before or after the change.
+- DONE: The task body carries a Scope amendment section with the added acceptance criterion and amended surface, and the report states what remains unproven until the stack targets main
+  `## Scope amendment` sits before the stage reports, with AC-5 and its tests, and the surface is 3 files, +120/−13, net +107. Unproven: no `pull_request` run has executed the two-leg matrix. The Runtime Live E2E `pull_request` trigger fires only for PRs into `main`, and #873 targets `ci/go-126-workflows`. Until the stack targets `main`, it is unproven that GitHub expands the expression axis into two legs, applies the job name, and reports the run as success when the haiku leg fails.
+
+### Summary
+
+The haiku leg is a base matrix axis chosen per event, not an include entry. GitHub turns an include entry that matches no existing combination into a new leg, so a haiku include entry would also run on dispatch. The resolver now refuses a pull-request registry without `claude.haiku`, which would otherwise produce a leg with an empty model. The test diff (+97 net) is most of the surface. `gofmt -l` still lists `internal/release/runtime_live_evidence_workflow_test.go`, which was already unformatted on the base and which this commit does not touch.
