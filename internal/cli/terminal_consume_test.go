@@ -578,6 +578,16 @@ func TestRoutedTerminalApprovalSurfacesExistingDisplay(t *testing.T) {
 	}
 }
 
+// localDeliverySentinel returns the `pr=local-merge:<SHA>` field a state-only
+// entity records under `merge: local` with no merge hook: the current trunk
+// commit. merge guard --verdict passed refuses without that delivery proof, so
+// tests of what the guard decides after it must record it first.
+func localDeliverySentinel(t *testing.T, root string) string {
+	t.Helper()
+	terminalRunGit(t, root, "branch", "-M", "main")
+	return "pr=local-merge:" + strings.TrimSpace(git(t, root, "rev-parse", "main"))
+}
+
 // TestMergeGuardFinalizesConsumedHistoryAfterTerminalSet pins the keep-moving
 // approved-gate path: the FO writes the terminal fields with `status --set`,
 // then runs `merge guard --verdict passed`. The guard must classify the spent
@@ -587,7 +597,7 @@ func TestRoutedTerminalApprovalSurfacesExistingDisplay(t *testing.T) {
 func TestMergeGuardFinalizesConsumedHistoryAfterTerminalSet(t *testing.T) {
 	root, _ := consumedNonterminalWorkflow(t)
 	if code, out, errOut := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task",
-		"status=done", "verdict=PASSED", "completed"); code != 0 {
+		"status=done", "verdict=PASSED", "completed", localDeliverySentinel(t, root)); code != 0 {
 		t.Fatalf("terminal set exit=%d stdout=%q stderr=%q", code, out, errOut)
 	}
 	terminalRunGit(t, root, "commit", "-q", "-am", "state: done")
@@ -609,7 +619,7 @@ func TestMergeGuardRefusesConsumedHistoryPastUnpreparedGate(t *testing.T) {
 	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nmerge: local\nstages:\n  states:\n"+
 		"    - name: review\n      initial: true\n      gate: true\n    - name: implementation\n"+
 		"    - name: validation\n      gate: true\n    - name: done\n      terminal: true\n---\n# Workflow\n")
-	if code, out, errOut := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task", "status=validation"); code != 0 {
+	if code, out, errOut := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task", "status=validation", localDeliverySentinel(t, root)); code != 0 {
 		t.Fatalf("hand-move exit=%d stdout=%q stderr=%q", code, out, errOut)
 	}
 	terminalRunGit(t, root, "commit", "-q", "-am", "state: hand-moved to validation")
