@@ -98,6 +98,17 @@ gates:
                 id: briefing:mh698y3ht6ydmr6ethaw9hg9:validation:attempt-4:revision-1
                 digest: sha256:8850493458f6839e007b3b1355ac66559dac9cad34b122c480a04db9fc5f093f
                 room-ref: '@review/validation/briefing-4'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:mh698y3ht6ydmr6ethaw9hg9:validation:4
+                briefing: briefing:mh698y3ht6ydmr6ethaw9hg9:validation:attempt-4:revision-1
+                by: agent:first-officer
+                at: "2026-11-10T16:54:01.961907Z"
+                decision: revise
+                reason: 'Lane halves of AC-1/2/3 and live-smoke halves of AC-6/9 are unmet: pi-live fails on current main-descendant tips (runs 42848114247, 42849777496) with a pi-codemode MCP_TYPESCRIPT_PREAMBLE export error; last green pi-live was 2026-10-07. Fix: root-cause and repair the pin drift so pi-live can go green on main.'
+                conn:
+                    quote: merge both chains, then dispatch pi-live-lane-pin-refresh
+                    source: captain instruction, this session, 2026-11-10
 sprint: pi-ux
 group: tooling
 sprint-readiness: ready
