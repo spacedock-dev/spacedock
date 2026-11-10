@@ -25,9 +25,25 @@ The pi-live job of Runtime Live E2E has not passed since 2026-10-07. Worker laun
 
 ## Unknowns
 
-- Which package versions disagree, and whether a declared pin, an unpinned transitive dependency, or the runner install step lets them drift.
-- Whether the export error explains every failing journey and the front-door smoke. Failing in both runs: `smallest-sufficient-mechanism`, `recorded-gate-lifecycle`, `TestLivePiFrontDoorSmoke`. Failing in one run only: `gate-guardrail`; `filing` and `TestLiveCommonFullEnsignCycle`.
+- Whether `recorded-gate-lifecycle` passes on Linux CI. In the local macOS run it failed with `successor dispatch build attempts = 1 (0 ok)`: `dispatch build --stamp` exited 2 with `--entity-path` under `/var/folders/…` and `--workflow-dir` under `/private/var/folders/…`, which points at a macOS symlink spelling rather than Pi, but that is unconfirmed.
+- Whether `rejection-flow` passes: the local run hit the 50-minute suite timeout with it unfinished at 25 minutes.
+- Which `pi-codemode` release first dropped the export (1.1.0 was published 2026-10-07, the day the lane went red).
+
+## Diagnosis
+
+`internal/pilive/pilive.go` pins `@earendil-works/pi-coding-agent@1.0.2`, which depends on `@earendil-works/pi-codemode` `^1.0.2`. The install has no lockfile, so npm resolves `pi-codemode` 1.5.0, whose `./declarations` no longer exports `MCP_TYPESCRIPT_PREAMBLE`. Pi 1.0.2's bundled `dist/extensions/codemode/tool.js` imports that symbol, so the extension fails to load. Pi 1.5.0 does not import it.
+
+Local evidence, 2026-11-10 (macOS, model `openai-codex/gpt-6-luna`):
+
+- Pi 1.0.2 installed the way CI installs it: `TestLivePiFrontDoorSmoke` fails in 102 s with the export error.
+- Pi 1.5.0 with the pinned substrates (`pi-subagents` 0.75.0, `pi-intercom` 0.16.0): the smoke passes in 263 s.
+- Pi 1.5.0 with `pi-subagents` 0.84.0 and `pi-intercom` 0.18.1: 16 of 18 tests pass, including every journey that failed in CI (`smoke`, `smallest-sufficient-mechanism`, `full-ensign-cycle`, `filing`, `gate-guardrail`). The two that did not pass are the unknowns above.
+- In that run three `pi` xfail bindings passed: `owned-conflict-owner-handoff`, `default-headless-gate-stop`, and `auto-continue-after-implementation` split-root.
+
+Latest published versions: Pi 1.5.2, `pi-subagents` 0.87.0, `pi-intercom` 0.18.1.
 
 ## Outcome
 
-pi-live passes on a tip containing the fix, the install can no longer drift the same way without a deterministic check failing, and any failing journey with a different cause is named with its evidence rather than repaired here.
+The pi-live pin moves to a current Pi family that loads cleanly, and the install can no longer drift through an unpinned transitive dependency without a deterministic check failing. pi-live passes in CI on a tip containing the fix. Any journey that still fails for a different cause is named with its evidence rather than repaired here.
+
+The change ships as a pull request stacked on the `claude-live-forbid-schedulewakeup` branch, which is itself stacked on `ci/go-126-workflows` (PR #849).
