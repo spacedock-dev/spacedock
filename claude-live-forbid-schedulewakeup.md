@@ -7,7 +7,7 @@ started: 2026-11-10T18:36:35Z
 completed:
 verdict:
 score: 0.6
-worktree:
+worktree: .worktrees/spacedock-ensign-claude-live-forbid-schedulewakeup
 issue:
 pr:
 mod-block:
