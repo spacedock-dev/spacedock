@@ -9,7 +9,7 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-fo-contract-reread-churn
 issue:
-pr: "#841"
+pr: pr-merge:841
 mod-block: merge:pr-merge
 gates:
     version: 1
