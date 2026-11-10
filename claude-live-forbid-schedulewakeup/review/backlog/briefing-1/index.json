@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ef4p1sbvkk9zxjxm0ez9npdr:backlog:attempt-1:revision-1",
+  "question": "Take this task into ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:ef4p1sbvkk9zxjxm0ez9npdr:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/c8c6ea859dd2f62af35f6916bb141fc133b17b99/claude-live-forbid-schedulewakeup.md",
+      "rev": "sha256:fe86d78054d446034c436a8c216bf948d4b0a2dd47e9310c34d77bfecf5e529b",
+      "mediaType": "text/markdown",
+      "summary": "Haiku live journeys are killed as hung because a ScheduleWakeup call keeps claude -p alive after the work ends. Scope: disallow the tool for haiku in the Claude live harness, pin it with a deterministic test, bind remaining haiku failures as xfail, ship stacked on PR #849. No first-officer skill text changes."
+    }
+  ]
+}
