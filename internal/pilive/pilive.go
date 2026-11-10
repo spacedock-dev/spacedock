@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"cmp"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -248,7 +249,8 @@ var exactVersion = regexp.MustCompile(`^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$`)
 // verifyExactDependencies refuses a Pi tree that can float without a lockfile:
 // every dependency Pi declares, and every first-party dependency a nested
 // first-party package declares, must be an exact version installed under Pi as
-// declared. Edges are checked in sorted order so the refusal is stable.
+// declared. Every violating edge is reported, in sorted order, so the refusal
+// is stable and lists the whole drift.
 func verifyExactDependencies(piRoot string) error {
 	const firstParty = "@earendil-works/"
 	type edge struct{ from, dep, want string }
@@ -284,15 +286,15 @@ func verifyExactDependencies(piRoot string) error {
 	slices.SortFunc(edges, func(a, b edge) int {
 		return cmp.Or(strings.Compare(a.from, b.from), strings.Compare(a.dep, b.dep))
 	})
+	var errs []error
 	for _, e := range edges {
 		if !exactVersion.MatchString(e.want) {
-			return fmt.Errorf("%s declares %s %q, not an exact version: the install can float", e.from, e.dep, e.want)
-		}
-		if err := verifyInstalled(filepath.Join(piRoot, "node_modules", e.dep), e.dep, e.want); err != nil {
-			return fmt.Errorf("%s dependency: %w", e.from, err)
+			errs = append(errs, fmt.Errorf("%s declares %s %q, not an exact version: the install can float", e.from, e.dep, e.want))
+		} else if err := verifyInstalled(filepath.Join(piRoot, "node_modules", e.dep), e.dep, e.want); err != nil {
+			errs = append(errs, fmt.Errorf("%s dependency: %w", e.from, err))
 		}
 	}
-	return nil
+	return errors.Join(errs...)
 }
 
 func verifyManifest(root string) ([]string, error) {
