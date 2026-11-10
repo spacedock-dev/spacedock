@@ -66,6 +66,17 @@ gates:
                 id: briefing:ef4p1sbvkk9zxjxm0ez9npdr:validation:attempt-1:revision-1
                 digest: sha256:39434e79be4d88b573ea12f3f2e1433dc7bd27a1efc3e4afa269744969ce3304
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ef4p1sbvkk9zxjxm0ez9npdr:validation:1
+                briefing: briefing:ef4p1sbvkk9zxjxm0ez9npdr:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-11-10T19:47:30.043181Z"
+                decision: revise
+                reason: 'Captain adds scope to PR #873 before merge: run claude-haiku as a second claude-live leg on pull requests with continue-on-error: true, so haiku is sampled on every PR without blocking merges or the release gate. The validated restriction at ebf5dccfa is accepted as-is; the revision is the added workflow leg.'
+                conn:
+                    quote: do it as part of the pr with continue-on-error
+                    source: captain chat, 2026-11-10
 ---
 
 On the claude-haiku live lane, journeys that complete their work are killed as hung. The haiku first officer calls the host tool `ScheduleWakeup` as a fallback heartbeat while waiting on background workers; after the work finishes and the final turn ends, the pending wakeup keeps the `claude -p` process alive and silent, and the harness kills it after its 60-second no-progress budget, before grading.
