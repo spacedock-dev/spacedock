@@ -22,6 +22,20 @@ gates:
                 id: briefing:cvrwyn3xynbwg4wkgc5khyfq:backlog:attempt-1:revision-1
                 digest: sha256:2544a2af2281e604befe554972fd7e5132abba4caacdc03bb0991794ec9bc943
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:cvrwyn3xynbwg4wkgc5khyfq:backlog:1
+                briefing: briefing:cvrwyn3xynbwg4wkgc5khyfq:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-11-10T18:37:03.84826Z"
+                decision: approve
+                reason: Seed names the diagnosed cause with local evidence, the unproven journeys, and a bounded pin-bump-plus-drift-check outcome; ready for ideation.
+                conn:
+                    quote: dispatch pi drift one too and approve toward PR stack on top of the haiku one.
+                    source: captain chat, 2026-11-10
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 The pi-live job of Runtime Live E2E has not passed since 2026-10-07. Worker launches die before a child session exists with a Pi package mismatch, so no commit on `main` can be greened on the Pi lane. This blocks the 0.28.0 release, which must green its exact release SHA.
