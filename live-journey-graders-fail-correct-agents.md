@@ -36,6 +36,20 @@ gates:
                 id: briefing:9wpk5vftfth48rcaxft6kw27:ideation:attempt-1:revision-1
                 digest: sha256:03ad186758167e0c6673ca477f417b0389cbd3808cce96e0d2656049d492fbbc
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:9wpk5vftfth48rcaxft6kw27:ideation:1
+                briefing: briefing:9wpk5vftfth48rcaxft6kw27:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-11-11T05:42:40.296672Z"
+                decision: approve
+                reason: Design is test-side only, each fix was prototyped with a failing-then-passing test, and the recommended defect 3 remedy matches the binary and the rejection-flow journey; the contract-changing alternative is not taken.
+                conn:
+                    quote: you have the conn to drive the test fixes to PR
+                    source: captain chat, 2026-11-10
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-11-11T05:18:02Z
 ---
 
