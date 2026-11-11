@@ -90,3 +90,16 @@ func extractMarkdownSection(t *testing.T, text, heading string) (section string,
 	end := afterStart + nextRel
 	return text[start:end], text[:start] + text[end:]
 }
+
+func TestCodexRuntimeDocumentsModelEffortPassthrough(t *testing.T) {
+	text := readRepoFile(t, codexFORuntimeRel)
+	for _, want := range []string{
+		"pass each verbatim as the same-named `spawn_agent` argument",
+		"`model` / `reasoning_effort` passed to `spawn_agent`",
+		"`followup_task` cannot change a live worker's model or reasoning effort",
+	} {
+		if !strings.Contains(text, want) {
+			t.Errorf("%s missing %q", codexFORuntimeRel, want)
+		}
+	}
+}

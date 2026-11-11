@@ -17,14 +17,24 @@ type CodexMultiAgentV2Spawn struct {
 	TaskName string
 	Message  string
 	Identity CodexMultiAgentV2Identity
+
+	Model           string
+	ReasoningEffort string
 }
 
 func (s CodexMultiAgentV2Spawn) ToolArgs() map[string]string {
-	return map[string]string{
+	args := map[string]string{
 		"task_name":  s.TaskName,
 		"message":    s.Message,
 		"fork_turns": "none",
 	}
+	if s.Model != "" {
+		args["model"] = s.Model
+	}
+	if s.ReasoningEffort != "" {
+		args["reasoning_effort"] = s.ReasoningEffort
+	}
+	return args
 }
 
 func CodexMultiAgentV2SpawnInput(raw []byte) (CodexMultiAgentV2Spawn, error) {
@@ -33,8 +43,10 @@ func CodexMultiAgentV2SpawnInput(raw []byte) (CodexMultiAgentV2Spawn, error) {
 
 func CodexMultiAgentV2SpawnInputWithSeen(raw []byte, seen map[string]string) (CodexMultiAgentV2Spawn, error) {
 	var helper struct {
-		Prompt string  `json:"prompt"`
-		Name   *string `json:"name"`
+		Prompt          string  `json:"prompt"`
+		Name            *string `json:"name"`
+		Model           *string `json:"model"`
+		ReasoningEffort *string `json:"reasoning_effort"`
 	}
 	if err := json.Unmarshal(raw, &helper); err != nil {
 		return CodexMultiAgentV2Spawn{}, fmt.Errorf("decode dispatch build output: %w", err)
@@ -54,13 +66,20 @@ func CodexMultiAgentV2SpawnInputWithSeen(raw []byte, seen map[string]string) (Co
 		seen[taskName] = *helper.Name
 	}
 
-	return CodexMultiAgentV2Spawn{
+	spawn := CodexMultiAgentV2Spawn{
 		TaskName: taskName,
 		Message:  helper.Prompt,
 		Identity: CodexMultiAgentV2Identity{
 			Name: *helper.Name,
 		},
-	}, nil
+	}
+	if helper.Model != nil {
+		spawn.Model = *helper.Model
+	}
+	if helper.ReasoningEffort != nil {
+		spawn.ReasoningEffort = *helper.ReasoningEffort
+	}
+	return spawn, nil
 }
 
 func CodexMultiAgentV2TaskName(name string) string {
