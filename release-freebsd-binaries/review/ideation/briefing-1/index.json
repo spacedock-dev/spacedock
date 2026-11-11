@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:h0xv2p2a7kts1k124hjdgb2v:ideation:attempt-1:revision-1",
+  "question": "Approve the FreeBSD release design and its host-support promise?",
+  "artifacts": [
+    {
+      "id": "artifact:h0xv2p2a7kts1k124hjdgb2v:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/bc5d7e350707f3a090504921ff5b1251fafdf697/release-freebsd-binaries.md",
+      "rev": "sha256:afbb73f8157cf1f280eda83c151811f2b31ad2dd55e929067dba7057a59efb37",
+      "mediaType": "text/markdown",
+      "summary": "Ideation answered the six open questions and designed the release targets, cask handling, installer behaviour, CI compile check and docs for FreeBSD amd64 and arm64."
+    }
+  ]
+}
