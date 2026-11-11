@@ -60,9 +60,9 @@ validate_channel() {
 # ship release tarballs; anything else is unsupported here (use Homebrew on mac,
 # or build from source).
 detect_os() {
-	case "$(uname -s)" in
-		Darwin) echo darwin ;;
-		Linux) echo linux ;;
+	case "$(uname -s | tr '[:upper:]' '[:lower:]')" in
+		darwin) echo darwin ;;
+		linux) echo linux ;;
 		*) die "unsupported OS $(uname -s); see docs/site/get-started/install.md for source build" ;;
 	esac
 }
@@ -70,8 +70,8 @@ detect_os() {
 # detect_arch maps `uname -m` to the goreleaser goarch token. The release builds
 # amd64 + arm64; uname reports several spellings for each.
 detect_arch() {
-	case "$(uname -m)" in
-		x86_64 | amd64) echo amd64 ;;
+	case "$(uname -m | tr '[:upper:]' '[:lower:]')" in
+		x86_64 | x64 | amd64) echo amd64 ;;
 		arm64 | aarch64) echo arm64 ;;
 		*) die "unsupported arch $(uname -m); release ships amd64 + arm64 only" ;;
 	esac
@@ -106,18 +106,52 @@ fetch() {
 	esac
 }
 
-# release_tag prints the newest release tag of a repo on the selected channel.
-# Stable reads the redirect of github.com/REPO/releases/latest, which skips
-# prereleases and is outside the API's 60-an-hour limit; edge reads the API.
+# lookup_user_agent describes the installed client before any binary replacement.
+lookup_user_agent() {
+	ua_version=""
+	ua_binary="$INSTALL_DIR/spacedock"
+	if [ ! -x "$ua_binary" ]; then
+		ua_binary="$(command -v spacedock 2>/dev/null)" || ua_binary=""
+	fi
+	if [ -n "$ua_binary" ]; then
+		ua_version="$("$ua_binary" --version 2>/dev/null | sed -nE '1s/^spacedock v?([0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?)$/\1/p')" || ua_version=""
+	fi
+	ua="spacedock-install/${ua_version:-unknown} ($os; $arch"
+	ua_ci="${CI:-}"
+	ua_ci="${ua_ci#"${ua_ci%%[![:space:]]*}"}"
+	ua_ci="${ua_ci%"${ua_ci##*[![:space:]]}"}"
+	case "$(printf '%s' "$ua_ci" | tr '[:upper:]' '[:lower:]')" in
+		1 | true | yes | on) ua="$ua; ci" ;;
+	esac
+	[ "${SPACEDOCK_INTERNAL:-}" != 1 ] || ua="$ua; internal"
+	printf '%s)\n' "$ua"
+}
+
+# release_tag looks up the newest release through spacedock.md.
+# Stable follows the web redirects to avoid GitHub's API limit. Edge reads JSON.
+# A failed route uses the direct GitHub lookup, then the version tag fallback.
 release_tag() {
 	rt_repo="$1"
+	rt_url="https://spacedock.md/latest-release/${rt_repo##*/}"
 	rt_tag=""
 	if [ "$CHANNEL" = edge ]; then
-		rt_tag="$(curl -fs "https://api.github.com/repos/$rt_repo/releases?per_page=1" 2>/dev/null \
+		rt_json="$(curl -fsSL -A "$LOOKUP_USER_AGENT" "$rt_url?prerelease=1" 2>/dev/null)" || rt_json=""
+		rt_tag="$(printf '%s\n' "$rt_json" \
 			| grep '"tag_name"' | head -n 1 \
-			| sed -E 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')" || rt_tag=""
+			| sed -nE 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p')" || rt_tag=""
+		if [ -z "$rt_tag" ]; then
+			rt_tag="$(curl -fs "https://api.github.com/repos/$rt_repo/releases?per_page=1" 2>/dev/null \
+				| grep '"tag_name"' | head -n 1 \
+				| sed -E 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')" || rt_tag=""
+		fi
 	else
-		rt_to="$(curl -fs -o /dev/null -w '%{redirect_url}' "https://github.com/$rt_repo/releases/latest" 2>/dev/null)" || rt_to=""
+		rt_to="$(curl -fsSL -A "$LOOKUP_USER_AGENT" -o /dev/null -w '%{url_effective}' "$rt_url" 2>/dev/null)" || rt_to=""
+		case "$rt_to" in
+			"https://github.com/$rt_repo/releases/tag/"*) rt_tag="${rt_to##*/releases/tag/}" ;;
+		esac
+		if [ -z "$rt_tag" ]; then
+			rt_to="$(curl -fs -o /dev/null -w '%{redirect_url}' "https://github.com/$rt_repo/releases/latest" 2>/dev/null)" || rt_to=""
+		fi
 		case "$rt_to" in
 			*/releases/tag/*) rt_tag="${rt_to##*/releases/tag/}" ;;
 		esac
@@ -298,6 +332,7 @@ main() {
 
 	os="$(detect_os)"
 	arch="$(detect_arch)"
+	LOOKUP_USER_AGENT="$(lookup_user_agent)"
 
 	# Resolve the asset name + the source refs (tarball + checksums) for either
 	# source. The SAME verify/extract/install path runs below for both.

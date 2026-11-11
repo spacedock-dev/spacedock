@@ -7,6 +7,124 @@ import (
 	"testing"
 )
 
+// Removing the route, redirect following, or edge selector breaks this proof.
+func TestInstallLookupRoute(t *testing.T) {
+	for _, tc := range []struct{ channel, request string }{
+		{"stable", "https://spacedock.md/latest-release/spacedock|spacedock-install/unknown (linux; amd64)|1|%{url_effective}|GET\n"},
+		{"edge", "https://spacedock.md/latest-release/spacedock?prerelease=1|spacedock-install/unknown (linux; amd64)|1||GET\n"},
+	} {
+		t.Run(tc.channel, func(t *testing.T) {
+			r, log := lookupRun(t)
+			r.addProgram("uname", "case \"$1\" in -s) echo Linux ;; -m) echo x86_64 ;; esac")
+			stderr, code := r.runWith("SPACEDOCK_PRINT_TARGET=1", "STUB_ROUTE=ok", "SPACEDOCK_CHANNEL="+tc.channel)
+			if code != 0 || !strings.Contains(stderr, "resolved "+tc.channel+" channel to v9.9.9\n") {
+				t.Fatalf("exit=%d; route tag was not resolved:\n%s", code, stderr)
+			}
+			requests, err := os.ReadFile(log + ".requests")
+			if err != nil || string(requests) != tc.request {
+				t.Errorf("requests=%q (%v), want %q", requests, err, tc.request)
+			}
+		})
+	}
+}
+
+// Using GitHub first or dropping its fallback breaks the literal request order.
+func TestInstallLookupRouteFailureUsesDirectGitHub(t *testing.T) {
+	for _, tc := range []struct{ channel, urls string }{
+		{"stable", "https://spacedock.md/latest-release/spacedock\nhttps://github.com/spacedock-dev/spacedock/releases/latest\n"},
+		{"edge", "https://spacedock.md/latest-release/spacedock?prerelease=1\nhttps://api.github.com/repos/spacedock-dev/spacedock/releases?per_page=1\n"},
+	} {
+		t.Run(tc.channel, func(t *testing.T) {
+			for _, route := range []string{"fail", "malformed", "partial"} {
+				t.Run(route, func(t *testing.T) {
+					r, log := lookupRun(t)
+					stderr, code := r.runWith("SPACEDOCK_PRINT_TARGET=1", "SPACEDOCK_CHANNEL="+tc.channel, "STUB_ROUTE="+route)
+					if code != 0 || !strings.Contains(stderr, "resolved "+tc.channel+" channel to v9.9.9\n") {
+						t.Fatalf("exit=%d; direct GitHub fallback failed:\n%s", code, stderr)
+					}
+					urls, err := os.ReadFile(log)
+					if err != nil || string(urls) != tc.urls {
+						t.Errorf("urls=%q (%v), want %q", urls, err, tc.urls)
+					}
+				})
+			}
+		})
+	}
+}
+
+// A separate count request or routing only Spacedock breaks this proof.
+func TestInstallLookupEachProductOnce(t *testing.T) {
+	r, log := lookupRun(t)
+	stderr, code := r.runWith("STUB_ROUTE=ok", "SPACEDOCK_PLUGINS=none")
+	if code != 0 {
+		t.Fatalf("exit=%d:\n%s", code, stderr)
+	}
+	urls, err := os.ReadFile(log)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var lookups []string
+	for _, url := range strings.Fields(string(urls)) {
+		if !strings.Contains(url, "/releases/download/") {
+			lookups = append(lookups, url)
+		}
+	}
+	if got := strings.Join(lookups, "\n"); got != "https://spacedock.md/latest-release/spacedock\nhttps://spacedock.md/latest-release/alpha\nhttps://spacedock.md/latest-release/beta" {
+		t.Errorf("release lookups=%q", got)
+	}
+	requests, _ := os.ReadFile(log + ".requests")
+	for _, request := range strings.Split(strings.TrimSpace(string(requests)), "\n") {
+		if strings.HasPrefix(request, "https://spacedock.md/") && !strings.Contains(request, "|spacedock-install/unknown (") {
+			t.Errorf("lookup used the newly installed version instead of the original client version: %s", request)
+		}
+	}
+}
+
+// Changing version discovery, normalization, or marker rules breaks a literal UA.
+func TestInstallLookupUserAgent(t *testing.T) {
+	for _, tc := range []struct {
+		name, os, arch, version, ci, internal, want string
+		inPath                                      bool
+	}{
+		{name: "installed version", os: "Darwin", arch: "aarch64", version: "spacedock v0.27.3\nOS: darwin/arm64", want: "spacedock-install/0.27.3 (darwin; arm64)"},
+		{name: "version from PATH", os: "Linux", arch: "x86_64", version: "spacedock 0.28.0-pre10", inPath: true, want: "spacedock-install/0.28.0-pre10 (linux; amd64)"},
+		{name: "case folded platform", os: "dArWiN", arch: "X64", want: "spacedock-install/unknown (darwin; amd64)"},
+		{name: "CI one", os: "Linux", arch: "amd64", ci: "1", want: "spacedock-install/unknown (linux; amd64; ci)"},
+		{name: "CI true trimmed", os: "Linux", arch: "amd64", ci: " \tTrUe\n", want: "spacedock-install/unknown (linux; amd64; ci)"},
+		{name: "CI yes", os: "Linux", arch: "amd64", ci: "YES", want: "spacedock-install/unknown (linux; amd64; ci)"},
+		{name: "CI on and internal", os: "Linux", arch: "amd64", ci: "on", internal: "1", want: "spacedock-install/unknown (linux; amd64; ci; internal)"},
+		{name: "internal only", os: "Linux", arch: "amd64", ci: "false", internal: "1", want: "spacedock-install/unknown (linux; amd64; internal)"},
+		{name: "markers require explicit values", os: "Linux", arch: "amd64", ci: "enabled", internal: "true", want: "spacedock-install/unknown (linux; amd64)"},
+		{name: "unrecognized version", os: "Linux", arch: "arm64", version: "not a version", want: "spacedock-install/unknown (linux; arm64)"},
+		{name: "development version is unknown", os: "Linux", arch: "arm64", version: "spacedock dev", ci: "true", want: "spacedock-install/unknown (linux; arm64; ci)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r, log := lookupRun(t)
+			r.addProgram("uname", "case \"$1\" in -s) echo '"+tc.os+"' ;; -m) echo '"+tc.arch+"' ;; esac")
+			if tc.version != "" {
+				body := "printf '%s\\n' '" + tc.version + "'"
+				if tc.inPath {
+					r.addProgram("spacedock", body)
+				} else if err := os.WriteFile(filepath.Join(r.bin, "spacedock"), []byte("#!/bin/sh\n"+body+"\n"), 0o755); err != nil {
+					t.Fatal(err)
+				}
+			}
+			stderr, code := r.runWith("SPACEDOCK_PRINT_TARGET=1", "STUB_ROUTE=ok", "CI="+tc.ci, "SPACEDOCK_INTERNAL="+tc.internal)
+			if code != 0 {
+				t.Fatalf("exit=%d:\n%s", code, stderr)
+			}
+			requests, err := os.ReadFile(log + ".requests")
+			if err != nil {
+				t.Fatal(err)
+			}
+			fields := strings.Split(strings.TrimSpace(string(requests)), "|")
+			if len(fields) != 5 || fields[1] != tc.want {
+				t.Errorf("requests=%q, want User-Agent %q", requests, tc.want)
+			}
+		})
+	}
+}
+
 func lookupRun(t *testing.T) (*extrasRun, string) {
 	t.Helper()
 	r := newExtrasRun(t, "1.0.1")

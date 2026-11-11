@@ -20,6 +20,8 @@ Spacedock works with Claude Code and Codex.
       <button type="button" class="sd-prompt-copy" aria-label="Copy command" aria-live="polite" hidden>copy</button>
     </div>
 
+The installer looks up releases at `spacedock.md` with User-Agent `spacedock-install/<version> (<os>; <arch>[; ci][; internal])`. PostHog counts each lookup without an IP address. Plausible uses the caller's IP address to count the lookup but does not store it. CI lookups are not counted.
+
 <a id="2-set-up-your-agent"></a>
 
 ## Set up your agent

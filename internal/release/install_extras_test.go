@@ -307,8 +307,8 @@ func TestInstallWithNoExtensionTableRowInstallsOnlySpacedock(t *testing.T) {
 
 // stubCurl serves install.sh's release lookups and downloads from the staged
 // directories and logs every URL, so a run without SPACEDOCK_INSTALL_FROM stays
-// offline. STUB_API, STUB_REDIRECT (fail or norelease) and STUB_FAIL_REPO break
-// lookups; the stub git prints STUB_TAGS.
+// offline. STUB_ROUTE, STUB_API, STUB_REDIRECT and STUB_FAIL_REPO control failures.
+// The stub git prints STUB_TAGS.
 func (r *extrasRun) stubCurl(osName, arch string) (log string) {
 	r.t.Helper()
 	log = filepath.Join(r.t.TempDir(), "urls.log")
@@ -322,17 +322,30 @@ func (r *extrasRun) stubCurl(osName, arch string) (log string) {
 	}
 	r.writeChecksums(r.dist)
 	body := `#!/bin/sh
-out=""; url=""
+out=""; url=""; agent=""; follow=0; write=""; method=GET
 while [ $# -gt 0 ]; do
-	case "$1" in -o) out="$2"; shift ;; -w) shift ;; -*) ;; *) url="$1" ;; esac
+	case "$1" in -o) out="$2"; shift ;; -w) write="$2"; shift ;; -A|--user-agent) agent="$2"; shift ;; -X|--request) method="$2"; shift ;; -I|--head|-*I*) method=HEAD ;; -L|-*L*) follow=1 ;; -*) ;; *) url="$1" ;; esac
 	shift
 done
 echo "$url" >> '` + log + `'
+printf '%s|%s|%s|%s|%s\n' "$url" "$agent" "$follow" "$write" "$method" >> '` + log + `.requests'
 repo="${url#https://api.github.com/repos/}"; repo="${repo#https://github.com/}"; repo="${repo%%/releases*}"
+case "$url" in https://spacedock.md/latest-release/*) product="${url##*/}"; repo="spacedock-dev/${product%%\?*}" ;; esac
 case "$repo" in
 	spacedock-dev/spacedock) tag=v` + r.launcherVersion + ` ;; spacedock-dev/alpha) tag=v0.16.0 ;; *) tag=v1.0.1 ;;
 esac
 case "$url" in
+	https://spacedock.md/latest-release/*)
+		case "$STUB_ROUTE" in
+			malformed) printf '{"tag_name":null}'; exit 0 ;;
+			partial) case "$url" in *\?prerelease=1) printf '{"tag_name": "v8.8.8"}' ;; *) printf 'https://github.com/%s/releases/tag/v8.8.8' "$repo" ;; esac; exit 18 ;;
+		esac
+		[ "$STUB_ROUTE" = ok ] || exit 22
+		[ "$repo" = "$STUB_FAIL_REPO" ] && exit 22
+		case "$url" in
+			*\?prerelease=1) printf '{"tag_name": "%s"}\n' "$tag" ;;
+			*) printf 'https://github.com/%s/releases/tag/%s' "$repo" "$tag" ;;
+		esac ;;
 	https://api.github.com/*)
 		[ "$STUB_API" = fail ] || [ "$repo" = "$STUB_FAIL_REPO" ] && exit 22
 		printf '{"tag_name": "%s"}\n' "$tag" ;;
