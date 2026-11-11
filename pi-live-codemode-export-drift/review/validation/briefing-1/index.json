@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:cvrwyn3xynbwg4wkgc5khyfq:validation:attempt-1:revision-1",
+  "question": "Approve validation of the Pi 1.5.0 pin and floating-dependency guard (PR #874), accepting that the pi-live job is not yet green for three causes outside this task?",
+  "artifacts": [
+    {
+      "id": "artifact:cvrwyn3xynbwg4wkgc5khyfq:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/173591eff8197d23e651bc4d3f70c8bfcd2bb9e9/pi-live-codemode-export-drift/index.md",
+      "rev": "sha256:cdc90906ecee792207ff549cf38aff686610547b9872c68efbff4da3d73ad94f",
+      "mediaType": "text/markdown",
+      "summary": "Cycle 2 recommends PASSED conditional on the captain accepting AC-2 unmet. AC-1 met: pins install at Pi 1.5.0 / pi-subagents 0.84.0 / pi-intercom 0.18.1 on three jobs, no export error anywhere, named journeys pass. AC-2 unmet on all three jobs for causes outside the pin surface: recorded-gate-lifecycle fixture leaves its AC-1 unevidenced, filing grader pattern miss, suite at its 50-minute deadline. Restack is patch-identical."
+    }
+  ]
+}

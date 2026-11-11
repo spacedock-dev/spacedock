@@ -58,6 +58,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:cvrwyn3xynbwg4wkgc5khyfq:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:cvrwyn3xynbwg4wkgc5khyfq-validation-1
+              briefing:
+                id: briefing:cvrwyn3xynbwg4wkgc5khyfq:validation:attempt-1:revision-1
+                digest: sha256:87a940a032c2b12d7d84eeecf73332cb4e827c358f0e0d4eca14d7b3178f6ae8
+                room-ref: '@review/validation/briefing-1'
 ---
 
 The pi-live job of Runtime Live E2E has not passed since 2026-10-07. Worker launches die before a child session exists with a Pi package mismatch, so no commit on `main` can be greened on the Pi lane. This blocks the 0.28.0 release, which must green its exact release SHA.
