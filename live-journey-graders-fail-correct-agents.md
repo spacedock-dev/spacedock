@@ -28,6 +28,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-11-11T05:18:02Z
 ---
 
 Four live journeys intermittently fail on runs where the first officer did what the contract requires. Each failure is a defect in the grader, fixture, or scenario runbook, so a red lane says nothing about the product, and the release gate needs reruns to go green. Target: 0.28.1.
