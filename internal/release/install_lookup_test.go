@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -104,51 +105,116 @@ func TestInstallLookupRouteFailureUsesDirectGitHub(t *testing.T) {
 	}
 }
 
-// Exercise the shipped product table. A separate count request, missing route,
-// body download on stable, or version probe after replacement breaks this proof.
+// Keep curl's request handling real; only route DNS to this test's TLS listener.
+func localLookupCurl(r *extrasRun, handler http.HandlerFunc) {
+	r.t.Helper()
+	realCurl, err := exec.LookPath("curl")
+	if err != nil {
+		r.t.Fatal(err)
+	}
+	server := httptest.NewTLSServer(handler)
+	r.t.Cleanup(server.Close)
+	address := strings.TrimPrefix(server.URL, "https://")
+	body := "exec '" + realCurl + "' -q --noproxy '*' -k"
+	for _, host := range []string{"spacedock.md", "github.com", "api.github.com"} {
+		body += " --connect-to '" + host + ":443:" + address + "'"
+	}
+	r.addProgram("curl", body+" \"$@\"")
+	r.addProgram("git", "exit 1")
+}
+
+func realSpacedock(t *testing.T, version string) string {
+	t.Helper()
+	binary := filepath.Join(t.TempDir(), "spacedock")
+	cmd := exec.Command("go", "build", "-buildvcs=false", "-ldflags", "-X github.com/spacedock-dev/spacedock/internal/cli.Version="+version, "-o", binary, "./cmd/spacedock")
+	cmd.Dir = filepath.Join("..", "..")
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("build spacedock: %v\n%s", err, out)
+	}
+	return binary
+}
+
+// The real installer must resolve each shipped product once, before replacement.
 func TestInstallLookupEachProductOnce(t *testing.T) {
+	binary, err := os.ReadFile(realSpacedock(t, "9.9.9"))
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, channel := range []string{"stable", "edge"} {
 		t.Run(channel, func(t *testing.T) {
-			r, log := lookupRun(t)
+			r := newExtrasRun(t, "1.0.1")
 			r.script = installScript()
 			osName, arch := goosArch(t)
+			for _, suffix := range []string{"", "_edge"} {
+				writeTarGzFiles(t, filepath.Join(r.dist, "spacedock_9.9.9_"+osName+"_"+arch+suffix+".tar.gz"), map[string]string{"spacedock": string(binary)})
+			}
+			r.writeChecksums(r.dist)
 			writeTarGzFiles(t, filepath.Join(r.extras, "subspace_0.16.0_"+osName+"_"+arch+".tar.gz"), map[string]string{"subspace-tui": "#!/bin/sh\necho 0.16.0\n", "subspace-relay-client": "#!/bin/sh\necho 0.16.0\n"})
 			writeTarGzFiles(t, filepath.Join(r.extras, "compass_1.0.1_"+osName+"_"+arch+".tar.gz"), map[string]string{"compass/compass": "#!/bin/sh\necho compass\n"})
 			r.writeChecksums(r.extras)
-			stderr, code := r.runWith("STUB_ROUTE=ok", "SPACEDOCK_PLUGINS=none", "SPACEDOCK_CHANNEL="+channel)
+			var mu sync.Mutex
+			var lookups []string
+			localLookupCurl(r, func(w http.ResponseWriter, req *http.Request) {
+				if req.Host == "spacedock.md" {
+					mu.Lock()
+					lookups = append(lookups, req.URL.RequestURI())
+					mu.Unlock()
+					if req.Method != "GET" || !strings.Contains(req.UserAgent(), "/unknown (") {
+						t.Errorf("lookup = %s %s, want GET with the version from before replacement", req.Method, req.UserAgent())
+					}
+					product := strings.TrimPrefix(req.URL.Path, "/latest-release/")
+					if req.URL.RawQuery == "prerelease=1" {
+						http.Redirect(w, req, "https://api.github.com/repos/spacedock-dev/"+product+"/releases?per_page=1", http.StatusFound)
+					} else {
+						http.Redirect(w, req, "https://github.com/spacedock-dev/"+product+"/releases/latest", http.StatusFound)
+					}
+					return
+				}
+				product := strings.Split(strings.TrimPrefix(strings.TrimPrefix(req.URL.Path, "/"), "repos/"), "/")[1]
+				tag := map[string]string{"spacedock": "v9.9.9", "subspace": "v0.16.0", "compass": "v1.0.1"}[product]
+				switch {
+				case strings.HasSuffix(req.URL.Path, "/latest"):
+					http.Redirect(w, req, "https://github.com/spacedock-dev/"+product+"/releases/tag/"+tag, http.StatusFound)
+				case req.Host == "api.github.com":
+					fmt.Fprintf(w, `[{"tag_name":%q}]`, tag)
+				case strings.Contains(req.URL.Path, "/download/"):
+					dir := r.extras
+					if product == "spacedock" {
+						dir = r.dist
+					}
+					http.ServeFile(w, req, filepath.Join(dir, filepath.Base(req.URL.Path)))
+				default:
+					// A headers-only GET must not wait for a release page body.
+					w.Header().Set("Content-Length", "1000000")
+					w.WriteHeader(http.StatusOK)
+					w.(http.Flusher).Flush()
+					<-req.Context().Done()
+				}
+			})
+			stderr, code := r.runWith("SPACEDOCK_PLUGINS=none", "SPACEDOCK_CHANNEL="+channel)
 			if code != 0 {
 				t.Fatalf("exit=%d:\n%s", code, stderr)
 			}
-			urls, err := os.ReadFile(log)
-			if err != nil {
-				t.Fatal(err)
-			}
-			var lookups []string
-			for _, url := range strings.Fields(string(urls)) {
-				if !strings.Contains(url, "/releases/download/") {
-					lookups = append(lookups, url)
-				}
-			}
-			suffix, write, headers := "", "%{url_effective}", "1"
+			suffix := ""
 			if channel == "edge" {
-				suffix, write, headers = "?prerelease=1", `\n%{url_effective}`, "0"
+				suffix = "?prerelease=1"
 			}
-			want := "https://spacedock.md/latest-release/spacedock" + suffix + "\nhttps://spacedock.md/latest-release/subspace" + suffix + "\nhttps://spacedock.md/latest-release/compass" + suffix
-			if got := strings.Join(lookups, "\n"); got != want {
-				t.Errorf("release lookups=%q", got)
-			}
-			requests, _ := os.ReadFile(log + ".requests")
-			for _, request := range strings.Split(strings.TrimSpace(string(requests)), "\n") {
-				if strings.HasPrefix(request, "https://spacedock.md/") {
-					if !strings.Contains(request, "|spacedock-install/unknown (") || !strings.HasSuffix(request, "|1|"+write+"|GET|"+headers) {
-						t.Errorf("lookup lost the original version, redirect following, final URL, or headers-only GET: %s", request)
-					}
-				}
+			want := "/latest-release/spacedock" + suffix + "\n/latest-release/subspace" + suffix + "\n/latest-release/compass" + suffix
+			mu.Lock()
+			got := strings.Join(lookups, "\n")
+			mu.Unlock()
+			if got != want {
+				t.Errorf("release lookups=%q, want %q", got, want)
 			}
 			for _, program := range []string{"spacedock", "subspace-tui", "subspace-relay-client", "compass", "spacedock-review", "spacedock-compass"} {
 				if _, err := os.Stat(filepath.Join(r.bin, program)); err != nil {
 					t.Errorf("%s was not installed: %v", program, err)
 				}
+			}
+			cmd := exec.Command(filepath.Join(r.bin, "spacedock"), "--version")
+			cmd.Env = []string{"CI=1", "HOME=" + r.home, "PATH=/usr/bin:/bin"}
+			if out, err := cmd.CombinedOutput(); err != nil || !strings.HasPrefix(string(out), "spacedock 9.9.9\n") {
+				t.Errorf("installed binary: %v: %s", err, out)
 			}
 		})
 	}
@@ -156,11 +222,13 @@ func TestInstallLookupEachProductOnce(t *testing.T) {
 
 // Changing version discovery, normalization, or marker rules breaks a literal UA.
 func TestInstallLookupUserAgent(t *testing.T) {
+	binary := realSpacedock(t, "0.27.3")
 	for _, tc := range []struct {
 		name, os, arch, version, ci, internal, want string
-		inPath, readsInput                          bool
+		inPath, readsInput, realBinary              bool
 		fails, slow                                 bool
 	}{
+		{name: "real installed binary", realBinary: true, want: "spacedock-install/0.27.3 (" + runtime.GOOS + "; " + runtime.GOARCH + ")"},
 		{name: "installed version", os: "Darwin", arch: "aarch64", version: "spacedock v0.27.3\nOS: darwin/arm64", want: "spacedock-install/0.27.3 (darwin; arm64)"},
 		{name: "version cannot read installer input", os: "Linux", arch: "amd64", version: "spacedock 0.27.3", readsInput: true, want: "spacedock-install/0.27.3 (linux; amd64)"},
 		{name: "version from PATH", os: "Linux", arch: "x86_64", version: "spacedock 0.28.0-pre10", inPath: true, want: "spacedock-install/0.28.0-pre10 (linux; amd64)"},
@@ -176,11 +244,33 @@ func TestInstallLookupUserAgent(t *testing.T) {
 		{name: "failed version command", os: "Linux", arch: "amd64", version: "spacedock 1.2.3", fails: true, want: "spacedock-install/unknown (linux; amd64)"},
 		{name: "slow version command", os: "Linux", arch: "amd64", slow: true, want: "spacedock-install/unknown (linux; amd64)"},
 		{name: "version cannot inject a curl option", os: "Linux", arch: "amd64", version: "spacedock 1.2.3' -A evil; $(exit 1)", want: "spacedock-install/unknown (linux; amd64)"},
-		{name: "UA fits route parser", os: "Linux", arch: "amd64", version: "spacedock 1.2.3-" + strings.Repeat("a", 200), ci: "1", want: "spacedock-install/unknown (linux; amd64; ci)"},
+		{name: "maximum version length", os: "Linux", arch: "amd64", version: "spacedock 1.2.3-" + strings.Repeat("a", 26), want: "spacedock-install/1.2.3-" + strings.Repeat("a", 26) + " (linux; amd64)"},
+		{name: "version exceeds contract limit", os: "Linux", arch: "amd64", version: "spacedock 1.2.3-" + strings.Repeat("a", 27), ci: "1", want: "spacedock-install/unknown (linux; amd64; ci)"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r, log := lookupRun(t)
-			r.addProgram("uname", "case \"$1\" in -s) echo '"+tc.os+"' ;; -m) echo '"+tc.arch+"' ;; esac")
+			r := newExtrasRun(t, "1.0.1")
+			r.script = installScript()
+			var mu sync.Mutex
+			var agents []string
+			localLookupCurl(r, func(w http.ResponseWriter, req *http.Request) {
+				if req.Host == "spacedock.md" {
+					mu.Lock()
+					agents = append(agents, req.UserAgent())
+					mu.Unlock()
+					http.Redirect(w, req, "https://github.com/spacedock-dev/spacedock/releases/tag/v9.9.9", http.StatusFound)
+				}
+			})
+			if tc.realBinary {
+				data, err := os.ReadFile(binary)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := os.WriteFile(filepath.Join(r.bin, "spacedock"), data, 0o755); err != nil {
+					t.Fatal(err)
+				}
+			} else {
+				r.addProgram("uname", "case \"$1\" in -s) echo '"+tc.os+"' ;; -m) echo '"+tc.arch+"' ;; esac")
+			}
 			if tc.version != "" || tc.slow {
 				r.stdin = "installer input\n"
 				body := "printf '%s\\n' '" + strings.ReplaceAll(tc.version, "'", "'\"'\"'") + "'"
@@ -200,20 +290,17 @@ func TestInstallLookupUserAgent(t *testing.T) {
 				}
 			}
 			start := time.Now()
-			stderr, code := r.runWith("SPACEDOCK_PRINT_TARGET=1", "STUB_ROUTE=ok", "CI="+tc.ci, "SPACEDOCK_INTERNAL="+tc.internal)
+			stderr, code := r.runWith("SPACEDOCK_PRINT_TARGET=1", "CI="+tc.ci, "SPACEDOCK_INTERNAL="+tc.internal)
 			if code != 0 {
 				t.Fatalf("exit=%d:\n%s", code, stderr)
 			}
 			if tc.slow && time.Since(start) > 4*time.Second {
 				t.Error("version probe delayed the lookup for more than four seconds")
 			}
-			requests, err := os.ReadFile(log + ".requests")
-			if err != nil {
-				t.Fatal(err)
-			}
-			fields := strings.Split(strings.TrimSpace(string(requests)), "|")
-			if len(fields) != 6 || fields[1] != tc.want {
-				t.Errorf("requests=%q, want User-Agent %q", requests, tc.want)
+			mu.Lock()
+			defer mu.Unlock()
+			if len(agents) != 1 || agents[0] != tc.want {
+				t.Errorf("wire User-Agents=%q, want [%q]", agents, tc.want)
 			}
 		})
 	}
@@ -257,7 +344,7 @@ func TestInstallResolvesTheNewestTagByVersionWhenGitHubDoesNotAnswer(t *testing.
 		t.Run(tc.name, func(t *testing.T) {
 			r, _ := lookupRun(t)
 			stderr, code := r.runWith("SPACEDOCK_PRINT_TARGET=1", "SPACEDOCK_CHANNEL="+tc.channel,
-				"STUB_ROUTE=malformed", "STUB_API="+tc.api, "STUB_REDIRECT="+tc.redirect, "STUB_TAGS="+tc.tags)
+				"STUB_API="+tc.api, "STUB_REDIRECT="+tc.redirect, "STUB_TAGS="+tc.tags)
 			if code != 0 || !strings.Contains(stderr, "resolved "+tc.channel+" channel to "+tc.want+"\n") {
 				t.Errorf("exit=%d, want %s:\n%s", code, tc.want, stderr)
 			}

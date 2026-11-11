@@ -151,7 +151,7 @@ func (r *extrasRun) runWith(env ...string) (stderr string, code int) {
 	cmd.Stdin = strings.NewReader(r.stdin)
 	cmd.Env = append([]string{
 		"PATH=" + strings.Join(append(append([]string{}, r.pathDir...), "/usr/bin", "/bin"), ":"),
-		"HOME=" + r.home, "XDG_DATA_HOME=" + r.data, "SPACEDOCK_INSTALL_DIR=" + r.bin,
+		"CI=1", "HOME=" + r.home, "XDG_DATA_HOME=" + r.data, "SPACEDOCK_INSTALL_DIR=" + r.bin,
 	}, env...)
 	var errOut strings.Builder
 	cmd.Stderr = &errOut
@@ -304,7 +304,7 @@ func TestInstallWithNoExtensionTableRowInstallsOnlySpacedock(t *testing.T) {
 	r := newExtrasRun(t, "1.0.1")
 	cmd := exec.Command("sh", scriptWithExtras(t, ""))
 	cmd.Env = []string{
-		"PATH=/usr/bin:/bin", "HOME=" + r.home, "XDG_DATA_HOME=" + r.data,
+		"PATH=/usr/bin:/bin", "CI=1", "HOME=" + r.home, "XDG_DATA_HOME=" + r.data,
 		"SPACEDOCK_INSTALL_DIR=" + r.bin, "SPACEDOCK_INSTALL_FROM=" + r.dist,
 		"SPACEDOCK_EXTRAS=1", "SPACEDOCK_EXTRAS_FROM=" + r.extras,
 	}
@@ -322,7 +322,7 @@ func TestInstallWithNoExtensionTableRowInstallsOnlySpacedock(t *testing.T) {
 
 // stubCurl serves install.sh's release lookups and downloads from the staged
 // directories and logs every URL, so a run without SPACEDOCK_INSTALL_FROM stays
-// offline. STUB_ROUTE, STUB_API, STUB_REDIRECT and STUB_FAIL_REPO control failures.
+// offline. STUB_API, STUB_REDIRECT and STUB_FAIL_REPO control direct lookup failures.
 // The stub git prints STUB_TAGS.
 func (r *extrasRun) stubCurl(osName, arch string) (log string) {
 	r.t.Helper()
@@ -337,33 +337,19 @@ func (r *extrasRun) stubCurl(osName, arch string) (log string) {
 	}
 	r.writeChecksums(r.dist)
 	body := `#!/bin/sh
-out=""; url=""; agent=""; follow=0; write=""; method=GET; headers=0
+out=""; url=""
 while [ $# -gt 0 ]; do
-	case "$1" in -o) out="$2"; shift ;; -w) write="$2"; shift ;; -A|--user-agent) agent="$2"; shift ;; -X|--request) method="$2"; shift ;; -I|--head|-*I*) headers=1; method=HEAD ;; -L|-*L*) follow=1 ;; --connect-timeout|--max-time|--max-redirs) shift ;; -*) ;; *) url="$1" ;; esac
+	case "$1" in -o) out="$2"; shift ;; -w|-A|--user-agent|-X|--request|--connect-timeout|--max-time|--max-redirs) shift ;; -*) ;; *) url="$1" ;; esac
 	shift
 done
 echo "$url" >> '` + log + `'
-printf '%s|%s|%s|%s|%s|%s\n' "$url" "$agent" "$follow" "$write" "$method" "$headers" >> '` + log + `.requests'
 repo="${url#https://api.github.com/repos/}"; repo="${repo#https://github.com/}"; repo="${repo%%/releases*}"
 case "$url" in https://spacedock.md/latest-release/*) product="${url##*/}"; repo="spacedock-dev/${product%%\?*}" ;; esac
 case "$repo" in
 	spacedock-dev/spacedock) tag=v` + r.launcherVersion + ` ;; spacedock-dev/alpha|spacedock-dev/subspace) tag=v0.16.0 ;; *) tag=v1.0.1 ;;
 esac
 case "$url" in
-	https://spacedock.md/latest-release/*)
-		case "$STUB_ROUTE" in
-			malformed) tag=garbage ;;
-			traversal) tag='v1.2.3/../../evil' ;;
-			whitespace) tag='v1.2.3 bad' ;;
-			metacharacters) tag='v1.2.3-$(evil)' ;;
-			ok) ;;
-			*) exit 22 ;;
-		esac
-		[ "$repo" = "$STUB_FAIL_REPO" ] && exit 22
-		case "$url" in
-			*\?prerelease=1) printf '[{"tag_name": "%s"}]\n' "$tag"; [ -z "$write" ] || printf '\n%s' "$url" ;;
-			*) printf 'https://github.com/%s/releases/tag/%s' "$repo" "$tag" ;;
-		esac ;;
+	https://spacedock.md/latest-release/*) exit 22 ;;
 	https://api.github.com/*)
 		[ "$STUB_API" = fail ] || [ "$repo" = "$STUB_FAIL_REPO" ] && exit 22
 		[ "$STUB_API" != null ] || { printf '[{"tag_name":null}]\n'; exit 0; }

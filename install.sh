@@ -129,6 +129,7 @@ lookup_user_agent() {
 			rm -f "$ua_file"
 		fi
 	fi
+	[ "${#ua_version}" -le 32 ] || ua_version=""
 	ua="spacedock-install/${ua_version:-unknown} (${os:-unknown}; ${arch:-unknown}"
 	ua_ci="${CI:-}"
 	ua_ci="${ua_ci#"${ua_ci%%[![:space:]]*}"}"
@@ -137,8 +138,6 @@ lookup_user_agent() {
 		1 | true | yes | on) ua="$ua; ci" ;;
 	esac
 	[ "${SPACEDOCK_INTERNAL:-}" != 1 ] || ua="$ua; internal"
-	# The route accepts a User-Agent with at most 200 characters.
-	[ "${#ua}" -le 199 ] || ua="spacedock-install/unknown (${ua#* (}"
 	printf '%s)\n' "$ua"
 }
 
