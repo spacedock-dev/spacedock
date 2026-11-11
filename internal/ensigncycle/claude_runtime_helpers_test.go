@@ -9,10 +9,12 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
 
+	"github.com/spacedock-dev/spacedock/internal/release"
 	statuspkg "github.com/spacedock-dev/spacedock/internal/status"
 )
 
@@ -85,6 +87,32 @@ func TestUnsetNestedSessionArgs(t *testing.T) {
 	for i := range wantTail {
 		if gotTail[i] != wantTail[i] {
 			t.Errorf("launch command tail[%d] = %q, want %q (full: %v)", i, gotTail[i], wantTail[i], got)
+		}
+	}
+}
+
+// claudeFrontDoorArgs is the `spacedock claude` argument list for a live scenario.
+// Haiku also forwards `--disallowedTools ScheduleWakeup`: a pending wakeup holds
+// `claude -p` open and silent after its final turn, so the no-progress budget kills it.
+func claudeFrontDoorArgs(pluginDir, prompt, model string) []string {
+	args := []string{"claude", "--plugin-dir", pluginDir, "--skip-compat-check", "--", "-p", prompt,
+		"--permission-mode", "bypassPermissions", "--output-format", "stream-json", "--verbose", "--model", model}
+	if strings.Contains(model, "haiku") {
+		args = append(args, "--disallowedTools", "ScheduleWakeup")
+	}
+	return args
+}
+
+func TestClaudeFrontDoorArgs(t *testing.T) {
+	for model, forbid := range map[string]bool{release.LiveModels["claude.haiku"]: true, "haiku": true,
+		release.LiveModels["claude.sonnet"]: false, "sonnet": false, release.LiveModels["claude.opus"]: false} {
+		args := claudeFrontDoorArgs("/plugin", "prompt", model)
+		forwarded := " " + strings.Join(args[slices.Index(args, "--")+1:], " ") + " "
+		if !strings.Contains(forwarded, " --model "+model+" ") {
+			t.Errorf("model %q: args lack --model %q after --: %v", model, model, args)
+		}
+		if got := strings.Contains(forwarded, " --disallowedTools ScheduleWakeup "); got != forbid {
+			t.Errorf("model %q: forwards --disallowedTools ScheduleWakeup after -- = %t, want %t: %v", model, got, forbid, args)
 		}
 	}
 }
