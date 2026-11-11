@@ -9,14 +9,14 @@ Spacedock works with Claude Code and Codex.
 === "macOS with Homebrew"
 
     <div class="sd-agent-prompt sd-command-prompt">
-      <code>brew trust spacedock-dev/tap&#10;brew install --cask spacedock-dev/tap/spacedock@next</code>
+      <code>brew trust spacedock-dev/tap&#10;brew install --cask spacedock-dev/tap/spacedock</code>
       <button type="button" class="sd-prompt-copy" aria-label="Copy command" aria-live="polite" hidden>copy</button>
     </div>
 
 === "Linux or macOS without Homebrew"
 
     <div class="sd-agent-prompt sd-command-prompt">
-      <code>curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/main/install.sh | SPACEDOCK_CHANNEL=edge sh&#10;export PATH="${SPACEDOCK_INSTALL_DIR:-$HOME/.local/bin}:$PATH"</code>
+      <code>curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/main/install.sh | sh&#10;export PATH="${SPACEDOCK_INSTALL_DIR:-$HOME/.local/bin}:$PATH"</code>
       <button type="button" class="sd-prompt-copy" aria-label="Copy command" aria-live="polite" hidden>copy</button>
     </div>
 
