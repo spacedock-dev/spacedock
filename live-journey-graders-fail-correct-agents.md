@@ -50,6 +50,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:9wpk5vftfth48rcaxft6kw27:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:9wpk5vftfth48rcaxft6kw27-validation-1
+              briefing:
+                id: briefing:9wpk5vftfth48rcaxft6kw27:validation:attempt-1:revision-1
+                digest: sha256:929f96a9573a36bc27d679f6a71409f0f8f5d6d74036fafb4ad46e4f0e9973ac
+                room-ref: '@review/validation/briefing-1'
 started: 2026-11-11T05:18:02Z
 worktree: .worktrees/spacedock-ensign-live-journey-graders-fail-correct-agents
 ---

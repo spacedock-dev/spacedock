@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:9wpk5vftfth48rcaxft6kw27:validation:attempt-1:revision-1",
+  "question": "Approve the grader fixes for delivery as a pull request?",
+  "artifacts": [
+    {
+      "id": "artifact:9wpk5vftfth48rcaxft6kw27:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/597a025fcde18ace14d3bc5a27621ce912ee3e5a/live-journey-graders-fail-correct-agents.md",
+      "rev": "sha256:ee934f781e887a8189daa4eb49d8013a5075377542eb9ea43ef4d8b0b2e8665f",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED: each of the four grader fixes reproduced red on main and green on the branch; full suite and race suite pass; live proof is owed to the pull request's live run."
+    }
+  ]
+}
