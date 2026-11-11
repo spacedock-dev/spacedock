@@ -201,6 +201,37 @@ func TestUpdateFailsAndNamesPiWhenItsPackageStaysBehindTheProgram(t *testing.T) 
 	}
 }
 
+func TestUpdateFailsWhenPiLosesAnExtensionPackageItHeldBefore(t *testing.T) {
+	f := newPiUpdateFixture(t, piPackageStatus{registered: true, source: piSpacedockPackageSource + "@stable"})
+	f.deps.runSelf = func(args ...string) (string, error) {
+		writeFile(t, f.settings, `{"packages":["`+piSpacedockPackageSource+`@stable"]}`)
+		return "", nil
+	}
+	var stdout, stderr bytes.Buffer
+	if code := runUpdate(f.deps, &stdout, &stderr); code != 1 {
+		t.Fatalf("update exited %d, want 1; stderr:\n%s", code, stderr.String())
+	}
+	want := "spacedock update: alpha is still MIXED on Pi: program 0.16.0-beta.2, package not installed. Left behind: the Pi package"
+	if !strings.Contains(stderr.String(), want) {
+		t.Errorf("stderr lacks %q:\n%s", want, stderr.String())
+	}
+}
+
+func TestUpdateFailsWhenAnExtensionProgramIsMissingBesideItsPiPackage(t *testing.T) {
+	f := newPiUpdateFixture(t, piPackageStatus{registered: true, source: piSpacedockPackageSource + "@stable"})
+	for _, entry := range filepath.SplitList(envMap(f.deps.env)["PATH"]) {
+		os.Remove(filepath.Join(entry, "spacedock-alpha"))
+	}
+	var stdout, stderr bytes.Buffer
+	if code := runUpdate(f.deps, &stdout, &stderr); code != 1 {
+		t.Fatalf("update exited %d, want 1; stderr:\n%s", code, stderr.String())
+	}
+	want := "alpha is still MIXED on Pi: program not installed, package 0.16.0-beta.2. Left behind: the program"
+	if !strings.Contains(stderr.String(), want) {
+		t.Errorf("stderr lacks %q:\n%s", want, stderr.String())
+	}
+}
+
 func TestUpdateLeavesPiAloneWhenItCannotRefreshThePublishedPackage(t *testing.T) {
 	for name, tc := range map[string]struct {
 		status piPackageStatus
