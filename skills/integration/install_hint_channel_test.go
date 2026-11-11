@@ -131,14 +131,15 @@ func TestChannelClassifierTable(t *testing.T) {
 
 // The install-command extractors, all anchored on the real install.sh URL so an unrelated
 // command cannot satisfy them: the contract's backticked stable command, the doc's stable
-// command, and the doc's edge command.
+// command, and the contract's edge command.
 var (
 	stableCurlRe = regexp.MustCompile("`(curl -fsSL " + installURLRe + ` \| sh)` + "`")
 	docStableRe  = regexp.MustCompile(`(?m)^\s*(curl -fsSL ` + installURLRe + ` \| sh)\s*$`)
-	// docEdgeRe matches the published edge command in EITHER env-var placement — prefixed
-	// on curl or on sh — so that the shape question is settled by running the command
-	// (TestEdgeHintDeliversChannelToScript) rather than by which regex happens to match.
-	docEdgeRe = regexp.MustCompile(`(?m)^\s*(\S+=\S+ curl -fsSL ` + installURLRe + ` \| sh|curl -fsSL ` + installURLRe + ` \| \S+=\S+ sh)\s*$`)
+	// edgeCurlRe matches the contract's backticked edge command in EITHER env-var
+	// placement — prefixed on curl or on sh — so that the shape question is settled by
+	// running the command (TestEdgeHintDeliversChannelToScript) rather than by which
+	// regex happens to match.
+	edgeCurlRe = regexp.MustCompile("`(" + `\S+=\S+ curl -fsSL ` + installURLRe + ` \| sh|curl -fsSL ` + installURLRe + ` \| \S+=\S+ sh` + ")`")
 	// curlFetchRe isolates just the network fetch inside a published command, so a test
 	// can swap it for a local stub while leaving every other byte — crucially, anything
 	// that decides what the script's environment looks like — exactly as published.
@@ -159,12 +160,11 @@ const installURLRe = `https://raw\.githubusercontent\.com/spacedock-dev/spacedoc
 // the stable command the docs publish are two independently maintained strings that must
 // stay byte-identical. Editing either one alone diverges the pair and fails here.
 func TestStableHintMatchesPublishedDoc(t *testing.T) {
-	t.Skip("install.md teaches the edge channel only until a stable release carries the extensions; restore this check when install.md documents the stable commands again")
 	contractM := stableCurlRe.FindStringSubmatch(readFile(t, installRefPath(t)))
 	if contractM == nil {
 		t.Fatalf("no Linux stable curl command found in fo-install.md matching %q", stableCurlRe.String())
 	}
-	docM := docStableRe.FindStringSubmatch(readFile(t, installDocPath(t)))
+	docM := docStableRe.FindStringSubmatch(promptBlockText(readFile(t, installDocPath(t))))
 	if docM == nil {
 		t.Fatalf("no stable curl command found in install.md matching %q", docStableRe.String())
 	}
@@ -179,7 +179,8 @@ func TestStableHintMatchesPublishedDoc(t *testing.T) {
 // `SPACEDOCK_CHANNEL=edge curl … | sh` leaves the variable UNSET inside the script and
 // silently installs stable — the exact channel skew this whole gate exists to close.
 //
-// The test runs the PUBLISHED edge command with the network fetch swapped for a local
+// The test runs the edge command the FO contract hints (install.md teaches the stable
+// channel, so the contract is where the edge command ships) with the network fetch swapped for a local
 // script that reports what it actually received, so the oracle is the variable the script
 // observes, never the wording of the command. Moving the assignment onto `curl` reds it.
 func TestEdgeHintDeliversChannelToScript(t *testing.T) {
@@ -187,9 +188,9 @@ func TestEdgeHintDeliversChannelToScript(t *testing.T) {
 	if err != nil {
 		t.Skip("sh not on PATH; the install hint is a POSIX shell pipeline")
 	}
-	docM := docEdgeRe.FindStringSubmatch(promptBlockText(readFile(t, installDocPath(t))))
+	docM := edgeCurlRe.FindStringSubmatch(readFile(t, installRefPath(t)))
 	if docM == nil {
-		t.Fatalf("no edge (channel-carrying) curl command found in install.md matching %q", docEdgeRe.String())
+		t.Fatalf("no edge (channel-carrying) curl command found in fo-install.md matching %q", edgeCurlRe.String())
 	}
 	published := docM[1]
 
