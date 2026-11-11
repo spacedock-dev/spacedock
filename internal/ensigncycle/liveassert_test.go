@@ -23,7 +23,7 @@ var (
 	// frontmatterField anchors the terminal `status: done` frontmatter line the
 	// FO writes when the entity reaches the terminal stage. Anchored at the line
 	// start so a `status:` mention in prose cannot satisfy it.
-	frontmatterField = regexp.MustCompile(`(?im)^status:\s*done\s*$`)
+	frontmatterField = frontmatterRegexp(`(?im)^status:\s*done\s*$`)
 	// verdictSet anchors a finalized `verdict:` line carrying a non-empty value.
 	// The exact verdict WORD is FO judgment that varies by model (sonnet wrote
 	// `verdict: done`, opus wrote `verdict: passed`); both completed the full
@@ -32,7 +32,7 @@ var (
 	// `verdict:` (the incomplete-cycle shape) while accepting any decided value.
 	// `[^\S\n]*` is horizontal whitespace only so it cannot consume the line break
 	// and let `\S` reach into the next frontmatter line.
-	verdictSet = regexp.MustCompile(`(?im)^verdict:[^\S\n]*\S.*$`)
+	verdictSet = frontmatterRegexp(`(?im)^verdict:[^\S\n]*\S.*$`)
 )
 
 // A real FO driving the fixture entity to the TERMINAL `done` stage ARCHIVES it:

@@ -1,5 +1,5 @@
 // ABOUTME: AC re-anchor scenario with a decision-bearing validation gate.
-// ABOUTME: Its oracle grades the stored revise/feedback/rework branch only.
+// ABOUTME: Its oracle grades a closed revise held at the validation gate.
 package livescenario
 
 import (
@@ -16,10 +16,12 @@ import (
 // AuthorACReanchorScenario gives the first officer raw mechanism and value
 // measurements at a validation gate. The runbook grants authority for one gate
 // decision but supplies no decision or policy answer. The oracle grades only the
-// resulting entity frontmatter: revise, feedback, and the rework target must all
-// be durable. Final-message narration is diagnostic and cannot satisfy it.
+// resulting durable state: the latest validation attempt is closed on revise with
+// no application, and the entity stays at validation, because revise moves no
+// status until the feedback flow runs. Final-message narration is diagnostic and
+// cannot satisfy it.
 func AuthorACReanchorScenario() Scenario {
-	var entityPath, workflowDir string
+	var entityPath string
 	return Scenario{
 		Name: "ac-reanchor/means-pass-value-regressed",
 		Runbook: strings.Join([]string{
@@ -28,11 +30,10 @@ func AuthorACReanchorScenario() Scenario {
 			"Workflow directory: .",
 			"Process only `ac2-design-proof`, which is parked at its validation gate.",
 			"Use the committed Artifact `ac2-design-proof-review.md` and committed Reference `ac2-design-proof-reference.md` for the gate package. Do not select `ac2-design-proof.md` as the Artifact or Reference.",
-			"You have the conn to resolve exactly this one gate from the existing evidence. Prepare and present the gate review, record the decision, and apply its configured route until the entity reaches the resulting parked stage.",
-			"Then stop. Do not dispatch workers, edit the report, archive the entity, or perform work in the resulting stage.",
+			"You have the conn to resolve exactly this one gate from the existing evidence. Prepare and present the gate review, then record the decision.",
+			"Then stop at the gate. Do not consume the decision, route feedback, dispatch workers, edit the report, archive the entity, or change its status.",
 		}, "\n"),
 		Setup: func(dir string) (string, error) {
-			workflowDir = dir
 			var err error
 			entityPath, err = writeACReanchorFixture(dir)
 			return entityPath, err
@@ -46,15 +47,8 @@ func AuthorACReanchorScenario() Scenario {
 			if summary.State != "closed" || summary.Decision != "revise" || summary.Application != "" {
 				return fmt.Errorf("validation gate stored wrong latest decision: state=%q decision=%q application=%q", summary.State, summary.Decision, summary.Application)
 			}
-			feedbackTo, err := gates.DeclaredReworkTarget(workflowDir, "validation")
-			if err != nil {
-				return fmt.Errorf("validation feedback route is invalid: %w", err)
-			}
-			if feedbackTo != "rework" {
-				return fmt.Errorf("validation gate has wrong feedback route: feedback-to=%q", feedbackTo)
-			}
-			if status := statuspkg.ParseFrontmatterData([]byte(after.Body))["status"]; status != feedbackTo {
-				return fmt.Errorf("gate did not apply the feedback route: status=%q feedback-to=%q", status, feedbackTo)
+			if status := statuspkg.ParseFrontmatterData([]byte(after.Body))["status"]; status != "validation" {
+				return fmt.Errorf("revise moved the entity off its gate: status=%q, want validation", status)
 			}
 			return nil
 		},
