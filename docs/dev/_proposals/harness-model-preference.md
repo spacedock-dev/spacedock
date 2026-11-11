@@ -55,7 +55,7 @@ machine-local model config found belongs to the harnesses themselves (`~/.pi/age
 ## Requirements
 
 - **R1 Persisted, per stage, before dispatch.** "the problem is persisting that preference. which is what the FM tries to do" (CL).
-- **R2 Model and reasoning level.** Set "the model and the reasoning level of a dispatched worker by rule before dispatch, per role/stage" (Kent).
+- **R2 Model and reasoning level.** "I want to have a rule that I can setup the reasoning level before dispatch, because agent will just use it's own level" (Kent).
 - **R3 Generalize the frontmatter path, allow override.** "the claude path reads from readme frontmatter. we should probably generalize it and allow override" (CL).
 - **R4 Per harness.** "we don't have a good way to represent per-harness preference" (CL).
 - **R5 Per machine.** "on pi for different host, it might have different profile config to the model"; "hosta … default llm gateway … hostb uses native provider routing (lunaroute/deepseek-4.1-flash)" (CL).
