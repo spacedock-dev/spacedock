@@ -4,30 +4,33 @@ package pilive
 
 import (
 	"bytes"
+	"cmp"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
 )
 
-// The family pins resolved from the npm `latest` dist-tag on 2026-10-04 and the
-// readiness floors (pi-coding-agent's is also the launcher ready-gate floor):
-// the ONLY place these numbers may be written.
+// The family pins (the newest family proven by a local pi-live run, 2026-11-10)
+// and the readiness floors (pi-coding-agent's is also the launcher ready-gate
+// floor): the ONLY place these numbers may be written.
 const (
 	PiCodingAgentSpec      = "@earendil-works/pi-coding-agent"
-	PiCodingAgentVersion   = "1.0.2"
-	PiCodingAgentIntegrity = "sha512-3ZdIghMSELMGV3sKi5iASOb1Jwb696fLjmNu0aezaqDxTLLWWoRpqBYkGxJ1CgAMCbtfqXWEF0lcRrlVXmiEGQ=="
+	PiCodingAgentVersion   = "1.5.0"
+	PiCodingAgentIntegrity = "sha512-xNDZ5kqowO6Z03FS2gwAkPEGk1ssxVcYKQ6qZId84mFEvwACvvyc2l0vAMOS+c5zvxLRMLBE9r4y44IGYkMJaQ=="
 	PiSubagentsSpec        = "pi-subagents"
-	PiSubagentsVersion     = "0.75.0"
-	PiSubagentsIntegrity   = "sha512-RO4DiTJM6pnK8y9PnD7Y6TLeiX2c8Kh6QhmkecFo+ou5qtnz5qiM+vUKru48UmJG1nB9eJ6rALd1M04uBOR4XQ=="
+	PiSubagentsVersion     = "0.84.0"
+	PiSubagentsIntegrity   = "sha512-IagE1hcBxLi82jTxTmcy/pIWckBuqhMH1GfAOe6/aIMVfnopMybCbcTMUS5K0CNy4tqSwHGleaXabaDmJS1QOg=="
 	PiIntercomSpec         = "pi-intercom"
-	PiIntercomVersion      = "0.16.0"
-	PiIntercomIntegrity    = "sha512-ClGQuovPsz7r1iQwMRjEN+8wxywfrDrMILAkCSf/z19Nezzyfz77U8362Wb/VFNoZOwmF4PBsuGWCtB9AsEJMQ=="
+	PiIntercomVersion      = "0.18.1"
+	PiIntercomIntegrity    = "sha512-hY3y+vF6CrkpV0N/55pEsl3DSVjGerlTCQDY2mt37o0jQj8SLW+GmQoKyAEgCyfcxrqJb+Tx4hp4eXqM2hLYgg=="
 	NodeEngineFloor        = "22.19.0"
 	PiCodingAgentFloor     = "1.0.0"
 	PiSubagentsFloor       = "0.53.0"
@@ -140,7 +143,11 @@ func install(r Runner, agentDir string) error {
 	if err != nil {
 		return err
 	}
-	if err := verifyInstalled(filepath.Join(globalRoot, PiCodingAgentSpec), PiCodingAgentSpec, PiCodingAgentVersion); err != nil {
+	piRoot := filepath.Join(globalRoot, PiCodingAgentSpec)
+	if err := verifyInstalled(piRoot, PiCodingAgentSpec, PiCodingAgentVersion); err != nil {
+		return err
+	}
+	if err := verifyExactDependencies(piRoot); err != nil {
 		return err
 	}
 	piNpmRoot := filepath.Join(agentDir, "npm")
@@ -233,6 +240,56 @@ func verifyInstalled(root, wantName, wantVersion string) error {
 		return fmt.Errorf("installed %s version %q, want %q", wantName, version, wantVersion)
 	}
 	return nil
+}
+
+// exactVersion matches a dependency declared as one version (x.y.z or
+// x.y.z-pre), the only form npm cannot resolve to a newer release.
+var exactVersion = regexp.MustCompile(`^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$`)
+
+// verifyExactDependencies refuses a Pi tree that can float without a lockfile:
+// every dependency Pi declares, and every first-party dependency a nested
+// first-party package declares, must be an exact version installed under Pi as
+// declared. Every violating edge is reported, in sorted order, so the refusal
+// is stable and lists the whole drift.
+func verifyExactDependencies(piRoot string) error {
+	const firstParty = "@earendil-works/"
+	scope := filepath.Join(piRoot, "node_modules", strings.TrimSuffix(firstParty, "/"))
+	nested, err := os.ReadDir(scope)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	roots := []string{piRoot}
+	for _, entry := range nested {
+		roots = append(roots, filepath.Join(scope, entry.Name()))
+	}
+	type edge struct{ from, dep, want string }
+	var edges []edge
+	for i, root := range roots {
+		var m struct {
+			Name         string            `json:"name"`
+			Dependencies map[string]string `json:"dependencies"`
+		}
+		if err := readJSON(filepath.Join(root, "package.json"), &m); err != nil {
+			return err
+		}
+		for dep, want := range m.Dependencies {
+			if i == 0 || strings.HasPrefix(dep, firstParty) {
+				edges = append(edges, edge{m.Name, dep, want})
+			}
+		}
+	}
+	slices.SortFunc(edges, func(a, b edge) int {
+		return cmp.Or(strings.Compare(a.from, b.from), strings.Compare(a.dep, b.dep))
+	})
+	var errs []error
+	for _, e := range edges {
+		if !exactVersion.MatchString(e.want) {
+			errs = append(errs, fmt.Errorf("%s declares %s %q, not an exact version: the install can float", e.from, e.dep, e.want))
+		} else if err := verifyInstalled(filepath.Join(piRoot, "node_modules", e.dep), e.dep, e.want); err != nil {
+			errs = append(errs, fmt.Errorf("%s dependency: %w", e.from, err))
+		}
+	}
+	return errors.Join(errs...)
 }
 
 func verifyManifest(root string) ([]string, error) {

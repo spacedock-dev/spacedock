@@ -62,7 +62,9 @@ Leave `SPACEDOCK_CODEX_LIVE_REQUIRED` unset for this local path. When no `OPENAI
 
 Run the Pi live proofs locally with the pinned Pi family. The version list lives
 in exactly one place, `internal/pilive`; install the pinned family from those
-constants, then point the harness at the package roots:
+constants, then point the harness at the package roots. `spacedock-release install`
+refuses a Pi release whose own dependency tree is not pinned to exact versions, so a
+new Pi pin must be such a release:
 
 ```bash
 export PI_SUBAGENTS_PACKAGE_ROOT="$HOME/.pi/agent/npm/node_modules/pi-subagents"
