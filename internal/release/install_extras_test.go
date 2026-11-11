@@ -3,12 +3,14 @@ package release
 import (
 	"archive/tar"
 	"compress/gzip"
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 )
 
 type extrasRun struct {
@@ -21,6 +23,8 @@ type extrasRun struct {
 	log             string
 	pathDir         []string
 	launcherVersion string
+	stdin           string
+	script          string
 }
 
 func writeTarGzFiles(t *testing.T, path string, files map[string]string) {
@@ -136,14 +140,25 @@ func (r *extrasRun) run() (stderr string, code int) {
 
 func (r *extrasRun) runWith(env ...string) (stderr string, code int) {
 	r.t.Helper()
-	cmd := exec.Command("sh", scriptWithExtras(r.t, fakeExtrasRows))
+	script := r.script
+	if script == "" {
+		script = scriptWithExtras(r.t, fakeExtrasRows)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "sh", script)
+	cmd.WaitDelay = time.Second
+	cmd.Stdin = strings.NewReader(r.stdin)
 	cmd.Env = append([]string{
 		"PATH=" + strings.Join(append(append([]string{}, r.pathDir...), "/usr/bin", "/bin"), ":"),
-		"HOME=" + r.home, "XDG_DATA_HOME=" + r.data, "SPACEDOCK_INSTALL_DIR=" + r.bin,
+		"CI=1", "HOME=" + r.home, "XDG_DATA_HOME=" + r.data, "SPACEDOCK_INSTALL_DIR=" + r.bin,
 	}, env...)
 	var errOut strings.Builder
 	cmd.Stderr = &errOut
 	err := cmd.Run()
+	if ctx.Err() != nil {
+		r.t.Fatalf("installer did not finish within 12 seconds: %s", errOut.String())
+	}
 	r.t.Logf("install.sh stderr:\n%s", errOut.String())
 	if ee, ok := err.(*exec.ExitError); ok {
 		return errOut.String(), ee.ExitCode()
@@ -289,7 +304,7 @@ func TestInstallWithNoExtensionTableRowInstallsOnlySpacedock(t *testing.T) {
 	r := newExtrasRun(t, "1.0.1")
 	cmd := exec.Command("sh", scriptWithExtras(t, ""))
 	cmd.Env = []string{
-		"PATH=/usr/bin:/bin", "HOME=" + r.home, "XDG_DATA_HOME=" + r.data,
+		"PATH=/usr/bin:/bin", "CI=1", "HOME=" + r.home, "XDG_DATA_HOME=" + r.data,
 		"SPACEDOCK_INSTALL_DIR=" + r.bin, "SPACEDOCK_INSTALL_FROM=" + r.dist,
 		"SPACEDOCK_EXTRAS=1", "SPACEDOCK_EXTRAS_FROM=" + r.extras,
 	}
@@ -307,8 +322,9 @@ func TestInstallWithNoExtensionTableRowInstallsOnlySpacedock(t *testing.T) {
 
 // stubCurl serves install.sh's release lookups and downloads from the staged
 // directories and logs every URL, so a run without SPACEDOCK_INSTALL_FROM stays
-// offline. STUB_API, STUB_REDIRECT (fail or norelease) and STUB_FAIL_REPO break
-// lookups; the stub git prints STUB_TAGS.
+// offline. STUB_ROUTE is the canned spacedock.md answer (empty fails the route);
+// STUB_API, STUB_REDIRECT and STUB_FAIL_REPO control direct lookup failures.
+// The stub git prints STUB_TAGS.
 func (r *extrasRun) stubCurl(osName, arch string) (log string) {
 	r.t.Helper()
 	log = filepath.Join(r.t.TempDir(), "urls.log")
@@ -324,20 +340,41 @@ func (r *extrasRun) stubCurl(osName, arch string) (log string) {
 	body := `#!/bin/sh
 out=""; url=""
 while [ $# -gt 0 ]; do
-	case "$1" in -o) out="$2"; shift ;; -w) shift ;; -*) ;; *) url="$1" ;; esac
+	case "$1" in -o) out="$2"; shift ;; -A) ua="$2"; shift ;; -w) shift ;; -*) ;; *) url="$1" ;; esac
 	shift
 done
 echo "$url" >> '` + log + `'
 repo="${url#https://api.github.com/repos/}"; repo="${repo#https://github.com/}"; repo="${repo%%/releases*}"
+case "$url" in https://spacedock.md/latest-release/*) product="${url##*/}"; repo="spacedock-dev/${product%%\?*}" ;; esac
 case "$repo" in
-	spacedock-dev/spacedock) tag=v` + r.launcherVersion + ` ;; spacedock-dev/alpha) tag=v0.16.0 ;; *) tag=v1.0.1 ;;
+	spacedock-dev/spacedock) tag=v` + r.launcherVersion + ` ;; spacedock-dev/alpha|spacedock-dev/subspace) tag=v0.16.0 ;; *) tag=v1.0.1 ;;
 esac
 case "$url" in
+	https://spacedock.md/latest-release/*)
+		echo "$ua" >> '` + log + `.ua'
+		[ -n "$STUB_ROUTE" ] || exit 22
+		if [ "${url##*prerelease=}" = 1 ]; then
+			json="[{\"tag_name\": \"$STUB_ROUTE\"}]"; effective="$url"
+			[ "$STUB_ROUTE" != html ] || json='<html>"tag_name": "v8.8.8"</html>'
+			[ "$STUB_ROUTE" != foreign ] || { json='[{"tag_name": "v8.8.8"}]'; effective=https://other.example/x; }
+			printf '%s\n%s' "$json" "$effective"
+		else
+			to="https://github.com/$repo/releases/tag/$STUB_ROUTE"
+			[ "$STUB_ROUTE" != foreign ] || to=https://other.example/releases/tag/v8.8.8
+			printf '%s' "$to"
+		fi ;;
 	https://api.github.com/*)
 		[ "$STUB_API" = fail ] || [ "$repo" = "$STUB_FAIL_REPO" ] && exit 22
-		printf '{"tag_name": "%s"}\n' "$tag" ;;
+		[ "$STUB_API" != null ] || { printf '[{"tag_name":null}]\n'; exit 0; }
+		[ "$STUB_API" != traversal ] || tag='v1.2.3/../../evil'
+		printf '[{"tag_name": "%s"}]\n' "$tag" ;;
 	https://github.com/*/releases/latest)
 		[ "$STUB_REDIRECT" = fail ] || [ "$repo" = "$STUB_FAIL_REPO" ] && exit 22
+		case "$STUB_REDIRECT" in
+			foreign) printf 'https://other.example/releases/tag/v8.8.8'; exit 0 ;;
+			nested) tag='v1.2.3/releases/tag/v8.8.8' ;;
+			traversal) tag='v1.2.3/../../evil' ;;
+		esac
 		if [ "$STUB_REDIRECT" = norelease ]; then printf 'https://github.com/%s/releases' "$repo"; else printf 'https://github.com/%s/releases/tag/%s' "$repo" "$tag"; fi ;;
 	https://github.com/*/releases/download/*)
 		dir='` + r.extras + `'; [ "$repo" = spacedock-dev/spacedock ] && dir='` + r.dist + `'
