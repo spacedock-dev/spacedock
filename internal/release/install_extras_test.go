@@ -322,7 +322,8 @@ func TestInstallWithNoExtensionTableRowInstallsOnlySpacedock(t *testing.T) {
 
 // stubCurl serves install.sh's release lookups and downloads from the staged
 // directories and logs every URL, so a run without SPACEDOCK_INSTALL_FROM stays
-// offline. STUB_API, STUB_REDIRECT and STUB_FAIL_REPO control direct lookup failures.
+// offline. STUB_ROUTE is the canned spacedock.md answer (empty fails the route);
+// STUB_API, STUB_REDIRECT and STUB_FAIL_REPO control direct lookup failures.
 // The stub git prints STUB_TAGS.
 func (r *extrasRun) stubCurl(osName, arch string) (log string) {
 	r.t.Helper()
@@ -339,7 +340,7 @@ func (r *extrasRun) stubCurl(osName, arch string) (log string) {
 	body := `#!/bin/sh
 out=""; url=""
 while [ $# -gt 0 ]; do
-	case "$1" in -o) out="$2"; shift ;; -w|-A|--user-agent|-X|--request|--connect-timeout|--max-time|--max-redirs) shift ;; -*) ;; *) url="$1" ;; esac
+	case "$1" in -o) out="$2"; shift ;; -A) ua="$2"; shift ;; -w) shift ;; -*) ;; *) url="$1" ;; esac
 	shift
 done
 echo "$url" >> '` + log + `'
@@ -349,7 +350,19 @@ case "$repo" in
 	spacedock-dev/spacedock) tag=v` + r.launcherVersion + ` ;; spacedock-dev/alpha|spacedock-dev/subspace) tag=v0.16.0 ;; *) tag=v1.0.1 ;;
 esac
 case "$url" in
-	https://spacedock.md/latest-release/*) exit 22 ;;
+	https://spacedock.md/latest-release/*)
+		echo "$ua" >> '` + log + `.ua'
+		[ -n "$STUB_ROUTE" ] || exit 22
+		if [ "${url##*prerelease=}" = 1 ]; then
+			json="[{\"tag_name\": \"$STUB_ROUTE\"}]"; effective="$url"
+			[ "$STUB_ROUTE" != html ] || json='<html>"tag_name": "v8.8.8"</html>'
+			[ "$STUB_ROUTE" != foreign ] || { json='[{"tag_name": "v8.8.8"}]'; effective=https://other.example/x; }
+			printf '%s\n%s' "$json" "$effective"
+		else
+			to="https://github.com/$repo/releases/tag/$STUB_ROUTE"
+			[ "$STUB_ROUTE" != foreign ] || to=https://other.example/releases/tag/v8.8.8
+			printf '%s' "$to"
+		fi ;;
 	https://api.github.com/*)
 		[ "$STUB_API" = fail ] || [ "$repo" = "$STUB_FAIL_REPO" ] && exit 22
 		[ "$STUB_API" != null ] || { printf '[{"tag_name":null}]\n'; exit 0; }
