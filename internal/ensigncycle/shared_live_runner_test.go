@@ -146,7 +146,7 @@ func TestLiveCommonOwnedConflictOwnerHandoff(t *testing.T) {
 //
 //spacedock:live-journey id=rejection-flow fixture=rejection/before-validation-1
 func TestLiveCommonRejectionFlow(t *testing.T) {
-	liveJourney(t, "rejection-flow", "rejection/before-validation-1", writeRejectionWorkflow, []liveJourneyGap{liveXFail("pi", "6h3teccccn3qh71yqcmjbjx4")}, runClaudeRejectionFlowScenario, assertRejectionFlow)
+	liveJourney(t, "rejection-flow", "rejection/before-validation-1", writeRejectionWorkflow, []liveJourneyGap{liveXFail("pi", "6h3teccccn3qh71yqcmjbjx4"), liveXFail("claude-haiku", "")}, runClaudeRejectionFlowScenario, assertRejectionFlow)
 }
 
 // The claude-sonnet red is the completion-observation gap: run 37421110550's

@@ -62,7 +62,9 @@ Leave `SPACEDOCK_CODEX_LIVE_REQUIRED` unset for this local path. When no `OPENAI
 
 Run the Pi live proofs locally with the pinned Pi family. The version list lives
 in exactly one place, `internal/pilive`; install the pinned family from those
-constants, then point the harness at the package roots:
+constants, then point the harness at the package roots. `spacedock-release install`
+refuses a Pi release whose own dependency tree is not pinned to exact versions, so a
+new Pi pin must be such a release:
 
 ```bash
 export PI_SUBAGENTS_PACKAGE_ROOT="$HOME/.pi/agent/npm/node_modules/pi-subagents"
@@ -152,7 +154,7 @@ If one artifact is unavailable or incomplete, the job warns and skips the commen
 
 Workflow: `.github/workflows/runtime-live-e2e.yml`. The offline gate job (`go test ./...`, no secrets) must pass before a live lane uses an environment approval.
 
-- Pull requests to `main` run the `claude.sonnet` id from `internal/release/live_models.txt` at maximum effort, the `codex.exec` id from the same file at maximum effort, and the Pi lane. Pi is not opt-in: every pull request runs it by default. The lane is not cheap — it takes about 35 minutes and spends live model calls.
+- Pull requests to `main` run the `claude.sonnet` id from `internal/release/live_models.txt` at maximum effort, the `codex.exec` id from the same file at maximum effort, and the Pi lane. They also run a second `claude-live` leg on the `claude.haiku` id, with the same effort and `CI-E2E` approval. That leg is `continue-on-error`: a Haiku failure shows on the leg but does not fail the run, so it never blocks the release gate. Manual dispatches never add it; `claude_model=haiku` on dispatch is a single blocking leg. Pi is not opt-in: every pull request runs it by default. The lane is not cheap — it takes about 35 minutes and spends live model calls.
 - An explicit `live_cadence=opus-pre-release` dispatch runs offline plus the `claude.opus` id from `internal/release/live_models.txt` at maximum effort. It allocates no Codex or Pi runner and requests only `CI-E2E-OPUS` approval.
 - An explicit `live_cadence=pi` dispatch runs the 17 common Pi journeys and the Pi front-door proof with the `pi.oauth` id from `internal/release/live_models.txt` for OAuth or the `pi.api-key` id from the same file for the API-key fallback, at maximum thinking. It waits only for `CI-E2E-PI` approval and retains Pi logs, diagnostics, journey metrics, and session artifacts. The manual dispatch path still works unchanged. The `live:pi` label is no longer required, on the dispatch path or on a pull request. Pi is not a merge requirement. Local Pi execution remains supported with `pi login` or an API key.
 

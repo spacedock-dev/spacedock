@@ -66,8 +66,8 @@ brew install spacedock
 
 These commands install the **stable** channel. Spacedock also has an **edge**
 channel that follows the prereleases. You select the channel at install time, not
-with a flag afterwards. If you want edge, start from the
-[install guide](docs/site/get-started/install.md) instead.
+with a flag afterwards. If you want edge, install the `spacedock@next` cask, or
+run the install script with `SPACEDOCK_CHANNEL=edge`.
 
 Then launch. The first launch sets up the plugin for you, so a single line gets
 you a working session. Point it at a project you already have and let it survey:

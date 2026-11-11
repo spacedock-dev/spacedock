@@ -12,7 +12,7 @@
 # (a required-reviewer approval gate, reviewer = clkao) and read only the
 # host-specific secret they need: ANTHROPIC_API_KEY for Claude and
 # CODEX_AUTH_JSON/OPENAI_API_KEY for Codex and Pi. Pull requests queue Sonnet 5.5,
-# Codex Luna, and the Pi lane.
+# Codex Luna, and the Pi lane, plus a Haiku 5.5 leg that cannot fail the run.
 # Manual Opus and Pi cadences run only their selected runtime.
 
 name: Runtime Live E2E
@@ -73,6 +73,7 @@ jobs:
       claude_selected: ${{ steps.live_models.outputs.claude_selected }}
       claude_sonnet: ${{ steps.live_models.outputs.claude_sonnet }}
       claude_opus: ${{ steps.live_models.outputs.claude_opus }}
+      claude_haiku: ${{ steps.live_models.outputs.claude_haiku }}
       codex_exec: ${{ steps.live_models.outputs.codex_exec }}
       pi_oauth: ${{ steps.live_models.outputs.pi_oauth }}
       pi_api_key: ${{ steps.live_models.outputs.pi_api_key }}
@@ -81,7 +82,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.22"
+          go-version: "1.26"
 
       - name: Build
         run: go build ./...
@@ -132,6 +133,7 @@ jobs:
             if (ENVIRON["LIVE_EVENT"] == "pull_request") {
               cadence = "sonnet"
               model = "sonnet"
+              if (!("claude.haiku" in records)) fail("Pull requests need claude.haiku for the non-blocking Haiku leg")
             } else if (ENVIRON["LIVE_EVENT"] != "workflow_dispatch") fail("Unsupported live event")
             if (cadence == "pi") {
               if (model != "") fail("claude_model requires live_cadence=sonnet or live_cadence=opus-pre-release")
@@ -172,18 +174,26 @@ jobs:
 
   # Model resolution is generic; cadence gates eligibility and approval.
   # Pull requests use Sonnet; manual dispatches can override with a permitted key.
+  # Pull requests also run a Haiku leg that never fails the run: any model other
+  # than the selected one is continue-on-error. A dispatch runs only the selected
+  # model, so it stays one blocking leg even when claude_model=haiku. The model
+  # list is a base matrix axis because an include entry cannot be made
+  # conditional; it would add the Haiku leg to dispatch runs as well.
   claude-live:
     if: ${{ (github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet' || inputs.live_cadence == 'opus-pre-release') && github.event.action != 'labeled' }}
     needs: offline
-    # The offline gate runs first without secrets. The selected live leg then
+    # Pins the check name to the include-only form the Sonnet leg always had.
+    name: claude-live (${{ matrix.cadence }}, ${{ matrix.model }}, ${{ matrix.effort }}, ${{ matrix.environment }})
+    # The offline gate runs first without secrets. Each live leg then
     # waits for its CI-E2E or CI-E2E-OPUS approval.
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.model != needs.offline.outputs.claude_selected }}
     strategy:
       fail-fast: false
       matrix:
+        model: ${{ fromJSON(github.event_name == 'pull_request' && format('["{0}","{1}"]', needs.offline.outputs.claude_selected, needs.offline.outputs.claude_haiku) || format('["{0}"]', needs.offline.outputs.claude_selected)) }}
         include:
           - cadence: ${{ github.event_name == 'pull_request' && 'pull-request' || inputs.live_cadence }}
-            model: ${{ needs.offline.outputs.claude_selected }}
             effort: max
             environment: ${{ (github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet') && 'CI-E2E' || 'CI-E2E-OPUS' }}
     environment:
@@ -200,7 +210,7 @@ jobs:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       # Per-leg artifact root the shared Claude scenario runner writes its
       # stream/final-message artifacts under (claudeLiveArtifactDir reads it). The
-      # /${{ matrix.model }} keeps cadence artifacts separate.
+      # /${{ matrix.model }} keeps each leg's artifacts separate.
       SPACEDOCK_LIVE_ARTIFACT_DIR: ${{ github.workspace }}/live-artifacts/claude/${{ matrix.model }}
       SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/claude/${{ matrix.model }}
     steps:
@@ -215,7 +225,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.22"
+          go-version: "1.26"
 
       - uses: actions/setup-node@v6
         with:
@@ -412,7 +422,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.22"
+          go-version: "1.26"
 
       - uses: actions/setup-node@v6
         with:
@@ -687,7 +697,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.22"
+          go-version: "1.26"
 
       - uses: actions/setup-node@v6
         with:
@@ -833,7 +843,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.22"
+          go-version: "1.26"
 
       - name: Recover this run's journey metrics
         id: recover_current_metrics
