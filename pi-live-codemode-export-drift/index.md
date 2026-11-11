@@ -9,7 +9,7 @@ verdict:
 score: 0.9
 worktree: .worktrees/spacedock-ensign-pi-live-codemode-export-drift
 issue:
-pr: "#874"
+pr: pr-merge:874
 mod-block:
 gates:
     version: 1
