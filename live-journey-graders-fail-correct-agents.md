@@ -14,6 +14,20 @@ gates:
                 id: briefing:9wpk5vftfth48rcaxft6kw27:backlog:attempt-1:revision-1
                 digest: sha256:00146751175ddc5ca0d05629a3dfece214c046d57e5956bd4d9d59f4459db8c7
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:9wpk5vftfth48rcaxft6kw27:backlog:1
+                briefing: briefing:9wpk5vftfth48rcaxft6kw27:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-11-11T05:17:55.466051Z"
+                decision: approve
+                reason: Captain asked for this task to be filed and dispatched; root causes are evidenced from run transcripts and the scope is test-side.
+                conn:
+                    quote: File and dispatch those test fixes so we can get them to 0.28.1
+                    source: captain chat, 2026-11-10
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Four live journeys intermittently fail on runs where the first officer did what the contract requires. Each failure is a defect in the grader, fixture, or scenario runbook, so a red lane says nothing about the product, and the release gate needs reruns to go green. Target: 0.28.1.
