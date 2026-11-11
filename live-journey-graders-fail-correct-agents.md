@@ -3,6 +3,17 @@ title: "Four live journeys fail agents that followed the contract"
 source: "Root-cause read of Runtime Live E2E runs 42883048364, 42883041637, 42916100601 and 42916110241 during the 0.28.0 release preparation, 2026-11-11"
 id: 9wpk5vftfth48rcaxft6kw27
 status: backlog
+gates:
+    version: 1
+    records:
+        - id: gate:9wpk5vftfth48rcaxft6kw27:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:9wpk5vftfth48rcaxft6kw27-backlog-1
+              briefing:
+                id: briefing:9wpk5vftfth48rcaxft6kw27:backlog:attempt-1:revision-1
+                digest: sha256:00146751175ddc5ca0d05629a3dfece214c046d57e5956bd4d9d59f4459db8c7
+                room-ref: '@review/backlog/briefing-1'
 ---
 
 Four live journeys intermittently fail on runs where the first officer did what the contract requires. Each failure is a defect in the grader, fixture, or scenario runbook, so a red lane says nothing about the product, and the release gate needs reruns to go green. Target: 0.28.1.

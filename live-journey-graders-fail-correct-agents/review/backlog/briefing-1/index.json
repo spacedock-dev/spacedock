@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:9wpk5vftfth48rcaxft6kw27:backlog:attempt-1:revision-1",
+  "question": "Take the four live-journey grader and fixture defects into ideation for 0.28.1?",
+  "artifacts": [
+    {
+      "id": "artifact:9wpk5vftfth48rcaxft6kw27:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/04c1b22e3e01097bd82879ff04b220fa320e3380/live-journey-graders-fail-correct-agents.md",
+      "rev": "sha256:732c93260fe3a435b1480d248ee5076ab273fbc75b1964bb706d366cc2924ca8",
+      "mediaType": "text/markdown",
+      "summary": "Four live journeys fail first officers that followed the contract: a whole-file verdict regex (Codex, in the release gate), an unevidenced fixture criterion (Pi), an undefined status move (haiku), and a filing pattern miss (Pi). Test-side fixes; one remedy for the third is a captain decision."
+    }
+  ]
+}
