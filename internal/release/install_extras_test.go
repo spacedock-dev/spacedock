@@ -3,12 +3,14 @@ package release
 import (
 	"archive/tar"
 	"compress/gzip"
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 )
 
 type extrasRun struct {
@@ -22,6 +24,7 @@ type extrasRun struct {
 	pathDir         []string
 	launcherVersion string
 	stdin           string
+	script          string
 }
 
 func writeTarGzFiles(t *testing.T, path string, files map[string]string) {
@@ -137,7 +140,14 @@ func (r *extrasRun) run() (stderr string, code int) {
 
 func (r *extrasRun) runWith(env ...string) (stderr string, code int) {
 	r.t.Helper()
-	cmd := exec.Command("sh", scriptWithExtras(r.t, fakeExtrasRows))
+	script := r.script
+	if script == "" {
+		script = scriptWithExtras(r.t, fakeExtrasRows)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "sh", script)
+	cmd.WaitDelay = time.Second
 	cmd.Stdin = strings.NewReader(r.stdin)
 	cmd.Env = append([]string{
 		"PATH=" + strings.Join(append(append([]string{}, r.pathDir...), "/usr/bin", "/bin"), ":"),
@@ -146,6 +156,9 @@ func (r *extrasRun) runWith(env ...string) (stderr string, code int) {
 	var errOut strings.Builder
 	cmd.Stderr = &errOut
 	err := cmd.Run()
+	if ctx.Err() != nil {
+		r.t.Fatalf("installer did not finish within 12 seconds: %s", errOut.String())
+	}
 	r.t.Logf("install.sh stderr:\n%s", errOut.String())
 	if ee, ok := err.(*exec.ExitError); ok {
 		return errOut.String(), ee.ExitCode()
@@ -324,17 +337,17 @@ func (r *extrasRun) stubCurl(osName, arch string) (log string) {
 	}
 	r.writeChecksums(r.dist)
 	body := `#!/bin/sh
-out=""; url=""; agent=""; follow=0; write=""; method=GET
+out=""; url=""; agent=""; follow=0; write=""; method=GET; headers=0
 while [ $# -gt 0 ]; do
-	case "$1" in -o) out="$2"; shift ;; -w) write="$2"; shift ;; -A|--user-agent) agent="$2"; shift ;; -X|--request) method="$2"; shift ;; -I|--head|-*I*) method=HEAD ;; -L|-*L*) follow=1 ;; -*) ;; *) url="$1" ;; esac
+	case "$1" in -o) out="$2"; shift ;; -w) write="$2"; shift ;; -A|--user-agent) agent="$2"; shift ;; -X|--request) method="$2"; shift ;; -I|--head|-*I*) headers=1; method=HEAD ;; -L|-*L*) follow=1 ;; --connect-timeout|--max-time|--max-redirs) shift ;; -*) ;; *) url="$1" ;; esac
 	shift
 done
 echo "$url" >> '` + log + `'
-printf '%s|%s|%s|%s|%s\n' "$url" "$agent" "$follow" "$write" "$method" >> '` + log + `.requests'
+printf '%s|%s|%s|%s|%s|%s\n' "$url" "$agent" "$follow" "$write" "$method" "$headers" >> '` + log + `.requests'
 repo="${url#https://api.github.com/repos/}"; repo="${repo#https://github.com/}"; repo="${repo%%/releases*}"
 case "$url" in https://spacedock.md/latest-release/*) product="${url##*/}"; repo="spacedock-dev/${product%%\?*}" ;; esac
 case "$repo" in
-	spacedock-dev/spacedock) tag=v` + r.launcherVersion + ` ;; spacedock-dev/alpha) tag=v0.16.0 ;; *) tag=v1.0.1 ;;
+	spacedock-dev/spacedock) tag=v` + r.launcherVersion + ` ;; spacedock-dev/alpha|spacedock-dev/subspace) tag=v0.16.0 ;; *) tag=v1.0.1 ;;
 esac
 case "$url" in
 	https://spacedock.md/latest-release/*)
@@ -348,15 +361,21 @@ case "$url" in
 		esac
 		[ "$repo" = "$STUB_FAIL_REPO" ] && exit 22
 		case "$url" in
-			*\?prerelease=1) printf '{"tag_name": "%s"}\n' "$tag" ;;
+			*\?prerelease=1) printf '[{"tag_name": "%s"}]\n' "$tag"; [ -z "$write" ] || printf '\n%s' "$url" ;;
 			*) printf 'https://github.com/%s/releases/tag/%s' "$repo" "$tag" ;;
 		esac ;;
 	https://api.github.com/*)
 		[ "$STUB_API" = fail ] || [ "$repo" = "$STUB_FAIL_REPO" ] && exit 22
-		[ "$STUB_API" != null ] || { printf '{"tag_name":null}\n'; exit 0; }
-		printf '{"tag_name": "%s"}\n' "$tag" ;;
+		[ "$STUB_API" != null ] || { printf '[{"tag_name":null}]\n'; exit 0; }
+		[ "$STUB_API" != traversal ] || tag='v1.2.3/../../evil'
+		printf '[{"tag_name": "%s"}]\n' "$tag" ;;
 	https://github.com/*/releases/latest)
 		[ "$STUB_REDIRECT" = fail ] || [ "$repo" = "$STUB_FAIL_REPO" ] && exit 22
+		case "$STUB_REDIRECT" in
+			foreign) printf 'https://other.example/releases/tag/v8.8.8'; exit 0 ;;
+			nested) tag='v1.2.3/releases/tag/v8.8.8' ;;
+			traversal) tag='v1.2.3/../../evil' ;;
+		esac
 		if [ "$STUB_REDIRECT" = norelease ]; then printf 'https://github.com/%s/releases' "$repo"; else printf 'https://github.com/%s/releases/tag/%s' "$repo" "$tag"; fi ;;
 	https://github.com/*/releases/download/*)
 		dir='` + r.extras + `'; [ "$repo" = spacedock-dev/spacedock ] && dir='` + r.dist + `'

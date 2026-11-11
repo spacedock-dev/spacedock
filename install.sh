@@ -113,8 +113,21 @@ lookup_user_agent() {
 	if [ ! -x "$ua_binary" ]; then
 		ua_binary="$(command -v spacedock 2>/dev/null)" || ua_binary=""
 	fi
-	if [ -n "$ua_binary" ]; then
-		ua_version="$("$ua_binary" --version </dev/null 2>/dev/null | sed -nE '1s/^spacedock v?([0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?)$/\1/p')" || ua_version=""
+	if [ -n "$ua_binary" ] && [ -f "$ua_binary" ] && [ -x "$ua_binary" ]; then
+		ua_file="$(mktemp)" || ua_file=""
+		if [ -n "$ua_file" ]; then
+			# Limit probe output and time without a platform-specific timeout tool.
+			(ulimit -f 64; exec "$ua_binary" --version) </dev/null >"$ua_file" 2>/dev/null &
+			ua_pid=$!
+			(sleep 2; kill -s KILL "$ua_pid" 2>/dev/null) </dev/null >/dev/null 2>&1 &
+			ua_timer=$!
+			if wait "$ua_pid" 2>/dev/null; then
+				ua_version="$(sed -nE '1s/^spacedock v?([0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?)$/\1/p' "$ua_file")"
+			fi
+			kill "$ua_timer" 2>/dev/null || :
+			wait "$ua_timer" 2>/dev/null || :
+			rm -f "$ua_file"
+		fi
 	fi
 	ua="spacedock-install/${ua_version:-unknown} (${os:-unknown}; ${arch:-unknown}"
 	ua_ci="${CI:-}"
@@ -124,12 +137,24 @@ lookup_user_agent() {
 		1 | true | yes | on) ua="$ua; ci" ;;
 	esac
 	[ "${SPACEDOCK_INTERNAL:-}" != 1 ] || ua="$ua; internal"
+	# The route accepts a User-Agent with at most 200 characters.
+	[ "${#ua}" -le 199 ] || ua="spacedock-install/unknown (${ua#* (}"
 	printf '%s)\n' "$ua"
 }
 
 # is_release_tag accepts the same release-tag format as newest_tag.
 is_release_tag() {
-	printf '%s\n' "$1" | awk 'END { exit !(NR == 1 && $0 ~ /^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$/) }'
+	printf '%s\n' "$1" | awk 'END { exit !(NR == 1 && $0 ~ /^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$/) }' || return 1
+	[ "$CHANNEL" != stable ] || case "$1" in *-*) return 1 ;; esac
+}
+
+# Edge responses start with a JSON array. Do not read a tag from an HTML page.
+json_release_tag() {
+	printf '%s\n' "$1" | awk '
+		!started && /^[[:space:]]*$/ { next }
+		!started { if ($0 !~ /^[[:space:]]*\[/) exit; started = 1 }
+		/"tag_name"/ { print; exit }
+	' | sed -nE 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p'
 }
 
 # release_tag looks up the newest release through spacedock.md.
@@ -140,26 +165,33 @@ release_tag() {
 	rt_url="https://spacedock.md/latest-release/${rt_repo##*/}"
 	rt_tag=""
 	if [ "$CHANNEL" = edge ]; then
-		rt_json="$(curl -fsSL -A "$LOOKUP_USER_AGENT" "$rt_url?prerelease=1" 2>/dev/null)" || rt_json=""
-		rt_tag="$(printf '%s\n' "$rt_json" \
-			| grep '"tag_name"' | head -n 1 \
-			| sed -nE 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p')" || rt_tag=""
-		is_release_tag "$rt_tag" || rt_tag=""
-		if [ -z "$rt_tag" ]; then
-			rt_tag="$(curl -fs "https://api.github.com/repos/$rt_repo/releases?per_page=1" 2>/dev/null \
-				| grep '"tag_name"' | head -n 1 \
-				| sed -nE 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p')" || rt_tag=""
-		fi
-	else
-		rt_to="$(curl -fsSL -A "$LOOKUP_USER_AGENT" -o /dev/null -w '%{url_effective}' "$rt_url" 2>/dev/null)" || rt_to=""
+		rt_json="$(curl -fsSL --connect-timeout 2 --max-time 5 --max-redirs 5 -A "$LOOKUP_USER_AGENT" \
+			-w '\n%{url_effective}' "$rt_url?prerelease=1" 2>/dev/null)" || rt_json=""
+		rt_to="${rt_json##*
+}"
+		rt_json="${rt_json%
+*}"
 		case "$rt_to" in
-			"https://github.com/$rt_repo/releases/tag/"*) rt_tag="${rt_to##*/releases/tag/}" ;;
+			"$rt_url?prerelease=1" | "https://api.github.com/repos/$rt_repo/releases?per_page=1")
+				rt_tag="$(json_release_tag "$rt_json")" ;;
 		esac
 		is_release_tag "$rt_tag" || rt_tag=""
 		if [ -z "$rt_tag" ]; then
-			rt_to="$(curl -fs -o /dev/null -w '%{redirect_url}' "https://github.com/$rt_repo/releases/latest" 2>/dev/null)" || rt_to=""
+			rt_json="$(curl -fs --connect-timeout 2 --max-time 5 "https://api.github.com/repos/$rt_repo/releases?per_page=1" 2>/dev/null)" || rt_json=""
+			rt_tag="$(json_release_tag "$rt_json")"
+		fi
+	else
+		# Keep GET for route counting. Read headers without the release page body.
+		rt_to="$(curl -fsSL -I -X GET --connect-timeout 2 --max-time 5 --max-redirs 5 \
+			-A "$LOOKUP_USER_AGENT" -o /dev/null -w '%{url_effective}' "$rt_url" 2>/dev/null)" || rt_to=""
+		case "$rt_to" in
+			"https://github.com/$rt_repo/releases/tag/"*) rt_tag="${rt_to#"https://github.com/$rt_repo/releases/tag/"}" ;;
+		esac
+		is_release_tag "$rt_tag" || rt_tag=""
+		if [ -z "$rt_tag" ]; then
+			rt_to="$(curl -fs --connect-timeout 2 --max-time 5 -o /dev/null -w '%{redirect_url}' "https://github.com/$rt_repo/releases/latest" 2>/dev/null)" || rt_to=""
 			case "$rt_to" in
-				*/releases/tag/*) rt_tag="${rt_to##*/releases/tag/}" ;;
+				"https://github.com/$rt_repo/releases/tag/"*) rt_tag="${rt_to#"https://github.com/$rt_repo/releases/tag/"}" ;;
 			esac
 		fi
 	fi
@@ -340,7 +372,11 @@ main() {
 
 	os="$(detect_os)"
 	arch="$(detect_arch)"
-	LOOKUP_USER_AGENT="$(lookup_user_agent)"
+	if [ -z "${SPACEDOCK_INSTALL_FROM:-}" ] || {
+		[ -z "${SPACEDOCK_PRINT_TARGET:-}" ] && [ -n "${SPACEDOCK_EXTRAS:-}" ] && [ "$SPACEDOCK_EXTRAS" != none ]
+	}; then
+		LOOKUP_USER_AGENT="$(lookup_user_agent)"
+	fi
 
 	# Resolve the asset name + the source refs (tarball + checksums) for either
 	# source. The SAME verify/extract/install path runs below for both.

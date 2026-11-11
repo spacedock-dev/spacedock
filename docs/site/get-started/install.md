@@ -20,7 +20,13 @@ Spacedock works with Claude Code and Codex.
       <button type="button" class="sd-prompt-copy" aria-label="Copy command" aria-live="polite" hidden>copy</button>
     </div>
 
-The installer looks up releases at `spacedock.md` with User-Agent `spacedock-install/<version> (<os>; <arch>[; ci][; internal])`. PostHog counts each lookup without an IP address. Plausible uses the caller's IP address to count the lookup but does not store it. CI lookups are not counted.
+The installer looks up releases at `spacedock.md` with User-Agent `spacedock-install/<version|unknown> (<os>; <arch>[; ci][; internal])`.
+The version identifies the installed Spacedock binary. If the version probe fails or takes more than two seconds, the installer uses `unknown`.
+The installer uses GitHub directly if the route fails or takes more than five seconds.
+
+PostHog counts each lookup without the caller's IP address. Plausible uses the caller's IP address to count the lookup but does not store it.
+CI lookups are not counted. The installer adds `; ci` when `CI` is `1`, `true`, `yes`, or `on`, regardless of case or surrounding whitespace.
+Set `SPACEDOCK_INTERNAL=1` to add `; internal`.
 
 <a id="2-set-up-your-agent"></a>
 
