@@ -68,10 +68,25 @@ on 2026-11-11, not repository facts and not a guarantee for other installs.**
 | Claude Code `Agent` | `model` enum: sonnet, opus, haiku, fable | separate `effort`: low, medium, high, xhigh, max | |
 | Codex CLI 0.162.1 `spawn_agent` | optional `model: string` | optional `reasoning_effort: string` | Overrides require `fork_turns: "none"`; a full-history fork inherits model and effort. Listed effort values vary by model (`gpt-6-luna` lists no `ultra`). Behaviour on an unknown value is not specified and was not tried |
 | omp 18.2.0 (a Pi-family harness) `task` | none | none | Exposes no `subagent` or `intercom` tool |
-| Pi `subagent(...)` | unverified | unverified | Nobody could run it |
+| stock Pi 0.73.1, no extension | none | none | Exposes only read, bash, edit, write: no spawn tool |
 
-Consequence: the harness alone does not determine what a spawn can carry, because two Pi-family
-substrates differ.
+**`pi-subagents` 0.88.0, read from the published package source on 2026-11-11, not exercised in a live
+spawn; this repo records only `subagents 0.75.0` as installed (`docs/roadmap/pi-ux/staff-review-2.md`).**
+
+- `subagent` schema (`src/extension/schemas.js`): `model` is an optional string, "Child model
+  provider/id … Suffix :off/minimal/low/medium/high/xhigh/max overrides agent thinking default". The
+  separate `thinking` parameter is "watchdog.configure only … Dispatch ignores this; use model suffix."
+- Machine-local settings (`docs/models.md`): `~/.pi/agent/settings.json`, or project `.pi/settings.json`
+  (project wins), carries `subagents.defaultModel`, `defaultProvider`, `defaultThinking`,
+  `agentOverrides.<agent>.model / .thinking`, and `agentOverridesByProvider.<provider>.<agent>`, keyed
+  by the active parent session's provider. `subagents.disableThinking` serves providers that reject
+  suffixed ids. Saved role-to-model profiles live under `~/.pi/agent/profiles/pi-subagents/`.
+- Precedence as documented: "Per-run model overrides and `agentOverrides.<name>.model` win over
+  frontmatter and the global default." The order between a per-run `model` and `agentOverrides` is
+  not stated.
+
+Consequence: the harness alone does not determine what a spawn can carry. Two Pi-family substrates
+differ, and stock Pi has no spawn tool.
 
 ## Requirements
 
@@ -93,7 +108,7 @@ harness reduces to "pass these fields verbatim". When the harness cannot carry t
 |---|---|---|---|
 | claude | `model`, a `modelEnum` value | new `effort` field (self-report above); `claude-fo-dispatch.md` needs the slot added | exit non-zero (value outside the enum) |
 | codex | `model`, an opaque string | `reasoning_effort`, an opaque string; `fork_turns: "none"` is already fixed by `CodexMultiAgentV2Spawn.ToolArgs` | Spacedock holds no per-model effort list, so an incompatible pair reaches the harness (open question 8) |
-| pi | unverified: `subagent(...)` `model` per `pi-first-officer-runtime.md` | unverified: fold into the id (`:max`), a separate field, or omit with a note (open question 7) | unverified; a substrate with no model parameter, such as omp's `task`, needs exit non-zero or omit with a note (open question 7) |
+| pi (`pi-subagents`) | `model`, a `provider/id` string | suffix in the id (`provider/id:high`); a separate field is ignored on dispatch | `pi-agent-teams` encoding unverified; a substrate with no model parameter, such as omp's `task` (open question 7) |
 
 ## Candidate shapes
 
@@ -103,7 +118,7 @@ harness reduces to "pass these fields verbatim". When the harness cannot carry t
 | B | today's `model:` as intent | (harness, intent) → model, effort | per intent | works | unchanged |
 | C | A's ids as defaults | (harness, stage) overrides | per stage | works only where overridden | key dropped |
 | D | tier plus optional `effort:` per stage; Claude names kept as tier aliases | (harness, tier) → model | model per tier, effort per stage | works | `model: deep` exits 1 on claude; `effort:` dropped |
-| E | a logical alias | nothing new; the harness's own config resolves the alias | per alias | unverified (see native config above) | depends on the alias |
+| E | nothing new | the harness's own config (Pi: `pi-subagents` `agentOverrides`) | per agent role | works on Pi, by provider too; Codex not shown | unchanged |
 
 ```yaml
 # D, README
@@ -117,12 +132,17 @@ codex: {deep: gpt-6-luna, fast: gpt-6-luna}
 pi:    {deep: "lunaroute/deepseek-4.1-flash"}
 ```
 
-B's own example needs `opus → {gpt-6-luna, high}` and `sonnet → {gpt-6-luna, low}`: a Claude family
-name stands in for an effort level, and a reader can take `model: opus` as "use Claude Opus". D
-separates the two. D costs: the `ParseStagesWithDefaultsData` allowlist gains `effort`; `modelEnum`
-in `build.go` and in `standing.go` learns tiers and aliases; and an old binary exits 1 on claude for a
-README written with a new tier name. Claude itself needs no mapping: each tier has a built-in Claude
-alias.
+B needs `opus → {gpt-6-luna, high}` and `sonnet → {gpt-6-luna, low}`, so a Claude name stands in for
+an effort level, and `model: opus` reads as "use Claude Opus". D separates the two; each tier has a
+built-in Claude alias, so Claude needs no mapping.
+
+E on Pi exists today. `«worker.spawn»` in `pi-first-officer-runtime.md` passes the artifact's `agent`
+field as the `subagent` `agent` parameter, so `agentOverrides.worker` would apply. This may be what R5's
+"different profile config to the model" refers to. Limits: it is keyed by agent role, and
+`dispatch build` emits `agent: worker` (`piSpawnAgent`) for every stage without an `agent:` override,
+so stages are not distinguished. It is Pi only; this repo shows no Codex per-spawn equivalent. And the
+FO's null-model stamp (`«worker-identity»`) passes an explicit per-run `model`, whose order against
+`agentOverrides` is not documented, so deferring to it means dropping that stamp.
 
 ## Precedence (stated once)
 
@@ -134,8 +154,8 @@ Model and effort resolve independently, field by field. Each takes the highest l
 3. `stages.defaults`;
 4. none: `model` is null (or the effort field is omitted), as today.
 
-So `--model N` keeps the README's effort, and an effort-only flag keeps the resolved model. On Pi,
-if effort is folded into the id, the id is built after both fields resolve. A model/effort pair the
+So `--model N` keeps the README's effort, and an effort-only flag keeps the resolved model. On
+`pi-subagents` the id is built as `model:effort` after both resolve. A model/effort pair the
 harness rejects is open question 8.
 
 Reuse compares model and effort together. Today `buildAdvanceOutput` carries `Model` only. Under D
@@ -159,10 +179,14 @@ Shape D, resolved through a machine-local mapping, with the harness-ready envelo
 2. Existing READMEs keep working: `model: opus` is an alias, and claude output is unchanged (R7).
 3. The #845 flags become layer 1 unchanged, and the mapping is their invoker (R6).
 
-D is preferred over B because B's example has to use model names to express effort. What gets worse under D: the parser, `modelEnum` and `standing.go` all change; an old
-binary fails on a README that uses a new tier name; each machine carries a file that no Spacedock
-installer creates; and two stages with the same tier cannot get different models. E would avoid the new
-file but is unverified per spawn.
+D is preferred over B because B's example has to use model names to express effort. D is preferred
+over deferring to native config (E) wherever it exists, because on Pi that config is per agent role
+rather than per stage (R1), it exists on one harness, and its precedence against the FO's stamp is
+undocumented. What gets worse under D: the `ParseStagesWithDefaultsData` allowlist and `modelEnum` (in
+`build.go` and `standing.go`) change; an old binary exits 1 on claude for a README with a new tier
+name; each machine carries a file that no Spacedock installer creates; two stages with the same tier cannot get different models; and a Pi user who
+already configured `agentOverrides` configures the route a second time. Under E instead, Codex and
+Claude would still need D's mapping, so two mechanisms would coexist.
 
 ## What happens to #845
 
@@ -177,11 +201,11 @@ operative part. Superseded: the Codex-only restriction, and suppressing the "ign
 
 1. Granularity: is the preference per tier (B, D), or per stage (A, C)?
 2. Vocabulary: a vendor-neutral tier in `model:` with Claude names as aliases, a new stage key, or Claude names as the tiers?
-3. Native config (E) or a new Spacedock mapping file?
+3. On Pi, should Spacedock emit no model and defer to `pi-subagents` settings (dropping the null-model stamp), or resolve through the same mapping as other harnesses?
 4. If a new file: a fixed per-user path, an env var naming a file, or both?
-5. Should mapping keys also include the auth path or profile, since one machine can use both `pi.oauth` and `pi.api-key` ids?
+5. Should mapping keys also include the auth path or provider, as `agentOverridesByProvider` does, since one machine can use both `pi.oauth` and `pi.api-key` ids?
 6. Effort values: a portable enum Spacedock validates, or an opaque per-harness string?
-7. Pi encoding, and the case of a substrate with no model parameter: fold effort into the id, a separate field, omit with a note, or exit non-zero?
+7. For a Pi substrate with no model parameter (omp's `task`) or an unverified one (`pi-agent-teams`): omit with a note, or exit non-zero?
 8. Model/effort pair the harness may reject (such as `gpt-6-luna` with `ultra`): pass through, or validate against a list Spacedock maintains?
 9. Missing mapping entry when the file exists: exit non-zero as proposed, or the stderr note?
 10. May a mapping entry override Claude's built-in alias on one machine?
@@ -190,5 +214,6 @@ operative part. Superseded: the Codex-only restriction, and suppressing the "ign
 13. `«worker-identity»` in `pi-first-officer-runtime.md` says stage-declared models "are passed unchanged", but `TestBuildPiHostIgnoresModelWithNote` pins `model: null`. Which one is intended?
 14. How does `dispatch build` learn the substrate, given that `--host pi` alone does not determine it?
 
-Unverified, needs a live check: Pi `subagent(...)` parameters; whether either harness-native config
-resolves an alias per spawn (E); harness behaviour on an unknown model or effort value.
+Unverified, needs a live check: `pi-subagents` behaviour at the installed version in a live spawn;
+`pi-agent-teams` parameters; a Codex per-spawn native config; harness behaviour on an unknown model
+or effort value.
