@@ -56,7 +56,11 @@ type versionReport struct {
 	problems               []string
 	needsUpdate, extraCopy bool
 	pluginsBehind          []string
+	mixed                  []mixedExtension
+	brewUpgrade            string
 }
+
+type mixedExtension struct{ name, host, program, plugin string }
 
 type versionInputs struct {
 	env         []string
@@ -123,6 +127,10 @@ func collectVersions(in versionInputs) versionReport {
 		report.problems = append(report.problems, fmt.Sprintf(format, a...))
 	}
 	pathEnv := envMap(in.env)["PATH"]
+	brew := in.selfPath != "" && isHomebrewPath(in.selfPath)
+	if brew {
+		report.brewUpgrade = brewUpgradeArgs(in.selfPath)
+	}
 
 	add("spacedock", in.selfVersion, in.selfPath)
 	spacedockID := channelPluginID(devBranch)
@@ -157,7 +165,8 @@ func collectVersions(in versionInputs) versionReport {
 				report.needsUpdate = true
 			case programVersion != "unknown" && pluginVer != "unknown" && programVersion != pluginVer:
 				problem("MIXED: the %s program %s does not match its plugin %s on %s.", ext.name, programVersion, pluginVer, h.title)
-				if cmp, err := release.ComparePreVersion(programVersion, pluginVer); err == nil && cmp > 0 {
+				report.mixed = append(report.mixed, mixedExtension{ext.name, h.title, programVersion, pluginVer})
+				if cmp, err := release.ComparePreVersion(programVersion, pluginVer); brew && err == nil && cmp > 0 {
 					if !slices.Contains(report.pluginsBehind, ext.name) {
 						report.pluginsBehind = append(report.pluginsBehind, ext.name)
 					}
@@ -226,7 +235,10 @@ func printVersionReport(w io.Writer, report versionReport) {
 		fmt.Fprintln(w, p)
 	}
 	fmt.Fprintf(w, "\nProblems found: %d.", len(report.problems))
-	if report.needsUpdate {
+	switch {
+	case report.needsUpdate && report.brewUpgrade != "":
+		fmt.Fprintf(w, " Homebrew owns the programs. Run `brew upgrade %s`, then `spacedock update` to bring every plugin to the same release.", report.brewUpgrade)
+	case report.needsUpdate:
 		fmt.Fprint(w, " Run `spacedock update` to bring every program and plugin to the same release.")
 	}
 	if len(report.pluginsBehind) > 0 {

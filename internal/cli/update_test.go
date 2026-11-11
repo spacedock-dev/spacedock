@@ -56,6 +56,9 @@ func (h *twoHosts) PluginInventory(host string) ([]pluginInventoryEntry, error) 
 func (h *twoHosts) Install(host, source, branch string) (string, error) {
 	if host == "codex" {
 		h.codexInstalls++
+		if h.codexInstallErr == nil {
+			h.codexPlugins = codexPlugins("1.0.1")
+		}
 		return "", h.codexInstallErr
 	}
 	return h.fakeHost.Install(host, source, branch)
@@ -164,8 +167,8 @@ func TestUpdateShowsTheInstallScriptsFailedPluginLinesWhenTheScriptSucceeds(t *t
 
 func TestUpdateOnHomebrewChangesNoProgramAndNamesTheBrewCommand(t *testing.T) {
 	for path, formula := range map[string]string{
-		"/opt/homebrew/Caskroom/spacedock/0.28.0/spacedock":      "brew upgrade spacedock\n",
-		"/opt/homebrew/Caskroom/spacedock@next/0.28.0/spacedock": "brew upgrade spacedock@next\n",
+		"/opt/homebrew/Caskroom/spacedock/0.28.0/spacedock":      "brew upgrade spacedock spacedock-dev/tap/subspace-beta spacedock-dev/tap/compass\n",
+		"/opt/homebrew/Caskroom/spacedock@next/0.28.0/spacedock": "brew upgrade spacedock@next spacedock-dev/tap/subspace-beta spacedock-dev/tap/compass\n",
 	} {
 		s := stageInstall(t)
 		ran := filepath.Join(t.TempDir(), "ran")
@@ -384,7 +387,11 @@ func TestUpdateLeavesAClaudeWithoutTheSpacedockPluginAlone(t *testing.T) {
 	d := updateDepsFor(s, host, script)
 	d.lookPath = hostsOnPath("claude", "codex")
 	var ran []string
-	d.runSelf = func(args ...string) (string, error) { ran = append(ran, strings.Join(args, " ")); return "", nil }
+	d.runSelf = func(args ...string) (string, error) {
+		ran = append(ran, strings.Join(args, " "))
+		host.codexPlugins = codexPlugins("1.0.1")
+		return "", nil
+	}
 
 	var stdout, stderr bytes.Buffer
 	if code := runUpdate(d, &stdout, &stderr); code != 0 {
@@ -401,7 +408,7 @@ func TestUpdateLeavesAClaudeWithoutTheSpacedockPluginAlone(t *testing.T) {
 	}
 }
 
-func TestUpdateFailsAndRefreshesNoPluginWhenGitHubLimitsAnExtensionLookup(t *testing.T) {
+func TestUpdateFailsAndRefreshesNoPluginWhenAnExtensionLookupFails(t *testing.T) {
 	s := stageInstall(t)
 	root := t.TempDir()
 	dist, stubs := filepath.Join(root, "dist"), filepath.Join(root, "stubs")
@@ -430,10 +437,42 @@ func TestUpdateFailsAndRefreshesNoPluginWhenGitHubLimitsAnExtensionLookup(t *tes
 	if code := runUpdate(d, &stdout, &stderr); code != 1 {
 		t.Fatalf("exit = %d, want 1; stderr:\n%s", code, stderr.String())
 	}
-	if !strings.Contains(stderr.String(), "rate limit") {
-		t.Errorf("stderr does not name GitHub's rate limit:\n%s", stderr.String())
+	if !strings.Contains(stderr.String(), "the spacedock marketplace listing names no release of subspace") {
+		t.Errorf("stderr does not name the unreadable listing:\n%s", stderr.String())
 	}
 	if strings.Contains(stdout.String(), "Claude Code plugins") || len(s.host.installCmds) != 0 {
 		t.Errorf("a failed lookup still refreshed plugins or printed a result table: installCmds=%v\n%s", s.host.installCmds, stdout.String())
+	}
+}
+
+func TestUpdateFailsAndNamesTheExtensionWhenAProgramDownloadFailedButThePluginsMoved(t *testing.T) {
+	s := stageInstall(t)
+	s.host.inventory[2].Version = "1.0.2"
+	host := &switchHost{fakeHost: s.host, flag: "", after: nil}
+	script := filepath.Join(t.TempDir(), "install.sh")
+	mustWrite(t, script, "#!/bin/sh\necho 'beta: download failed - skipped' >&2\n")
+
+	var stdout, stderr bytes.Buffer
+	if code := runUpdate(updateDepsFor(s, host, script), &stdout, &stderr); code != 1 {
+		t.Fatalf("update exited %d, want 1 while beta is MIXED; stderr:\n%s", code, stderr.String())
+	}
+	want := "spacedock update: beta is still MIXED on Claude Code: program 1.0.1, plugin 1.0.2. Left behind: the program (failed: the install script's download of the beta program)."
+	if !strings.Contains(stderr.String(), want) {
+		t.Errorf("stderr lacks %q:\n%s", want, stderr.String())
+	}
+}
+
+func TestBrewFormulaNamesTheCaskAndBothExtensionFormulas(t *testing.T) {
+	const formulas = " spacedock-dev/tap/subspace-beta spacedock-dev/tap/compass"
+	for path, want := range map[string]string{
+		"/opt/homebrew/Caskroom/spacedock/0.28.0/spacedock":      "spacedock" + formulas,
+		"/opt/homebrew/Caskroom/spacedock@next/0.28.0/spacedock": "spacedock@next" + formulas,
+	} {
+		if got := brewFormula(path, true); got != want {
+			t.Errorf("brewFormula(%q) = %q, want %q", path, got, want)
+		}
+	}
+	if got := brewFormula("/usr/local/bin/spacedock", false); got != "" {
+		t.Errorf("brewFormula on a curl install = %q, want none", got)
 	}
 }

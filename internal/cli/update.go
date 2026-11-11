@@ -13,6 +13,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+
+	"github.com/spacedock-dev/spacedock/internal/release"
 )
 
 const installScriptURL = "https://raw.githubusercontent.com/spacedock-dev/spacedock/main/install.sh"
@@ -140,6 +142,10 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 	}
 	printUpdateChanges(stdout, before, after, brewFormula(d.selfPath, brew), hosts, pi)
 	code := 0
+	for _, line := range mixedAfterUpdate(after.mixed, brew, before.brewUpgrade) {
+		fmt.Fprintln(stderr, line)
+		code = 1
+	}
 	if pi.err != nil {
 		fmt.Fprintf(stderr, "spacedock update: the Pi package update failed: %v\n", pi.err)
 		code = 1
@@ -273,14 +279,43 @@ func printInstallFailures(w io.Writer, out string) {
 	}
 }
 
-func brewFormula(selfPath string, brew bool) string {
-	switch {
-	case !brew:
-		return ""
-	case isEdgeCaskPath(selfPath):
-		return "spacedock@next"
+// brewUpgradeArgs names the cask and both extension formulas: a cask upgrade
+// leaves an installed formula where it is, so naming the cask alone leaves a
+// program behind its plugin.
+func brewUpgradeArgs(selfPath string) string {
+	cask := "spacedock"
+	if isEdgeCaskPath(selfPath) {
+		cask = "spacedock@next"
 	}
-	return "spacedock"
+	return cask + " spacedock-dev/tap/subspace-beta spacedock-dev/tap/compass"
+}
+
+func brewFormula(selfPath string, brew bool) string {
+	if !brew {
+		return ""
+	}
+	return brewUpgradeArgs(selfPath)
+}
+
+func mixedAfterUpdate(mixed []mixedExtension, brew bool, brewArgs string) []string {
+	var lines []string
+	for _, m := range mixed {
+		behind := "the program or the plugin"
+		step := "a step of this update"
+		if cmp, err := release.ComparePreVersion(m.program, m.plugin); err == nil {
+			switch {
+			case cmp < 0 && brew:
+				behind, step = "the program", "Homebrew has not upgraded it; run `brew upgrade "+brewArgs+"`"
+			case cmp < 0:
+				behind, step = "the program", "the install script's download of the "+m.name+" program"
+			default:
+				behind, step = "the "+m.host+" plugin", "the "+m.host+" plugin install"
+			}
+		}
+		lines = append(lines, fmt.Sprintf("spacedock update: %s is still MIXED on %s: program %s, plugin %s. Left behind: %s (failed: %s). Run `spacedock update` again.",
+			m.name, m.host, m.program, m.plugin, behind, step))
+	}
+	return lines
 }
 
 var restartAdvice = map[string]string{

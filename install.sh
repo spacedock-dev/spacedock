@@ -39,6 +39,8 @@ set -eu
 REPO="spacedock-dev/spacedock"
 INSTALL_DIR="${SPACEDOCK_INSTALL_DIR:-$HOME/.local/bin}"
 CHANNEL="${SPACEDOCK_CHANNEL:-stable}"
+LISTING_REPO="https://github.com/spacedock-dev/marketplace.git"
+LISTING_URL="https://raw.githubusercontent.com/spacedock-dev/marketplace/main/.claude-plugin/marketplace.json"
 LOOKUP_FAILED=""
 
 err() { printf 'install.sh: %s\n' "$*" >&2; }
@@ -206,6 +208,53 @@ release_tag() {
 	printf '%s\n' "$rt_tag"
 }
 
+listing_version() {
+	printf '%s\n' "$2" | tr '\n' ' ' | awk -v plugin="$1" '
+		function field(s, key,   v) {
+			if (!match(s, "\"" key "\"[ \t]*:[ \t]*\"[^\"]*\"")) return ""
+			v = substr(s, RSTART, RLENGTH); sub("^\"" key "\"[ \t]*:[ \t]*\"", "", v); sub("\"$", "", v)
+			return v
+		}
+		{
+			s = $0
+			while (match(s, /"name"[ \t]*:/)) {
+				s = substr(s, RSTART)
+				rest = substr(s, 2)
+				end = match(rest, /"name"[ \t]*:/) ? RSTART : length(rest) + 1
+				entry = substr(s, 1, end)
+				s = substr(rest, end)
+				version = field(entry, "version")
+				if (field(entry, "name") == plugin && version != "") { print version; exit }
+			}
+		}'
+}
+
+# listing_body prints the marketplace listing. It reads over git, as Claude Code and
+# Codex do: raw.githubusercontent.com serves a listing up to five minutes after a
+# release stamps it, which would pair the program with the previous release.
+# Without git it falls back to the raw file.
+listing_body() {
+	lb_body=""
+	if command -v git >/dev/null 2>&1 && lb_dir="$(mktemp -d)"; then
+		GIT_TERMINAL_PROMPT=0 git clone -q --depth 1 --branch main "$LISTING_REPO" "$lb_dir" >/dev/null 2>&1 \
+			&& lb_body="$(cat "$lb_dir/.claude-plugin/marketplace.json" 2>/dev/null)" || lb_body=""
+		rm -rf "$lb_dir"
+	fi
+	[ -n "$lb_body" ] || lb_body="$(curl -fsSL --connect-timeout 2 --max-time 5 "$LISTING_URL" 2>/dev/null)" || lb_body=""
+	printf '%s\n' "$lb_body"
+}
+
+# listed_tag: an extension's plugins and Pi package install from the listing, so its
+# program does too, whatever GitHub lists as the newest release.
+listed_tag() {
+	lt_tag="v$(listing_version "$1" "$(listing_body)")"
+	is_release_tag "$lt_tag" || {
+		err "the spacedock marketplace listing names no release of $1 (read $LISTING_REPO)"
+		return 1
+	}
+	printf '%s\n' "$lt_tag"
+}
+
 # newest_tag prints the highest vMAJOR.MINOR.PATCH[-PRERELEASE] tag of a repo,
 # skipping prereleases on stable. It ranks with a zero-padded key and a C-locale
 # sort because `sort -V` on macOS puts a release before its own prereleases.
@@ -295,7 +344,9 @@ install_extra() {
 		[ "$(installed_version "$name" "$programs" "$kind" "$links")" = "$ver" ] && { err "$name $ver unchanged"; rm -rf "$dir"; return 0; }
 		cp "$local_from/$asset" "$dir/$asset" && cp "$local_from/checksums.txt" "$dir/checksums.txt" || return 1
 	else
-		tag="$(release_tag "$repo")" || { LOOKUP_FAILED=1; return 1; }
+		# This request is what spacedock.md counts as an install; its answer is not read.
+		release_tag "$repo" >/dev/null 2>&1 || :
+		tag="$(listed_tag "$name")" || { LOOKUP_FAILED=1; return 1; }
 		ver="${tag#v}"
 		[ "$(installed_version "$name" "$programs" "$kind" "$links")" = "$ver" ] && { err "$name $ver unchanged"; rm -rf "$dir"; return 0; }
 		asset="${prefix}_${ver}_${os}_${arch}.tar.gz"
