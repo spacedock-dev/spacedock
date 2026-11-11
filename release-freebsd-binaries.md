@@ -3,6 +3,17 @@ title: "Release FreeBSD binaries"
 source: "Captain request during the 0.28.0 release, 2026-11-10; Subspace added FreeBSD release targets on 2026-11-05"
 id: h0xv2p2a7kts1k124hjdgb2v
 status: backlog
+gates:
+    version: 1
+    records:
+        - id: gate:h0xv2p2a7kts1k124hjdgb2v:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:h0xv2p2a7kts1k124hjdgb2v-backlog-1
+              briefing:
+                id: briefing:h0xv2p2a7kts1k124hjdgb2v:backlog:attempt-1:revision-1
+                digest: sha256:f7e4c48a9345b32bd99144a6d3cb586efcc0a304692709cbbe31aa4732c73505
+                room-ref: '@review/backlog/briefing-1'
 ---
 
 Spacedock releases ship darwin and linux binaries only, and `install.sh` rejects any other OS. A FreeBSD user has to build from source. Subspace, which the Spacedock installer also installs, now builds FreeBSD amd64 and arm64 binaries; Spacedock should match so a FreeBSD host can install the whole kit.

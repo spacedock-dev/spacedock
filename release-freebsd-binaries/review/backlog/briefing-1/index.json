@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:h0xv2p2a7kts1k124hjdgb2v:backlog:attempt-1:revision-1",
+  "question": "Take FreeBSD release binaries into ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:h0xv2p2a7kts1k124hjdgb2v:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/659b2fcc9571213e8979683e218efe4826dcc900/release-freebsd-binaries.md",
+      "rev": "sha256:62856673424ec9e8f90313a44fafc652e9bb885f933e92500b233121e02d74a7",
+      "mediaType": "text/markdown",
+      "summary": "Spacedock already cross-compiles for FreeBSD amd64 and arm64; shipping needs the release target list, the installer OS mapping, a CI compile check and docs. Ideation owes answers on the Homebrew cask step, extensions without FreeBSD assets, host support, and how the installer is proven."
+    }
+  ]
+}
