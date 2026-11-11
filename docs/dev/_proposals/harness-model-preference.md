@@ -213,7 +213,7 @@ Shape-deciding first.
 | Effort values | Validate README `effort:` against low, medium, high, xhigh, max; pass flag values through opaque | Those five are common to all three vocabularies above | A harness drops one of the five |
 | Model/effort pair the harness may reject | Pass through, no per-model list | Value-space precedent above; Codex lists vary per model | A live check shows a silent fallback on an unknown pair |
 | Mapping file present, entry missing | Exit non-zero | The FO, not a person, runs `dispatch build`; a stderr note on exit 0 is unseen | CL wants a softer rollout |
-| Pi substrate with no or unverified model parameter | Exit non-zero when a model or effort was requested | Same reason; `piruntime.TeamsAction` has no model field | `pi-agent-teams` is shown to carry a model |
+| Pi substrate with no or unverified model parameter | Exit non-zero when a model or effort was requested. This needs a substrate signal `dispatch build` does not have today (next row); until one exists it cannot tell the substrates apart | Same reason; `piruntime.TeamsAction` has no model field | `pi-agent-teams` is shown to carry a model |
 | Pi substrate encoding | Encode for `pi-subagents` | A `--host pi` envelope already has the `pi-subagents` shape | A substrate signal is added to `dispatch build` |
 | Reuse | Envelope and `buildAdvanceOutput` carry effort; `«worker-identity»` records the emitted model and effort, flag values included; a mismatch in either forces a fresh dispatch | Effort is not recorded today, and Codex reuses through `followup_task` | — |
 | Standing teammates | Out of scope; `buildSpawnSpec` keeps the four Claude values | It takes no host and emits an `Agent()` spec | Standing teammates are spawned on Codex or Pi |
