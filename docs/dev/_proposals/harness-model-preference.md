@@ -1,56 +1,77 @@
 # Proposal: per-harness, per-machine model and reasoning-effort preference
 
-This proposes that a workflow README keep declaring a portable model *intent* per stage, that a
-machine-local mapping turn that intent into a concrete model and reasoning effort for each harness,
-and that `dispatch build` flags (open PR #845) sit on top as a one-dispatch override.
+This proposes that `dispatch build`, which already knows `--host`, emit model and effort values
+ready for that harness's spawn call, so the first officer copies them verbatim and translates
+nothing. It also proposes that a workflow README declare a vendor-neutral tier and an optional effort
+per stage, that a machine-local mapping resolve the tier to a concrete model per harness, and that
+the `dispatch build` flags of open PR #845 override one dispatch.
 
-Status: proposal for discussion (2026-11-11). Nothing is implemented. Facts below were read on
+Status: proposal for discussion (2026-11-11). Nothing is implemented. Repository facts were read on
 `main` at `5785dbed7`.
 
 ## Terms
 
-"Host" has two meanings below and this doc never uses the bare word: `--host` names the harness;
+"Host" has two meanings, so this doc avoids the bare word: `--host` names the harness, and
 "hosta"/"hostb" name machines.
 
-- **Harness** — the agent runtime a worker is spawned in: `--host claude|codex|pi` on `spacedock dispatch build`.
-- **Machine** — the computer and account a harness runs on. Two machines can reach the same model
-  through different provider routes or profiles (a default LLM gateway on one, native provider routing on another).
-- **FO** — the first officer, the orchestrating agent that runs `dispatch build` and spawns workers.
-- **Envelope** — the JSON `dispatch build` prints (`buildOutput`); the FO copies its fields into the spawn call.
+- **Harness**: the agent runtime a worker is spawned in, `--host claude|codex|pi` on `spacedock dispatch build`.
+- **Substrate**: the spawn tool a harness offers. Pi has two in `pi-first-officer-runtime.md`
+  (`pi-subagents`, `pi-agent-teams`).
+- **Machine**: the computer and account a harness runs on. Two machines can reach the same model
+  through different provider routes or profiles.
+- **FO**: the first officer. It is an LLM that runs `dispatch build` and copies envelope fields into
+  the spawn call by following prose in `skills/first-officer/references/*-runtime.md`.
+- **Envelope**: the JSON that `dispatch build` prints (`buildOutput`).
+- **Tier**: a vendor-neutral label for how capable a stage's model should be, such as `deep`.
 
 ## Problem
 
-A stage can ask for a model only on Claude: on Codex and Pi the declared model is dropped and every
-worker inherits the FO's model (`«worker-identity»` in each runtime adapter), so a cheap stage runs on
-an expensive tier. There
-is no persistent place to say "for stage X use model M at effort E" per harness. A concrete id
-committed in the README cannot be right on every machine, because the same model is reached through a
-different route per machine (see the `live_models.txt` pair below). Reasoning effort has no
-representation in non-test `internal/dispatch` code or in `skills/first-officer/references`.
+A stage can request a model only on Claude (the `host == "claude"` branch in `build.go`). On Codex and Pi the declared model is dropped, and each
+worker inherits the FO's model (`«worker-identity»` in each runtime adapter), so a cheap stage runs
+on an expensive tier. No persistent place says "for stage X use model M at effort E" for each
+harness. A concrete id committed in a README depends on the auth path and provider configuration in
+use, so one README can be wrong for a given machine. Effort has no representation in non-test
+`internal/dispatch` code or in `skills/first-officer/references`. The copy step in the FO is where
+the harnesses differ, and it is done by an LLM reading prose.
 
 ## Current behaviour on main
 
-| Harness | What a README `model:` does | Effort | Where it is decided |
+| Harness | What a README `model:` does | Effort | Decided in |
 |---|---|---|---|
-| claude | stage > `stages.defaults` > null; value must be in `modelEnum` (sonnet, opus, haiku, fable), else exit 1; FO passes it as `Agent(model=…)`, omitted when null | No slot in the `Agent()` template of `claude-fo-dispatch.md` | `internal/dispatch/build.go`, block after `stageMeta.Model()` |
-| codex | Ignored with stderr note `[build] declared model '…' ignored on host`; envelope `model: null`; worker inherits the thread's model | None. `CodexMultiAgentV2Spawn.ToolArgs` emits only `task_name`, `message`, `fork_turns`; the "future overrides" case of `TestCodexMultiAgentV2SpawnInputAlwaysIsolatesFreshDispatch` pins that `model`/`reasoning_effort` are dropped | same block; `codex_v2_adapter.go` |
-| pi | Ignored with the same note; envelope `model: null` (`TestBuildPiHostIgnoresModelWithNote`). The FO stamps the parent's live model on null (roadmap `0223`, member `pi-dispatch-model-stamping`, PR #405 — a null-handling fix, not a passthrough) | No dispatch slot. The live test harness's child model takes it inside the id as `provider/model:thinking` (`docs/runtime-live-ci.md`; `internal/release/live_models.txt`); not checked for a `subagent(...)` spawn | same block; `pi-first-officer-runtime.md` `«worker-identity»` |
+| claude | stage > `stages.defaults` > null. Both values are checked against `modelEnum` (sonnet, opus, haiku, fable); either invalid gives exit 1. Passed as `Agent(model=…)`, omitted when null | No slot in the `Agent()` template in `claude-fo-dispatch.md` | `internal/dispatch/build.go`, block after `stageMeta.Model()` |
+| codex | Ignored with stderr note `[build] declared model '…' ignored on host`; `model: null` (`TestBuildCodexHostIgnoresModelWithNote`); worker inherits the thread's model | `CodexMultiAgentV2Spawn.ToolArgs` emits only `task_name`, `message`, `fork_turns`; the "future overrides" case in `TestCodexMultiAgentV2SpawnInputAlwaysIsolatesFreshDispatch` pins that both fields are dropped | same block; `codex_v2_adapter.go` |
+| pi | Ignored with the same note; `model: null` (`TestBuildPiHostIgnoresModelWithNote`). On null the FO stamps the parent's live model (PR #405, `pi-dispatch-model-stamping`, a null-handling fix rather than a passthrough) | No dispatch slot. The live test child model carries effort in the id as `provider/model:thinking` (`docs/runtime-live-ci.md`); not checked for a `subagent(...)` spawn | same block; `pi-first-officer-runtime.md` `«worker-identity»` |
 
-Two further facts shape the design:
+Further facts that shape the design:
 
-- **Pi ids are machine-specific in this repo's own test config.** `internal/release/live_models.txt`
-  lists the same model twice by auth path: `pi.oauth=openai-codex/gpt-6-luna:max` and
-  `pi.api-key=openai/gpt-6-luna:max`. Custom providers (for example `lunaroute`) resolve only if the
-  machine's `~/.pi/agent/models.json` declares them (`docs/runtime-live-ci.md`).
-- **The stage parser is scalar-only.** By reading (not executed): `scalarMap` in
-  `internal/status/stages.go` stores `""` for a mapping value, so a nested `model: {codex: …}` would
-  reach the `modelEnum` check as `''` and fail `dispatch build --host claude` with exit 1. A new sibling
-  key is dropped by `ParseStagesWithDefaultsData`, which keeps only `feedback-to`, `agent`, `fresh`,
-  `model`; no other validator was checked.
+- **Pi ids depend on auth path and provider configuration.** `internal/release/live_models.txt` lists one
+  model under two ids: `pi.oauth=openai-codex/gpt-6-luna:max` and `pi.api-key=openai/gpt-6-luna:max`.
+  Custom providers such as `lunaroute` resolve only where `~/.pi/agent/models.json` declares them
+  (`docs/runtime-live-ci.md`). One machine can therefore use either id, so a mapping keyed only by
+  (harness, tier) assumes one auth path per machine.
+- **The stage parser is scalar-only.** Read, not executed: `scalarMap` in `internal/status/stages.go`
+  stores `""` for a mapping value, so a nested `model: {codex: …}` would fail the `modelEnum` check on
+  claude with exit 1. The optional-field allowlist in `ParseStagesWithDefaultsData` is `feedback-to`,
+  `agent`, `fresh`, `model`, so today's binary drops a new stage key.
+- **Native machine config.** Spacedock has no per-user or per-machine config file of its own, as far as
+  checked (env lookups in `internal/`, `internal/cli/local_plugin.go`,
+  `docs/specs/extension-install-contract.md`). For Pi, `~/.pi/agent/models.json` declares provider
+  models. For Codex, this repo shows `--profile` only as a launch argument passed through
+  `spacedock codex --` (`docs/roadmap/0250-fo-behavioral-discipline/post-sprint-audit.md`), which
+  applies to the whole FO session and not to one spawn.
 
-Spacedock has no per-user or per-machine config file of its own as far as checked (env lookups in
-`internal/`, `internal/cli/local_plugin.go`, `docs/specs/extension-install-contract.md`). The only
-machine-local model config found belongs to the harnesses themselves (`~/.pi/agent/models.json`, `CODEX_HOME`).
+**Spawn-tool schemas: agent self-reports of their own tool schema in one session each on one machine
+on 2026-11-11, not repository facts and not a guarantee for other installs.**
+
+| Spawn tool | Model | Effort | Notes |
+|---|---|---|---|
+| Claude Code `Agent` | `model` enum: sonnet, opus, haiku, fable | separate `effort`: low, medium, high, xhigh, max | |
+| Codex CLI 0.162.1 `spawn_agent` | optional `model: string` | optional `reasoning_effort: string` | Overrides require `fork_turns: "none"`; a full-history fork inherits model and effort. Listed effort values vary by model (`gpt-6-luna` lists no `ultra`). Behaviour on an unknown value is not specified and was not tried |
+| omp 18.2.0 (a Pi-family harness) `task` | none | none | Exposes no `subagent` or `intercom` tool |
+| Pi `subagent(...)` | unverified | unverified | Nobody could run it |
+
+Consequence: the harness alone does not determine what a spawn can carry, because two Pi-family
+substrates differ.
 
 ## Requirements
 
@@ -59,102 +80,115 @@ machine-local model config found belongs to the harnesses themselves (`~/.pi/age
 - **R3 Generalize the frontmatter path, allow override.** "the claude path reads from readme frontmatter. we should probably generalize it and allow override" (CL).
 - **R4 Per harness.** "we don't have a good way to represent per-harness preference" (CL).
 - **R5 Per machine.** "on pi for different host, it might have different profile config to the model"; "hosta … default llm gateway … hostb uses native provider routing (lunaroute/deepseek-4.1-flash)" (CL).
-- **R6 An invoker exists.** "you still need an entry point (by prose or by a invoker somewhere)" (CL). The persisted preference is that entry point; the flags are only the mechanism.
+- **R6 An invoker exists.** "you still need an entry point (by prose or by a invoker somewhere)" (CL). The persisted preference is that entry point; the flags are the mechanism.
 - **R7 Existing READMEs keep working.** `docs/dev/README.md` declares `model: opus` on two stages today.
+
+## Core rule: harness-ready envelope
+
+`dispatch build` resolves the value, encodes it for the harness, and emits it. The FO prose for each
+harness reduces to "pass these fields verbatim". When the harness cannot carry the requested value,
+`dispatch build` decides; the FO does not.
+
+| Harness | Model encoding | Effort encoding | Requested value cannot be carried |
+|---|---|---|---|
+| claude | `model`, a `modelEnum` value | new `effort` field (self-report above); `claude-fo-dispatch.md` needs the slot added | exit non-zero (value outside the enum) |
+| codex | `model`, an opaque string | `reasoning_effort`, an opaque string; `fork_turns: "none"` is already fixed by `CodexMultiAgentV2Spawn.ToolArgs` | Spacedock holds no per-model effort list, so an incompatible pair reaches the harness (open question 8) |
+| pi | unverified: `subagent(...)` `model` per `pi-first-officer-runtime.md` | unverified: fold into the id (`:max`), a separate field, or omit with a note (open question 7) | unverified; a substrate with no model parameter, such as omp's `task`, needs exit non-zero or omit with a note (open question 7) |
 
 ## Candidate shapes
 
-**A. Per-harness concrete values in the README** (sibling key, because nesting under `model:` breaks today's binary):
+| | README commits | Machine holds | Granularity | hosta/hostb | Old binary reading new README |
+|---|---|---|---|---|---|
+| A | concrete id per harness (`harness-models:` key) | nothing | per stage | fails: committed id fits one auth path | key dropped; today's behaviour |
+| B | today's `model:` as intent | (harness, intent) → model, effort | per intent | works | unchanged |
+| C | A's ids as defaults | (harness, stage) overrides | per stage | works only where overridden | key dropped |
+| D | tier plus optional `effort:` per stage; Claude names kept as tier aliases | (harness, tier) → model | model per tier, effort per stage | works | `model: deep` exits 1 on claude; `effort:` dropped |
+| E | a logical alias | nothing new; the harness's own config resolves the alias | per alias | unverified (see native config above) | depends on the alias |
 
 ```yaml
+# D, README
 - name: implementation
-  model: opus                       # claude, unchanged
-  harness-models:
-    codex: {model: gpt-6-luna, effort: high}
-    pi:    {model: openai-codex/gpt-6-luna:max}   # `:max` on a spawn: unverified
-```
-
-Committed: everything. Fails R5: the `pi` id is right on one machine only. Old binaries drop the key
-silently; `model: opus` is unchanged.
-
-**B. Portable intent in the README, machine-local mapping per harness:**
-
-```yaml
-# README — unchanged
-- name: implementation
-  model: opus
+  model: deep        # tier; `opus` remains an alias for `deep`
+  effort: high       # optional, vendor-neutral
 ```
 ```yaml
-# machine-local mapping on hostb (location: open question)
-codex:
-  opus:   {model: gpt-6-luna, effort: high}
-  sonnet: {model: gpt-6-luna, effort: low}
-pi:
-  opus:   {model: "lunaroute/deepseek-4.1-flash"}
+# D, machine-local mapping on hostb (location: open question 4)
+codex: {deep: gpt-6-luna, fast: gpt-6-luna}
+pi:    {deep: "lunaroute/deepseek-4.1-flash"}
 ```
 
-Committed: the intent only. hosta writes `pi.opus` with its gateway route; hostb writes the lunaroute
-id; the README is identical on both (R5). On claude with no entry, the intent is the model, as today
-(R7). A machine with no mapping behaves exactly as today: `model: null` plus the note. The cost: the
-Claude names become the cross-harness tier vocabulary unless a new key is added.
-
-**C. Hybrid: README defaults per harness (A), machine-local override (B, keyed by harness and stage).**
-Committed: a per-harness default plus the intent. Meets R5 only where the machine overrides; a
-missing override silently uses a committed id that may not resolve on that machine. Two places to
-read when debugging which model ran.
+B's own example needs `opus → {gpt-6-luna, high}` and `sonnet → {gpt-6-luna, low}`: a Claude family
+name stands in for an effort level, and a reader can take `model: opus` as "use Claude Opus". D
+separates the two. D costs: the `ParseStagesWithDefaultsData` allowlist gains `effort`; `modelEnum`
+in `build.go` and in `standing.go` learns tiers and aliases; and an old binary exits 1 on claude for a
+README written with a new tier name. Claude itself needs no mapping: each tier has a built-in Claude
+alias.
 
 ## Precedence (stated once)
 
-The intent is resolved as today: stage `model:` > `stages.defaults.model` > none. The concrete value
-for one dispatch is then:
+Model and effort resolve independently, field by field. Each takes the highest layer that sets it:
 
-1. `dispatch build --model / --reasoning-effort` (the #845 flags), for that dispatch only;
-2. the machine-local entry for (harness, intent) — on claude, pending open question 3;
-3. on claude only, the intent itself, still validated against `modelEnum`;
-4. otherwise `model: null` with today's stderr note, and the FO's existing per-harness null handling
-   (Codex thread inheritance, Pi parent-live-model stamp, Claude omits `model`).
+1. the `dispatch build` flags (`--model`, `--reasoning-effort`), for that dispatch only;
+2. the stage's README value, and for effort the README `effort:`; the machine mapping resolves a tier
+   to a model at this layer;
+3. `stages.defaults`;
+4. none: `model` is null (or the effort field is omitted), as today.
 
-Effort is emitted as `reasoning_effort` only when a layer above resolves it (omitted otherwise, as #845
-already does). `buildAdvanceOutput.Model`, the value `«reuse.model-match»` compares, would carry the
-resolved model, not the intent.
+So `--model N` keeps the README's effort, and an effort-only flag keeps the resolved model. On Pi,
+if effort is folded into the id, the id is built after both fields resolve. A model/effort pair the
+harness rejects is open question 8.
+
+Reuse compares model and effort together. Today `buildAdvanceOutput` carries `Model` only. Under D
+on Codex, two stages with one model and different efforts would look reusable, while on Pi, with
+effort folded into the id, they would not. `buildAdvanceOutput` therefore gains the effort field.
+
+## Failure defaults
+
+The FO, not a person, runs `dispatch build`. A stderr note on exit 0 is effectively unseen.
+Proposed:
+
+- No mapping file at all: today's behaviour (codex/pi: `model: null` plus the note; claude unchanged).
+- Mapping file present, tier entry missing: exit non-zero.
+- Requested value the harness cannot carry: exit non-zero (core rule table).
 
 ## Recommendation
 
-Shape B. Reasons:
+Shape D, resolved through a machine-local mapping, with the harness-ready envelope. Reasons:
 
-1. It is the only shape that commits nothing machine-specific, so it answers hosta/hostb (R5) and not only the per-harness case.
-2. It needs no README change: `model: opus` on Claude is byte-identical, and a machine without a mapping runs as today.
-3. The #845 flags become layer 1 of the precedence unchanged, and the mapping is their missing invoker (R6).
+1. It commits nothing machine-specific (R5), and it keeps effort apart from model choice (R2) without per-stage keys in a machine file.
+2. Existing READMEs keep working: `model: opus` is an alias, and claude output is unchanged (R7).
+3. The #845 flags become layer 1 unchanged, and the mapping is their invoker (R6).
 
-What gets worse: until a machine has a mapping, Codex and Pi still inherit the FO's tier, and the only
-sign is the existing stderr note. Each machine carries one more file that no Spacedock installer
-creates. Reusing Claude names as tiers reads oddly on Codex and Pi.
+D is preferred over B because B's example has to use model names to express effort. What gets worse under D: the parser, `modelEnum` and `standing.go` all change; an old
+binary fails on a README that uses a new tier name; each machine carries a file that no Spacedock
+installer creates; and two stages with the same tier cannot get different models. E would avoid the new
+file but is unverified per spawn.
 
 ## What happens to #845
 
 Survives as layer 1: the `--model` / `--reasoning-effort` flags, their refusals (empty, with
-`--advance`), the `reasoning_effort` omitempty envelope field, and forwarding in
-`CodexMultiAgentV2Spawn.ToolArgs`. On main grep finds no non-test Go caller of that adapter (only
-`conflict_owner_fixture_test.go` and the contractlint test); the FO calls `spawn_agent` from
-`codex-first-officer-runtime.md`, so the runtime-doc change is the operative part. Superseded: the
-Codex-only restriction (`«worker-identity»` in `pi-first-officer-runtime.md` already has the FO pass
-stage-declared models on Pi), and suppressing the
-"ignored" note only for `--model`, which becomes "suppress when any layer resolves". The branch is 151
-commits behind main and needs a rebase.
+`--advance`), the `reasoning_effort` omitempty field, and forwarding in
+`CodexMultiAgentV2Spawn.ToolArgs`. Grep finds no non-test Go caller of that adapter on main (only
+`conflict_owner_fixture_test.go` and the contractlint test), so its runtime-doc change is the
+operative part. Superseded: the Codex-only restriction, and suppressing the "ignored" note only for
+`--model`. The branch is 151 commits behind main.
 
 ## Open questions for CL
 
-1. Intent vocabulary: reuse `model:` values (sonnet/opus/haiku/fable) as cross-harness tiers, or add a new stage key — and if new, its name?
-2. Mapping location: a fixed per-user path, an env var naming a file, or both?
-3. May a mapping entry also override Claude (pin `opus` to another enum value on one machine)?
-4. Mapped model and effort values on codex/pi: validated by Spacedock (per-harness enum), or opaque strings passed through?
-5. Pi: does effort stay folded in the id (`:max`), or does Spacedock emit it separately?
-6. When a mapping file exists but lacks the entry, stderr note (as today) or exit 1?
-7. On reuse, does a model or effort mismatch force a fresh dispatch, given the flags are refused with `--advance` so a flag-overridden worker will not match the resolved value?
-8. Are standing teammates in scope (`standing.go` validates their `## Hook: startup` model against `modelEnum`)?
-9. On Pi, `«worker-identity»` in `pi-first-officer-runtime.md` says stage-declared models "are passed unchanged", but `TestBuildPiHostIgnoresModelWithNote` pins `model: null` — which is intended?
+1. Granularity: is the preference per tier (B, D), or per stage (A, C)?
+2. Vocabulary: a vendor-neutral tier in `model:` with Claude names as aliases, a new stage key, or Claude names as the tiers?
+3. Native config (E) or a new Spacedock mapping file?
+4. If a new file: a fixed per-user path, an env var naming a file, or both?
+5. Should mapping keys also include the auth path or profile, since one machine can use both `pi.oauth` and `pi.api-key` ids?
+6. Effort values: a portable enum Spacedock validates, or an opaque per-harness string?
+7. Pi encoding, and the case of a substrate with no model parameter: fold effort into the id, a separate field, omit with a note, or exit non-zero?
+8. Model/effort pair the harness may reject (such as `gpt-6-luna` with `ultra`): pass through, or validate against a list Spacedock maintains?
+9. Missing mapping entry when the file exists: exit non-zero as proposed, or the stderr note?
+10. May a mapping entry override Claude's built-in alias on one machine?
+11. On reuse, does an effort mismatch force a fresh dispatch, and does a flag-set worker (flags are refused with `--advance`) record its values for comparison?
+12. Are standing teammates in scope (`buildSpawnSpec` in `standing.go` validates their model against `modelEnum`)?
+13. `«worker-identity»` in `pi-first-officer-runtime.md` says stage-declared models "are passed unchanged", but `TestBuildPiHostIgnoresModelWithNote` pins `model: null`. Which one is intended?
+14. How does `dispatch build` learn the substrate, given that `--host pi` alone does not determine it?
 
-Unverified in this repository (needs a live check, not a ruling): whether Codex `spawn_agent` accepts
-`model` and `reasoning_effort`; whether a Codex worker also inherits the FO's reasoning effort;
-whether Claude's `Agent()` accepts any effort value; whether Pi's `subagent(...)` takes a thinking
-level at all, in the id or as a separate parameter.
+Unverified, needs a live check: Pi `subagent(...)` parameters; whether either harness-native config
+resolves an alias per spawn (E); harness behaviour on an unknown model or effort value.
