@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:9wpk5vftfth48rcaxft6kw27:ideation:attempt-1:revision-1",
+  "question": "Approve the test-only design for the four live-journey defects, including grading a closed revise held at validation for ac-value-reanchor?",
+  "artifacts": [
+    {
+      "id": "artifact:9wpk5vftfth48rcaxft6kw27:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/bd29e8186697c6cc676f74e4281334d1528576e1/live-journey-graders-fail-correct-agents.md",
+      "rev": "sha256:7ba7471252c3c9454577726f270944237dace59dd0f3ae20405ce649ce72f295",
+      "mediaType": "text/markdown",
+      "summary": "All four defects confirmed from CI logs and prototyped: frontmatter-scoped grader patterns, an AC-1 citation in the Pi fixture, ac-value-reanchor graded as revise held at validation with no status move, and a filing recognizer that skips flags before the slug. Test-side only, about +65 lines across 11 files."
+    }
+  ]
+}
