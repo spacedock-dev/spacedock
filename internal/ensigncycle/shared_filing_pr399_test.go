@@ -48,9 +48,21 @@ func TestCommandFilesViaNewSlugTerminators(t *testing.T) {
 		`${SPACEDOCK_BIN:-spacedock} new wire-the-thing --workflow-dir . ;`:              true,
 		`${SPACEDOCK_BIN:-spacedock} new wire-the-thing-two; echo`:                       false,
 		`${SPACEDOCK_BIN:-spacedock} new wire-the-thingy`:                                false,
+		// pi run 42916110241: `new` flags before the slug.
+		`"${SPACEDOCK_BIN:-spacedock}" new --workflow-dir /tmp/wf wire-the-thing <<'ENTITY'`: true,
+		`spacedock new --folder --workflow-dir=. wire-the-thing`:                             true,
+		`spacedock new --id-seed "seed value" --id-actor 'fo' wire-the-thing`:                true,
+		`spacedock new --id-seed wire-the-thing other-task`:                                  false,
+		`spacedock new --workflow-dir /tmp/wire-the-thing other-task`:                        false,
 	} {
 		if got := commandFilesViaNew(command, filingSlug); got != want {
 			t.Errorf("commandFilesViaNew(%q) = %v, want %v", command, got, want)
 		}
+	}
+}
+
+func TestCodexFilingCreateCountAcceptsNewFlags(t *testing.T) {
+	if got := codexFilingCreateCount(`spacedock new --workflow-dir . wire-the-thing`, filingSlug); got != 1 {
+		t.Fatalf("codexFilingCreateCount = %d, want 1", got)
 	}
 }

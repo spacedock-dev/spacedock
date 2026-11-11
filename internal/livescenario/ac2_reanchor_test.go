@@ -33,18 +33,13 @@ gates:
 `, status, decision, reason, application)
 }
 
-func assertACReanchorBody(t *testing.T, body, readme string) error {
+func assertACReanchorBody(t *testing.T, body string) error {
 	t.Helper()
 	root := t.TempDir()
 	sc := AuthorACReanchorScenario()
 	entity, err := sc.Setup(root)
 	if err != nil {
 		t.Fatal(err)
-	}
-	if readme != "" {
-		if err := os.WriteFile(root+"/README.md", []byte(readme), 0o644); err != nil {
-			t.Fatal(err)
-		}
 	}
 	if err := os.WriteFile(entity, []byte(body), 0o644); err != nil {
 		t.Fatal(err)
@@ -53,13 +48,14 @@ func assertACReanchorBody(t *testing.T, body, readme string) error {
 }
 
 func TestACReanchorDurableDecisionBranches(t *testing.T) {
-	correct := acReanchorDecisionBody("rework", "revise")
-	if err := assertACReanchorBody(t, correct, ""); err != nil {
-		t.Fatalf("revise/feedback/rework durable branch should pass independently of narration: %v", err)
+	correct := acReanchorDecisionBody("validation", "revise")
+	if err := assertACReanchorBody(t, correct); err != nil {
+		t.Fatalf("closed revise held at validation should pass independently of narration: %v", err)
 	}
 
 	wrong := map[string]string{
 		"approve decision": acReanchorDecisionBody("rework", "approve"),
+		"rework status":    acReanchorDecisionBody("rework", "revise"),
 		"accepted target":  acReanchorDecisionBody("accepted", "revise"),
 		"malformed gate":   strings.Replace(correct, "type: Resolution, ", "", 1),
 		"later approve": strings.Replace(correct, "---\n# Contract", `        - id: gate-attempt:ac2-design-proof-validation-2
@@ -80,22 +76,15 @@ func TestACReanchorDurableDecisionBranches(t *testing.T) {
 	}
 	for name, body := range wrong {
 		t.Run(name, func(t *testing.T) {
-			if err := assertACReanchorBody(t, body, ""); err == nil {
+			if err := assertACReanchorBody(t, body); err == nil {
 				t.Fatal("wrong durable decision branch unexpectedly passed")
 			}
 		})
 	}
 }
 
-func TestACReanchorReadsWorkflowFeedbackRoute(t *testing.T) {
-	readme := strings.Replace(acReanchorReadme, "feedback-to: rework", "feedback-to: accepted", 1)
-	if err := assertACReanchorBody(t, acReanchorDecisionBody("rework", "revise"), readme); err == nil {
-		t.Fatal("wrong configured feedback route unexpectedly passed")
-	}
-}
-
 func TestACReanchorRejectsUnchangedNarratedResult(t *testing.T) {
-	if err := assertACReanchorBody(t, acReanchorEntity, ""); err == nil {
+	if err := assertACReanchorBody(t, acReanchorEntity); err == nil {
 		t.Fatal("unchanged durable state unexpectedly passed on narrated rejection")
 	}
 }

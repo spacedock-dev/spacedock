@@ -14,10 +14,10 @@ import (
 )
 
 var (
-	validatingStatus = regexp.MustCompile(`(?im)^status:\s*validation\s*$`)
-	reviewStatus     = regexp.MustCompile(`(?im)^status:\s*review\s*$`)
-	completedSet     = regexp.MustCompile(`(?im)^completed:[^\S\n]*\S.*$`)
-	verdictSetFM     = regexp.MustCompile(`(?im)^verdict:[^\S\n]*\S.*$`)
+	validatingStatus = frontmatterRegexp(`(?im)^status:\s*validation\s*$`)
+	reviewStatus     = frontmatterRegexp(`(?im)^status:\s*review\s*$`)
+	completedSet     = frontmatterRegexp(`(?im)^completed:[^\S\n]*\S.*$`)
+	verdictSetFM     = frontmatterRegexp(`(?im)^verdict:[^\S\n]*\S.*$`)
 )
 
 type gateHeldExpectation struct {

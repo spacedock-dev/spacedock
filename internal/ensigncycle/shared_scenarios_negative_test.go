@@ -325,6 +325,12 @@ func TestSelfEvidenceMergeTriageNegativeIncidentEndState(t *testing.T) {
 	if err := assertSelfEvidenceMergeTriage(holdAtBlocked, goodFinal); err != nil {
 		t.Fatalf("hold at the non-terminal blocked stage must pass: %v", err)
 	}
+	// Hold whose body carries report prose opening with `Verdict: PASSED`. The
+	// approval verdict is the frontmatter field, so body prose cannot red a hold.
+	holdWithBodyVerdict := held + "\nVerdict: PASSED — deterministic lanes only; the " + selfEvidenceRequiredLane + " lane stays unapproved.\n"
+	if err := assertSelfEvidenceMergeTriage(holdWithBodyVerdict, goodFinal); err != nil {
+		t.Fatalf("hold with a body `Verdict: PASSED` line must pass: %v", err)
+	}
 	// Reject-without-merge — the Cycle-2 nondeterministic drive (1/3): the FO
 	// terminalized to done but recorded a REJECTED verdict, refusing the merge rather
 	// than waving it through. Over-caution is vcm's failure class, not the evidence

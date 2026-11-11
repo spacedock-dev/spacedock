@@ -1311,6 +1311,28 @@ func resolveRecordedGateEntity(fixture recordedGateFixture) string {
 	return ""
 }
 
+// TestRecordedGateFixtureEvidencesEveryAC pins the fixture to the gate contract:
+// the runbook asks for approval, which «gate.ac-cross-check» allows only when
+// the validation report cites every AC (pi run 42883041637 stopped on AC-1).
+func TestRecordedGateFixtureEvidencesEveryAC(t *testing.T) {
+	fixture := writePreparedRecordedGateFixture(t)
+	scan := mustRecordedGate(t, buildRecordedGateBinary(t), fixture.root, "status", "--read", fixture.entity, "--ac-scan", "--json", "--workflow-dir", fixture.root)
+	var out struct {
+		ACs []struct {
+			ID          string          `json:"id"`
+			Unevidenced json.RawMessage `json:"unevidenced"`
+		} `json:"acs"`
+	}
+	if err := json.Unmarshal([]byte(scan.stdout), &out); err != nil || len(out.ACs) == 0 {
+		t.Fatalf("decode ac-scan: %v\n%s", err, scan.stdout)
+	}
+	for _, ac := range out.ACs {
+		if strings.Trim(string(ac.Unevidenced), `"`) != "false" {
+			t.Errorf("%s unevidenced=%s in the recorded-gate validation report:\n%s", ac.ID, ac.Unevidenced, scan.stdout)
+		}
+	}
+}
+
 func writeRecordedGateFixture(t *testing.T) recordedGateFixture {
 	t.Helper()
 	return writeRecordedGateFixtureAt(t, t.TempDir())
@@ -1378,7 +1400,7 @@ func recordedGateEntity() string {
 		"completed:\nverdict:\nworktree:\n" +
 		"---\n# Recorded Gate Task\n\n" +
 		"## Acceptance criteria\n\n**AC-1** Successor dispatch requires consumed approval.\n\n" +
-		"## Stage Report: validation\n\n- DONE: Replayed retained evidence\n  The real command fixture is green.\n\n" +
+		"## Stage Report: validation\n\n- DONE: Replayed retained evidence for AC-1\n  The real command fixture is green: successor dispatch is refused until the approval is consumed.\n\n" +
 		"### Summary\n\nReady for the recorded decision gate.\n"
 }
 
