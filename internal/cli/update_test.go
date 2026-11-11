@@ -476,3 +476,21 @@ func TestBrewFormulaNamesTheCaskAndBothExtensionFormulas(t *testing.T) {
 		t.Errorf("brewFormula on a curl install = %q, want none", got)
 	}
 }
+
+func TestUpdateFailsAndNamesAnExtensionWhoseProgramIsMissingBesideItsPlugin(t *testing.T) {
+	s := stageInstall(t)
+	if err := os.Remove(filepath.Join(s.first, "spacedock-alpha")); err != nil {
+		t.Fatal(err)
+	}
+	script := filepath.Join(t.TempDir(), "install.sh")
+	mustWrite(t, script, "#!/bin/sh\n:\n")
+
+	var stdout, stderr bytes.Buffer
+	if code := runUpdate(updateDepsFor(s, s.host, script), &stdout, &stderr); code != 1 {
+		t.Fatalf("update exited %d, want 1; stderr:\n%s", code, stderr.String())
+	}
+	want := "spacedock update: alpha is still MIXED on Claude Code: program not installed, plugin 0.16.0-beta.2. Left behind: the program (failed: the install script's download of the alpha program)."
+	if !strings.Contains(stderr.String(), want) {
+		t.Errorf("stderr lacks %q:\n%s", want, stderr.String())
+	}
+}

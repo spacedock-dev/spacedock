@@ -142,7 +142,11 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 	}
 	printUpdateChanges(stdout, before, after, brewFormula(d.selfPath, brew), hosts, pi)
 	code := 0
-	for _, line := range mixedAfterUpdate(after.mixed, brew, before.brewUpgrade) {
+	mixed := after.mixed
+	if pi.refresh && pi.err == nil {
+		mixed = append(mixed, mixedPiPackages(pi.after, after)...)
+	}
+	for _, line := range mixedAfterUpdate(mixed, brew, before.brewUpgrade) {
 		fmt.Fprintln(stderr, line)
 		code = 1
 	}
@@ -279,6 +283,21 @@ func printInstallFailures(w io.Writer, out string) {
 	}
 }
 
+func mixedPiPackages(rows []pieceRow, after versionReport) []mixedExtension {
+	var mixed []mixedExtension
+	for _, ext := range extensions {
+		if ext.piTitle == "" {
+			continue
+		}
+		program := after.version(ext.name + " program")
+		pkg := strings.TrimPrefix(pieceVersion(rows, ext.name+" package"), "v")
+		if program != notInstalled && program != "unknown" && pkg != notInstalled && pkg != "unpinned" && pkg != program {
+			mixed = append(mixed, mixedExtension{ext.name, "Pi", program, pkg})
+		}
+	}
+	return mixed
+}
+
 // brewUpgradeArgs names the cask and both extension formulas: a cask upgrade
 // leaves an installed formula where it is, so naming the cask alone leaves a
 // program behind its plugin.
@@ -300,20 +319,24 @@ func brewFormula(selfPath string, brew bool) string {
 func mixedAfterUpdate(mixed []mixedExtension, brew bool, brewArgs string) []string {
 	var lines []string
 	for _, m := range mixed {
-		behind := "the program or the plugin"
-		step := "a step of this update"
-		if cmp, err := release.ComparePreVersion(m.program, m.plugin); err == nil {
-			switch {
-			case cmp < 0 && brew:
-				behind, step = "the program", "Homebrew has not upgraded it; run `brew upgrade "+brewArgs+"`"
-			case cmp < 0:
-				behind, step = "the program", "the install script's download of the "+m.name+" program"
-			default:
-				behind, step = "the "+m.host+" plugin", "the "+m.host+" plugin install"
-			}
+		kind := "plugin"
+		if m.host == "Pi" {
+			kind = "package"
 		}
-		lines = append(lines, fmt.Sprintf("spacedock update: %s is still MIXED on %s: program %s, plugin %s. Left behind: %s (failed: %s). Run `spacedock update` again.",
-			m.name, m.host, m.program, m.plugin, behind, step))
+		behind, step := "the program", "the install script's download of the "+m.name+" program"
+		switch cmp, err := release.ComparePreVersion(m.program, m.plugin); {
+		case m.program == notInstalled && brew:
+			step = "Homebrew owns the program; see the MISSING line above"
+		case m.program == notInstalled:
+		case m.plugin == notInstalled || (err == nil && cmp > 0):
+			behind, step = "the "+m.host+" "+kind, "the "+m.host+" "+kind+" install"
+		case err != nil:
+			behind, step = "the program or the "+kind, "a step of this update"
+		case brew:
+			step = "Homebrew has not upgraded it; run `brew upgrade " + brewArgs + "`"
+		}
+		lines = append(lines, fmt.Sprintf("spacedock update: %s is still MIXED on %s: program %s, %s %s. Left behind: %s (failed: %s). Run `spacedock update` again.",
+			m.name, m.host, m.program, kind, m.plugin, behind, step))
 	}
 	return lines
 }

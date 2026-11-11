@@ -160,9 +160,13 @@ func collectVersions(in versionInputs) versionReport {
 			addPlugin(h, ext.name+" plugin", pluginVer, id)
 			switch {
 			case programVersion == notInstalled:
+				if h.err == nil && pluginVer != notInstalled && pluginVer != "unknown" {
+					report.mixed = append(report.mixed, mixedExtension{ext.name, h.title, programVersion, pluginVer})
+				}
 			case h.err == nil && pluginVer == notInstalled:
 				problem("MISSING: the %s plugin is not installed on %s from %s.", ext.name, h.title, extensionMarketplace)
 				report.needsUpdate = true
+				report.mixed = append(report.mixed, mixedExtension{ext.name, h.title, programVersion, pluginVer})
 			case programVersion != "unknown" && pluginVer != "unknown" && programVersion != pluginVer:
 				problem("MIXED: the %s program %s does not match its plugin %s on %s.", ext.name, programVersion, pluginVer, h.title)
 				report.mixed = append(report.mixed, mixedExtension{ext.name, h.title, programVersion, pluginVer})

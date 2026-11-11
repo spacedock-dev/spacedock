@@ -145,6 +145,7 @@ type piUpdateFixture struct {
 	deps     updateDeps
 	settings string
 	ran      []string
+	piRef    string
 }
 
 func newPiUpdateFixture(t *testing.T, status piPackageStatus) *piUpdateFixture {
@@ -154,14 +155,14 @@ func newPiUpdateFixture(t *testing.T, status piPackageStatus) *piUpdateFixture {
 	script := filepath.Join(t.TempDir(), "install.sh")
 	mustWrite(t, script, "#!/bin/sh\n:\n")
 	agentDir := t.TempDir()
-	f := &piUpdateFixture{deps: updateDepsFor(s, s.host, script), settings: filepath.Join(agentDir, "settings.json")}
-	writeFile(t, f.settings, `{"packages":["`+piSpacedockPackageSource+`@stable","`+piTestAlpha+`@v1"]}`)
+	f := &piUpdateFixture{deps: updateDepsFor(s, s.host, script), settings: filepath.Join(agentDir, "settings.json"), piRef: "v0.16.0-beta.2"}
+	writeFile(t, f.settings, `{"packages":["`+piSpacedockPackageSource+`@stable","`+piTestAlpha+`@v0.16.0-beta.1"]}`)
 	f.deps.env = append(f.deps.env, "PI_CODING_AGENT_DIR="+agentDir)
 	f.deps.lookPath = hostsOnPath("pi")
 	f.deps.piOps = &fakePiRuntimeOps{packageStatus: status}
 	f.deps.runSelf = func(args ...string) (string, error) {
 		f.ran = append(f.ran, strings.Join(args, " "))
-		writeFile(t, f.settings, `{"packages":["`+piSpacedockPackageSource+`@stable","`+piTestAlpha+`@v2"]}`)
+		writeFile(t, f.settings, `{"packages":["`+piSpacedockPackageSource+`@stable","`+piTestAlpha+`@`+f.piRef+`"]}`)
 		return "noise\nspacedock install: pi install \"" + piTestAlpha + "@v2\" failed: exit status 1\n", nil
 	}
 	return f
@@ -177,13 +178,26 @@ func TestUpdateRefreshesThePiPackagesWithTheNewProgramAndShowsTheirRefs(t *testi
 		t.Errorf("runSelf calls = %v, want one install --host pi", f.ran)
 	}
 	out := stdout.String()
-	for _, want := range []string{"alpha package      v1 -> v2", "spacedock package  stable          unchanged", "Open Pi sessions keep the old skills until you run /reload.", "spacedock install: pi install"} {
+	for _, want := range []string{"alpha package      v0.16.0-beta.1 -> v0.16.0-beta.2", "spacedock package  stable          unchanged", "Open Pi sessions keep the old skills until you run /reload.", "spacedock install: pi install"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("update output lacks %q:\n%s", want, out)
 		}
 	}
 	if strings.Contains(out, "noise") {
 		t.Errorf("the new program's other output was printed:\n%s", out)
+	}
+}
+
+func TestUpdateFailsAndNamesPiWhenItsPackageStaysBehindTheProgram(t *testing.T) {
+	f := newPiUpdateFixture(t, piPackageStatus{registered: true, source: piSpacedockPackageSource + "@stable"})
+	f.piRef = "v0.16.0-beta.1"
+	var stdout, stderr bytes.Buffer
+	if code := runUpdate(f.deps, &stdout, &stderr); code != 1 {
+		t.Fatalf("update exited %d, want 1; stderr:\n%s", code, stderr.String())
+	}
+	want := "spacedock update: alpha is still MIXED on Pi: program 0.16.0-beta.2, package 0.16.0-beta.1. Left behind: the Pi package (failed: the Pi package install)."
+	if !strings.Contains(stderr.String(), want) {
+		t.Errorf("stderr lacks %q:\n%s", want, stderr.String())
 	}
 }
 
