@@ -2,7 +2,7 @@
 title: "Installation"
 description: "Your agents are waiting on you. Spacedock brings you the calls that need you, keeps your agents on the goal, and lets you decide in one place."
 doc_version: "0.20.2"
-last_updated: "2026-11-11 05:34:48"
+last_updated: "2026-11-11 06:06:09"
 ---
 
 # Installation
@@ -11,9 +11,9 @@ Spacedock works with Claude Code and Codex.
 
 ## Install Spacedock
 
-`brew trust spacedock-dev/tap brew install --cask spacedock-dev/tap/spacedock@next` copy
+`brew trust spacedock-dev/tap brew install --cask spacedock-dev/tap/spacedock` copy
 
-`curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/main/install.sh | SPACEDOCK_CHANNEL=edge sh export PATH="${SPACEDOCK_INSTALL_DIR:-$HOME/.local/bin}:$PATH"` copy
+`curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/main/install.sh | sh export PATH="${SPACEDOCK_INSTALL_DIR:-$HOME/.local/bin}:$PATH"` copy
 
 ## Set up your agent
 
