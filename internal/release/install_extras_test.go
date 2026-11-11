@@ -21,6 +21,7 @@ type extrasRun struct {
 	log             string
 	pathDir         []string
 	launcherVersion string
+	stdin           string
 }
 
 func writeTarGzFiles(t *testing.T, path string, files map[string]string) {
@@ -137,6 +138,7 @@ func (r *extrasRun) run() (stderr string, code int) {
 func (r *extrasRun) runWith(env ...string) (stderr string, code int) {
 	r.t.Helper()
 	cmd := exec.Command("sh", scriptWithExtras(r.t, fakeExtrasRows))
+	cmd.Stdin = strings.NewReader(r.stdin)
 	cmd.Env = append([]string{
 		"PATH=" + strings.Join(append(append([]string{}, r.pathDir...), "/usr/bin", "/bin"), ":"),
 		"HOME=" + r.home, "XDG_DATA_HOME=" + r.data, "SPACEDOCK_INSTALL_DIR=" + r.bin,
@@ -337,10 +339,13 @@ esac
 case "$url" in
 	https://spacedock.md/latest-release/*)
 		case "$STUB_ROUTE" in
-			malformed) printf '{"tag_name":null}'; exit 0 ;;
-			partial) case "$url" in *\?prerelease=1) printf '{"tag_name": "v8.8.8"}' ;; *) printf 'https://github.com/%s/releases/tag/v8.8.8' "$repo" ;; esac; exit 18 ;;
+			malformed) tag=garbage ;;
+			traversal) tag='v1.2.3/../../evil' ;;
+			whitespace) tag='v1.2.3 bad' ;;
+			metacharacters) tag='v1.2.3-$(evil)' ;;
+			ok) ;;
+			*) exit 22 ;;
 		esac
-		[ "$STUB_ROUTE" = ok ] || exit 22
 		[ "$repo" = "$STUB_FAIL_REPO" ] && exit 22
 		case "$url" in
 			*\?prerelease=1) printf '{"tag_name": "%s"}\n' "$tag" ;;
@@ -348,6 +353,7 @@ case "$url" in
 		esac ;;
 	https://api.github.com/*)
 		[ "$STUB_API" = fail ] || [ "$repo" = "$STUB_FAIL_REPO" ] && exit 22
+		[ "$STUB_API" != null ] || { printf '{"tag_name":null}\n'; exit 0; }
 		printf '{"tag_name": "%s"}\n' "$tag" ;;
 	https://github.com/*/releases/latest)
 		[ "$STUB_REDIRECT" = fail ] || [ "$repo" = "$STUB_FAIL_REPO" ] && exit 22

@@ -114,9 +114,9 @@ lookup_user_agent() {
 		ua_binary="$(command -v spacedock 2>/dev/null)" || ua_binary=""
 	fi
 	if [ -n "$ua_binary" ]; then
-		ua_version="$("$ua_binary" --version 2>/dev/null | sed -nE '1s/^spacedock v?([0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?)$/\1/p')" || ua_version=""
+		ua_version="$("$ua_binary" --version </dev/null 2>/dev/null | sed -nE '1s/^spacedock v?([0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?)$/\1/p')" || ua_version=""
 	fi
-	ua="spacedock-install/${ua_version:-unknown} ($os; $arch"
+	ua="spacedock-install/${ua_version:-unknown} (${os:-unknown}; ${arch:-unknown}"
 	ua_ci="${CI:-}"
 	ua_ci="${ua_ci#"${ua_ci%%[![:space:]]*}"}"
 	ua_ci="${ua_ci%"${ua_ci##*[![:space:]]}"}"
@@ -125,6 +125,11 @@ lookup_user_agent() {
 	esac
 	[ "${SPACEDOCK_INTERNAL:-}" != 1 ] || ua="$ua; internal"
 	printf '%s)\n' "$ua"
+}
+
+# is_release_tag accepts the same release-tag format as newest_tag.
+is_release_tag() {
+	printf '%s\n' "$1" | awk 'END { exit !(NR == 1 && $0 ~ /^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$/) }'
 }
 
 # release_tag looks up the newest release through spacedock.md.
@@ -139,23 +144,26 @@ release_tag() {
 		rt_tag="$(printf '%s\n' "$rt_json" \
 			| grep '"tag_name"' | head -n 1 \
 			| sed -nE 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p')" || rt_tag=""
+		is_release_tag "$rt_tag" || rt_tag=""
 		if [ -z "$rt_tag" ]; then
 			rt_tag="$(curl -fs "https://api.github.com/repos/$rt_repo/releases?per_page=1" 2>/dev/null \
 				| grep '"tag_name"' | head -n 1 \
-				| sed -E 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')" || rt_tag=""
+				| sed -nE 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p')" || rt_tag=""
 		fi
 	else
 		rt_to="$(curl -fsSL -A "$LOOKUP_USER_AGENT" -o /dev/null -w '%{url_effective}' "$rt_url" 2>/dev/null)" || rt_to=""
 		case "$rt_to" in
 			"https://github.com/$rt_repo/releases/tag/"*) rt_tag="${rt_to##*/releases/tag/}" ;;
 		esac
+		is_release_tag "$rt_tag" || rt_tag=""
 		if [ -z "$rt_tag" ]; then
 			rt_to="$(curl -fs -o /dev/null -w '%{redirect_url}' "https://github.com/$rt_repo/releases/latest" 2>/dev/null)" || rt_to=""
+			case "$rt_to" in
+				*/releases/tag/*) rt_tag="${rt_to##*/releases/tag/}" ;;
+			esac
 		fi
-		case "$rt_to" in
-			*/releases/tag/*) rt_tag="${rt_to##*/releases/tag/}" ;;
-		esac
 	fi
+	is_release_tag "$rt_tag" || rt_tag=""
 	if [ -z "$rt_tag" ]; then
 		err "GitHub did not answer the latest-release lookup for $rt_repo; reading the tags with git ls-remote"
 		rt_tag="$(newest_tag "$rt_repo")"

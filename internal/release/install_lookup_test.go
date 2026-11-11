@@ -2,6 +2,7 @@ package release
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -35,7 +36,7 @@ func TestInstallLookupRouteFailureUsesDirectGitHub(t *testing.T) {
 		{"edge", "https://spacedock.md/latest-release/spacedock?prerelease=1\nhttps://api.github.com/repos/spacedock-dev/spacedock/releases?per_page=1\n"},
 	} {
 		t.Run(tc.channel, func(t *testing.T) {
-			for _, route := range []string{"fail", "malformed", "partial"} {
+			for _, route := range []string{"fail", "malformed", "traversal", "whitespace", "metacharacters"} {
 				t.Run(route, func(t *testing.T) {
 					r, log := lookupRun(t)
 					stderr, code := r.runWith("SPACEDOCK_PRINT_TARGET=1", "SPACEDOCK_CHANNEL="+tc.channel, "STUB_ROUTE="+route)
@@ -84,9 +85,10 @@ func TestInstallLookupEachProductOnce(t *testing.T) {
 func TestInstallLookupUserAgent(t *testing.T) {
 	for _, tc := range []struct {
 		name, os, arch, version, ci, internal, want string
-		inPath                                      bool
+		inPath, readsInput                          bool
 	}{
 		{name: "installed version", os: "Darwin", arch: "aarch64", version: "spacedock v0.27.3\nOS: darwin/arm64", want: "spacedock-install/0.27.3 (darwin; arm64)"},
+		{name: "version cannot read installer input", os: "Linux", arch: "amd64", version: "spacedock 0.27.3", readsInput: true, want: "spacedock-install/0.27.3 (linux; amd64)"},
 		{name: "version from PATH", os: "Linux", arch: "x86_64", version: "spacedock 0.28.0-pre10", inPath: true, want: "spacedock-install/0.28.0-pre10 (linux; amd64)"},
 		{name: "case folded platform", os: "dArWiN", arch: "X64", want: "spacedock-install/unknown (darwin; amd64)"},
 		{name: "CI one", os: "Linux", arch: "amd64", ci: "1", want: "spacedock-install/unknown (linux; amd64; ci)"},
@@ -102,7 +104,11 @@ func TestInstallLookupUserAgent(t *testing.T) {
 			r, log := lookupRun(t)
 			r.addProgram("uname", "case \"$1\" in -s) echo '"+tc.os+"' ;; -m) echo '"+tc.arch+"' ;; esac")
 			if tc.version != "" {
+				r.stdin = "installer input\n"
 				body := "printf '%s\\n' '" + tc.version + "'"
+				if tc.readsInput {
+					body = "if read -r input; then exit 1; fi\n" + body
+				}
 				if tc.inPath {
 					r.addProgram("spacedock", body)
 				} else if err := os.WriteFile(filepath.Join(r.bin, "spacedock"), []byte("#!/bin/sh\n"+body+"\n"), 0o755); err != nil {
@@ -136,30 +142,31 @@ func TestInstallStableResolvesEachRepoFromTheRedirectWithoutTheAPI(t *testing.T)
 	r, log := lookupRun(t)
 	r.addProgram("claude", "exit 0")
 
-	stderr, code := r.runWith("SPACEDOCK_CHANNEL=stable")
+	stderr, code := r.runWith("SPACEDOCK_CHANNEL=stable", "STUB_ROUTE=ok")
 	urls, _ := os.ReadFile(log)
 	if code != 0 || !strings.Contains(stderr, "installed alpha v0.16.0") {
 		t.Fatalf("exit=%d; alpha was not installed from the redirect:\n%s", code, stderr)
 	}
-	if strings.Contains(string(urls), "api.github.com") || !strings.Contains(string(urls), "https://github.com/spacedock-dev/alpha/releases/latest") {
-		t.Errorf("stable must read the redirect and make no API request; urls:\n%s", urls)
+	if strings.Contains(string(urls), "api.github.com") || strings.Contains(string(urls), "/releases/latest") || !strings.Contains(string(urls), "https://spacedock.md/latest-release/alpha\n") {
+		t.Errorf("stable must use the route without direct GitHub fallback; urls:\n%s", urls)
 	}
 }
 
 func TestInstallResolvesTheNewestTagByVersionWhenGitHubDoesNotAnswer(t *testing.T) {
 	cases := []struct {
-		name, channel, tags, want string
+		name, channel, tags, want, api string
 	}{
-		{"a release outranks its own prereleases", "edge", "v0.16.0 v0.16.0-beta.5 v0.16.0-beta.1", "v0.16.0"},
-		{"prerelease numbers compare as numbers", "edge", "v0.28.0-pre9 v0.28.0-pre10 v0.27.3", "v0.28.0-pre10"},
-		{"minor versions compare as numbers and non-version tags are ignored", "edge", "v1.9.0 v1.10.0 v1.10.0-rc.1 archive/v0", "v1.10.0"},
-		{"stable skips prereleases", "stable", "v0.28.0-pre5 v0.27.3 v0.9.9 v0.27.10", "v0.27.10"},
+		{"a release outranks its own prereleases", "edge", "v0.16.0 v0.16.0-beta.5 v0.16.0-beta.1", "v0.16.0", "fail"},
+		{"prerelease numbers compare as numbers", "edge", "v0.28.0-pre9 v0.28.0-pre10 v0.27.3", "v0.28.0-pre10", "fail"},
+		{"minor versions compare as numbers and non-version tags are ignored", "edge", "v1.9.0 v1.10.0 v1.10.0-rc.1 archive/v0", "v1.10.0", "fail"},
+		{"null API tag falls back to git", "edge", "v0.16.0", "v0.16.0", "null"},
+		{"stable skips prereleases", "stable", "v0.28.0-pre5 v0.27.3 v0.9.9 v0.27.10", "v0.27.10", "fail"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			r, _ := lookupRun(t)
 			stderr, code := r.runWith("SPACEDOCK_PRINT_TARGET=1", "SPACEDOCK_CHANNEL="+tc.channel,
-				"STUB_API=fail", "STUB_REDIRECT=norelease", "STUB_TAGS="+tc.tags)
+				"STUB_ROUTE=malformed", "STUB_API="+tc.api, "STUB_REDIRECT=norelease", "STUB_TAGS="+tc.tags)
 			if code != 0 || !strings.Contains(stderr, "resolved "+tc.channel+" channel to "+tc.want+"\n") {
 				t.Errorf("exit=%d, want %s:\n%s", code, tc.want, stderr)
 			}
@@ -220,5 +227,19 @@ func TestInstallExitsZeroWhenAnExtensionDownloadFailsAfterItsTagResolved(t *test
 	stderr, code := r.runWith("SPACEDOCK_INSTALL_FROM="+r.dist, "SPACEDOCK_EXTRAS=1")
 	if code != 0 || !strings.Contains(stderr, "alpha: download failed") {
 		t.Errorf("exit=%d, want 0 with the download failure reported:\n%s", code, stderr)
+	}
+}
+
+// Removing the platform defaults makes an isolated lookup fail under set -u.
+func TestInstallLookupUserAgentWithoutPlatform(t *testing.T) {
+	src, err := os.ReadFile(filepath.Join("..", "..", "install.sh"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command("sh", "-c", strings.TrimSuffix(string(src), "main \"$@\"\n")+"\nunset os arch\nlookup_user_agent\n")
+	cmd.Env = []string{"PATH=/usr/bin:/bin", "HOME=" + t.TempDir(), "SPACEDOCK_INSTALL_DIR=" + t.TempDir()}
+	out, err := cmd.CombinedOutput()
+	if err != nil || string(out) != "spacedock-install/unknown (unknown; unknown)\n" {
+		t.Fatalf("isolated lookup=%q (%v)", out, err)
 	}
 }
