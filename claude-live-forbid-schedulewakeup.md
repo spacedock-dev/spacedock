@@ -82,6 +82,20 @@ gates:
                 id: briefing:ef4p1sbvkk9zxjxm0ez9npdr:validation:attempt-2:revision-1
                 digest: sha256:54abbe4acb6bdabd09e4d7a26d200b99bac34a47f272e6265695243cfa31015a
                 room-ref: '@review/validation/briefing-2'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ef4p1sbvkk9zxjxm0ez9npdr:validation:2
+                briefing: briefing:ef4p1sbvkk9zxjxm0ez9npdr:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-11-11T05:08:55.243802Z"
+                decision: approve
+                reason: Cycle 2 re-review PASSED with no material finding; restriction proven in CI (0 haiku kills across three runs); pull-request haiku leg is non-blocking and dispatch paths unchanged. Polish findings declined; journey-ledger haiku records accepted for 0.28.0 with a follow-up.
+                conn:
+                    quote: Do that in background. Get this to release
+                    source: 'captain chat, 2026-11-11, in reply to the FO recommendation to approve the #873 gate and merge the stack'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 On the claude-haiku live lane, journeys that complete their work are killed as hung. The haiku first officer calls the host tool `ScheduleWakeup` as a fallback heartbeat while waiting on background workers; after the work finishes and the final turn ends, the pending wakeup keeps the `claude -p` process alive and silent, and the harness kills it after its 60-second no-progress budget, before grading.
