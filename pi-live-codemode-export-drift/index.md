@@ -66,6 +66,20 @@ gates:
                 id: briefing:cvrwyn3xynbwg4wkgc5khyfq:validation:attempt-1:revision-1
                 digest: sha256:87a940a032c2b12d7d84eeecf73332cb4e827c358f0e0d4eca14d7b3178f6ae8
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:cvrwyn3xynbwg4wkgc5khyfq:validation:1
+                briefing: briefing:cvrwyn3xynbwg4wkgc5khyfq:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-11-11T05:15:16.634201Z"
+                decision: approve
+                reason: 'AC-1 met on three jobs; AC-2 (job green) accepted unmet by captain direction: all three failure causes are outside the pin surface (fixture, grader, suite deadline) and go to a 0.28.1 test-fix task. Restack patch-identical.'
+                conn:
+                    quote: I thought we can merge the stack and waive ci as the tree is identixL
+                    source: captain chat, 2026-11-11, directing the stack merge; preceded by "Get this to release"
+              application:
+                target-stage: done
+                state: pending
 ---
 
 The pi-live job of Runtime Live E2E has not passed since 2026-10-07. Worker launches die before a child session exists with a Pi package mismatch, so no commit on `main` can be greened on the Pi lane. This blocks the 0.28.0 release, which must green its exact release SHA.
