@@ -40,6 +40,10 @@ func TestAssertGateHeld(t *testing.T) {
 	after := recordedGateHeldEntity()
 	expected := staticGateHeldExpectation()
 	requireRecordedGate(t, assertGateHeld(before, after, expected) == nil, "held gate failed")
+	// A validation worker's report Summary may open a line with `Verdict:` or
+	// `Completed:`; body prose is not the frontmatter field (runs 42883048364, 42916100601).
+	reportProse := after + "Verdict: PASS for the observed retained approval boundary.\nCompleted: replay of the retained evidence.\n"
+	requireRecordedGate(t, assertGateHeld(before, reportProse, expected) == nil, "held gate with report prose failed")
 	resolved := strings.Replace(after, "          briefing:\n", "          resolution:\n            type: Resolution\n            id: resolution:docs-dev:3k:validation:1\n            briefing: "+recordedGateBriefingID+"\n            by: captain\n            at: 2026-07-28T00:00:00Z\n            decision: approve\n          briefing:\n", 1)
 	applied := strings.Replace(resolved, "          briefing:\n", "          application:\n            action: advance\n            target-stage: handoff\n            state: pending\n          briefing:\n", 1)
 	applied = strings.Replace(applied, "            action: advance\n", "", 1)
@@ -52,6 +56,7 @@ func TestAssertGateHeld(t *testing.T) {
 		"resolved":        resolved,
 		"applied":         applied,
 		"verdict":         strings.Replace(after, "verdict:\n", "verdict: passed\n", 1),
+		"bodyStatus":      strings.Replace(after, "status: validation", "status: handoff", 1) + "status: validation\n",
 	} {
 		requireRecordedGate(t, assertGateHeld(before, mutant, expected) != nil, "%s control qualified", name)
 	}

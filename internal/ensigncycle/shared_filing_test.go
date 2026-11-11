@@ -29,6 +29,11 @@ import (
 // on one line with a `new` verb on an unrelated later line.
 var newInvocation = regexp.MustCompile(`(?:spacedock|SPACEDOCK_BIN)[^\n]*?(?:\bnew\b|--new)`)
 
+// newFlags matches the `new` flags that may precede the slug, each with its
+// value, so a slug that appears only as a flag value or in a path is not the
+// created slug.
+const newFlags = `(?:[ \t]+(?:--folder|--(?:workflow-dir|id-seed|id-actor)(?:=|[ \t]+)(?:"[^"\n]*"|'[^'\n]*'|[^\s;&|'"]+)))*`
+
 // launcherCapture matches the three contract-blessed assignments of the
 // resolved launcher: unquoted, balanced-double-quoted, or balanced-single-quoted.
 // It also accepts the exact balanced command-v fallback observed in PR #496.
@@ -50,7 +55,7 @@ func commandFilesViaNew(command, slug string) bool {
 	if !strings.Contains(command, slug) {
 		return false
 	}
-	if regexp.MustCompile(newInvocation.String() + `[ \t]+` + regexp.QuoteMeta(slug) + `(?:[\s'";&|)]|$)`).MatchString(command) {
+	if regexp.MustCompile(newInvocation.String() + newFlags + `[ \t]+` + regexp.QuoteMeta(slug) + `(?:[\s'";&|)]|$)`).MatchString(command) {
 		return true
 	}
 	return capturedLauncherFilesViaNew(command, slug)
@@ -82,8 +87,8 @@ func capturedLauncherFilesViaNew(command, slug string) bool {
 	captureEnd := strings.Index(command, m[0]) + len(m[0])
 	segments := regexp.MustCompile(`\r?\n|;|&&|\|\||\|`).Split(command[captureEnd:], -1)
 	executable := regexp.QuoteMeta(varName)
-	call := regexp.MustCompile(`^(?:\$` + executable + `|\$\{` + executable + `\}|"\$` + executable + `"|"\$\{` + executable + `\}")[ \t]+(?:new|--new)[ \t]+` + regexp.QuoteMeta(slug) + `(?:[ \t]|$)`)
-	displayCall := regexp.MustCompile(`^\\""'\$` + executable + `"[ \t]+(?:new|--new)[ \t]+` + regexp.QuoteMeta(slug) + `(?:[ \t]|$)`)
+	call := regexp.MustCompile(`^(?:\$` + executable + `|\$\{` + executable + `\}|"\$` + executable + `"|"\$\{` + executable + `\}")[ \t]+(?:new|--new)` + newFlags + `[ \t]+` + regexp.QuoteMeta(slug) + `(?:[ \t]|$)`)
+	displayCall := regexp.MustCompile(`^\\""'\$` + executable + `"[ \t]+(?:new|--new)` + newFlags + `[ \t]+` + regexp.QuoteMeta(slug) + `(?:[ \t]|$)`)
 	for _, segment := range segments {
 		segment = strings.TrimSpace(segment)
 		matched := call.MatchString(segment)
@@ -180,7 +185,7 @@ func codexFilingCreateCount(command, slug string) int {
 	if !commandFilesViaNew(command, slug) {
 		return 0
 	}
-	create := regexp.MustCompile(`(?:\bnew\b|--new)[ \t]+` + regexp.QuoteMeta(slug) + `(?:[ \t';|&\n]|$)`)
+	create := regexp.MustCompile(`(?:\bnew\b|--new)` + newFlags + `[ \t]+` + regexp.QuoteMeta(slug) + `(?:[ \t';|&\n]|$)`)
 	return len(create.FindAllStringIndex(command, -1))
 }
 
