@@ -315,3 +315,36 @@ All four defects are confirmed as test-side faults. Defect 3 traces back to the 
 ### Summary
 
 All four grader fixes from the design are implemented test-first in one commit (0a76dc18a) on the task branch: frontmatter-scoped patterns, the AC-1 citation in the fixture, a filing recognizer that accepts flags before the slug, and the reanchor journey graded as held at validation. Every falsifying edit in the test plan turned its test red, and reverting the edit turned it green again. The full suite and the race suite pass.
+
+## Stage Report: validation
+
+- DONE: Independently reproduce targeted failure: for each of the four fixes, run the new test cases against origin/main's graders (or with the fix reverted) and show them red, then green on the branch tip; do not rely on the implementation report's output
+  Each grader file was checked out from `origin/main` (ad22447e1) under the branch's tests, run, then restored. Fix 1: `TestAssertGateHeld` "held gate with report prose failed". Fix 2 (fixture line reverted to main's text): `TestRecordedGateFixtureEvidencesEveryAC` `AC-1 unevidenced="true"`, `citations:[]`. Fix 3: `TestACReanchorDurableDecisionBranches` `gate did not apply the feedback route: status="validation" feedback-to="rework"`. Fix 4: the pi, `--folder --workflow-dir=.` and quoted `--id-seed` rows return false, and `codexFilingCreateCount = 0, want 1`. Sweep: main's `shared_assertions_impl_test.go` fails the merge-triage body-decoy case. All are green at 0a76dc18a.
+- DONE: Re-perform at least one falsifying edit per acceptance criterion from the test plan and confirm the named test goes red, then revert
+  AC-1: unscope `completedSet`/`verdictSetFM`, report-prose case red. AC-2: unscope `validatingStatus`, "bodyStatus control qualified" red; loosen `newFlags` to any token, the `--id-seed wire-the-thing other-task` row returns true. AC-3: `MatchString` skips `entityFrontmatter`, `TestFrontmatterPattern` red on three cases, and the gate-held and merge-triage decoys go red too. AC-4: disable the status check, the `rework status` and `accepted target` rows pass, so the test is red. Every edit was reverted; the worktree is clean at 0a76dc18a.
+- DONE: Confirm no grader is loosened: the negative rows for held-gate, filing and reanchor all still fail, and review the diff for any weakened assertion
+  All negative tables pass at the tip (held-gate: unbound, advanced, resolved, applied, verdict, bodyStatus; reanchor: approve, rework, accepted, malformed, later approve, duplicate, unchanged). A scratch probe, since deleted, confirmed the filing grader still returns false for the slug as a flag value, the slug in a later command, an unknown flag before the slug, and a captured launcher with the slug as `--id-seed` value. All 24 pattern call sites pass a whole entity file and call only `MatchString`. One deferred risk is listed below.
+- DONE: Check free disk first (df -h); run go test ./... and go test ./... -race if space allows, running packages serially and stopping on "no space left on device"; if the full suite cannot complete locally, say exactly which packages ran and leave the rest to the pull request's offline CI job
+  556 MB was free at the start. `go test -p 1 ./...` and `go test -p 1 -race ./...` both exit 0 with all 21 packages `ok` and no disk error (`ensigncycle` 157 s, 174 s under race). 409 MB is free afterwards.
+- DONE: Run go vet -tags live ./internal/ensigncycle ./internal/livescenario and gofmt -l on the changed files
+  `go vet -tags live` exits 0 on both packages. `gofmt -l` on the 12 changed files lists nothing.
+- DONE: Verify each acceptance criterion AC-1 to AC-4 with cited evidence, name AC-5 as owed to the live run after the pull request, and give a PASSED or REJECTED recommendation; do not open a pull request or trigger live CI
+  See the table below. Recommendation: PASSED. No pull request was opened and no live CI was triggered.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| AC-1 | met | The four captured states fail on `origin/main` graders with the cited messages and pass at the tip (first item above). |
+| AC-2 | met | Negative rows green at the tip; three falsifying edits show the rows have teeth. |
+| AC-3 | met | `TestFrontmatterPattern` and the merge-triage body decoy; all 13 declarations use `frontmatterRegexp`, and the live-tagged call sites compile under `go vet -tags live`. |
+| AC-4 | met | Runbook lines match the designed text; the grader requires closed `revise`, no application, `status: validation`. `internal/gates/application.go:35` reports `revise` as `feedback-pending`, so the binary agrees. |
+| AC-5 | owed | Needs the Runtime Live E2E run on the pull request (codex and pi lanes, plus a manual haiku dispatch), read job by job per the Live proof section. |
+
+### Findings
+
+1. Deferred risk (evidence defect). An entity whose frontmatter fence is not LF-terminated (`---\r\n`) or is unclosed now yields an empty frontmatter, so the negative-only checks in `assertSelfEvidenceMergeTriage` and `assertThirdCycleEscalation` pass. A probe with a CRLF entity carrying `status: done` and `verdict: passed` returned nil from the merge-triage grader; the whole-file patterns on main would have failed it. The trigger is a first officer rewriting the entity with CRLF line endings or a broken fence, which the binary never writes and no run has shown. Promote to material if a live artifact shows such an entity. A cheap remedy is to fail these graders when the frontmatter is empty.
+
+Surface: 12 files, +142/−52, net +90, inside the declared tolerance.
+
+### Summary
+
+Validation reproduced each of the four failures against the graders on `origin/main` and confirmed the branch tip turns them green without loosening any negative check. The full suite, the race suite, the live-tagged vet and gofmt are clean. Recommendation: PASSED, with AC-5 owed to the live run on the pull request and one deferred risk about entities with CRLF or unclosed frontmatter.
