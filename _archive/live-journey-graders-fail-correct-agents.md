@@ -2,7 +2,7 @@
 title: "Four live journeys fail agents that followed the contract"
 source: "Root-cause read of Runtime Live E2E runs 42883048364, 42883041637, 42916100601 and 42916110241 during the 0.28.0 release preparation, 2026-11-11"
 id: 9wpk5vftfth48rcaxft6kw27
-status: validation
+status: done
 gates:
     version: 1
     records:
@@ -71,11 +71,14 @@ gates:
                     source: Captain chat message, this session, 2026-11-10
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-11-11T05:18:02Z
 worktree: .worktrees/spacedock-ensign-live-journey-graders-fail-correct-agents
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:878
+verdict: PASSED
+completed: 2026-11-11T08:30:26Z
+archived: 2026-11-11T08:30:26Z
 ---
 
 Four live journeys intermittently fail on runs where the first officer did what the contract requires. Each failure is a defect in the grader, fixture, or scenario runbook, so a red lane says nothing about the product, and the release gate needs reruns to go green. Target: 0.28.1.
