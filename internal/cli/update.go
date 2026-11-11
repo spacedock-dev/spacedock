@@ -144,7 +144,7 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 	code := 0
 	mixed := after.mixed
 	if pi.refresh && pi.err == nil {
-		mixed = append(mixed, mixedPiPackages(pi.before, pi.after, after)...)
+		mixed = append(mixed, mixedPiPackages(pi.after, after)...)
 	}
 	for _, line := range mixedAfterUpdate(mixed, brew, before.brewUpgrade) {
 		fmt.Fprintln(stderr, line)
@@ -283,7 +283,7 @@ func printInstallFailures(w io.Writer, out string) {
 	}
 }
 
-func mixedPiPackages(before, rows []pieceRow, after versionReport) []mixedExtension {
+func mixedPiPackages(rows []pieceRow, after versionReport) []mixedExtension {
 	var mixed []mixedExtension
 	for _, ext := range extensions {
 		if ext.piTitle == "" {
@@ -291,10 +291,10 @@ func mixedPiPackages(before, rows []pieceRow, after versionReport) []mixedExtens
 		}
 		program := after.version(ext.name + " program")
 		pkg := strings.TrimPrefix(pieceVersion(rows, ext.name+" package"), "v")
-		had := pieceVersion(before, ext.name+" package") != notInstalled
 		switch {
 		case program == "unknown" || pkg == "unpinned":
-		case pkg == notInstalled && had && program != notInstalled, program == notInstalled && pkg != notInstalled, pkg != notInstalled && program != notInstalled && pkg != program:
+		case pkg == notInstalled && program == notInstalled:
+		case pkg != program:
 			mixed = append(mixed, mixedExtension{ext.name, "Pi", program, pkg})
 		}
 	}
