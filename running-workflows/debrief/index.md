@@ -2,7 +2,7 @@
 title: "Session debrief"
 description: "Your agents are waiting on you. Spacedock brings you the calls that need you, keeps your agents on the goal, and lets you decide in one place."
 doc_version: "0.20.2"
-last_updated: "2026-11-11 06:52:02"
+last_updated: "2026-11-11 08:30:05"
 ---
 
 # Session debrief
