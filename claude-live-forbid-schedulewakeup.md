@@ -9,7 +9,7 @@ verdict:
 score: 0.6
 worktree: .worktrees/spacedock-ensign-claude-live-forbid-schedulewakeup
 issue:
-pr: "#873"
+pr: pr-merge:873
 mod-block:
 gates:
     version: 1
