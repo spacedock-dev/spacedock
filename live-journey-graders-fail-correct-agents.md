@@ -58,6 +58,20 @@ gates:
                 id: briefing:9wpk5vftfth48rcaxft6kw27:validation:attempt-1:revision-1
                 digest: sha256:929f96a9573a36bc27d679f6a71409f0f8f5d6d74036fafb4ad46e4f0e9973ac
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:9wpk5vftfth48rcaxft6kw27:validation:1
+                briefing: briefing:9wpk5vftfth48rcaxft6kw27:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-11-11T06:38:51.718682Z"
+                decision: approve
+                reason: Validation independently reproduced red on main and green on the branch for all four grader fixes, re-ran falsifying edits per criterion, confirmed no grader loosened, and the full and race suites pass; AC-5 is live proof owed to the pull request run.
+                conn:
+                    quote: you have the conn to drive the test fixes to PR. make sure they are tested locally with targeted failure before doing ci env approval.
+                    source: Captain chat message, this session, 2026-11-10
+              application:
+                target-stage: done
+                state: pending
 started: 2026-11-11T05:18:02Z
 worktree: .worktrees/spacedock-ensign-live-journey-graders-fail-correct-agents
 ---
