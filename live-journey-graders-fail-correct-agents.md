@@ -288,3 +288,30 @@ Nothing else changes: command grammar, stored formats, authority and product run
 ### Summary
 
 All four defects are confirmed as test-side faults. Defect 3 traces back to the 2026-08-03 gate schema change that removed revise's application, which left the reanchor grader expecting a status move the binary no longer makes. The fixes are a frontmatter-scoped pattern type, one cited checklist line, a flag-aware `new` recognizer, and a rewritten reanchor runbook and grader. Prototypes showed each before/after test flipping. Residual risks: pi may still stop because `status --read` blanks `gates`; the codex keep-moving red and the haiku quiet-budget kills are separate causes and are named as follow-ups.
+
+## Stage Report: implementation
+
+- DONE: Implement the four fixes exactly as designed in the entity, test-first: add each new test case, run it against the unfixed code and record the failing output, then apply the fix and record the pass
+  Commit 0a76dc18a. Red on unfixed code: `TestAssertGateHeld` "held gate with report prose failed"; `TestRecordedGateFixtureEvidencesEveryAC` `AC-1 unevidenced="true"`; `TestCommandFilesViaNewSlugTerminators` the pi, `--folder --workflow-dir=.` and quoted `--id-seed` rows false; `TestCodexFilingCreateCountAcceptsNewFlags` count 0; merge-triage body decoy reported "PASSED-style approval verdict"; `TestACReanchorDurableDecisionBranches` "did not apply the feedback route: status=\"validation\"". All of them pass after the fix.
+- DONE: Apply the frontmatter-scoped pattern type to all 13 pattern declarations and add the TestFrontmatterPattern and merge-triage body-decoy cases
+  New `internal/ensigncycle/frontmatter_pattern_test.go`. 13 declarations in 4 files now use `frontmatterRegexp(`; every call site uses only `MatchString`. `TestFrontmatterPattern` has five cases: frontmatter match, body-only decoy, no frontmatter, unclosed, and closed at end of file. The decoy case is in `TestSelfEvidenceMergeTriageNegativeIncidentEndState`.
+- DONE: Rewrite the ac-value-reanchor runbook and grader to the recorded-revise-held-at-validation end state, with the rework-status negative row, and remove TestACReanchorReadsWorkflowFeedbackRoute
+  Runbook lines 31–32 match the "After" text word for word. The grader requires status `validation`. `workflowDir` and `DeclaredReworkTarget` are gone, and the ABOUTME and doc comment are updated. A `rework status` row is added. The route test is removed, together with the helper's now-unused `readme` parameter.
+- DONE: For every row of the test plan, perform the falsifying edit, show the named test goes red, and revert it; report the red and green output per row
+  Each row below went red with the edit and back to `ok` after the revert.
+  1. Revert `completedSet`/`verdictSetFM`: TestAssertGateHeld "held gate with report prose failed".
+  2. Revert `validatingStatus`: TestAssertGateHeld "bodyStatus control qualified".
+  3. `MatchString` skips `entityFrontmatter`: TestFrontmatterPattern red on the decoy, no-frontmatter and unclosed cases.
+  4. Revert `approvalVerdict`: the merge-triage body-decoy case red.
+  5. Drop `for AC-1`: TestRecordedGateFixtureEvidencesEveryAC `AC-1 unevidenced="true"`.
+  6. Drop `newFlags` from the direct regex: the pi row red. Loosen `newFlags` to `(?:[ \t]+\S+)*`: the `--id-seed wire-the-thing other-task` row true, want false.
+  7. Drop `newFlags` from `create`: count 0, want 1.
+  8. Restore the rework status check: correct case red. Disable the status check: the `rework status` and `accepted target` rows pass, so the test is red. A plain deletion does not build, because `statuspkg` becomes unused, so the check was disabled with `false &&`.
+- FAILED: Run go test ./..., go test ./... -race, gofmt -w ./cmd ./internal, and go vet -tags live ./internal/ensigncycle ./internal/livescenario, and report results with any pre-existing failures named
+  `go vet -tags live` exits 0 on both packages, and `gofmt` is clean on the changed files. Before the disk filled, `go test ./internal/livescenario` and the recorded-gate, gate-held, filing, merge-triage, shallow-boot, merge-hook, escalation and auto-continue tests passed. Then the machine disk filled (`/System/Volumes/Data` had about 130 MiB free). `go test ./...` and `-race` failed at build time with "no space left on device", so the full suites could not run. This was reported to the FO. Pre-existing on main: `gofmt -w` reformats the unrelated `internal/release/runtime_live_evidence_workflow_test.go`, which was left out of this change.
+- DONE: Report the diff surface against the expected +65 lines across 11 files and explain any drift outside tolerance; do not open a pull request or trigger live CI
+  `git diff --numstat` against the merge base: 12 files, +142/−52, net +90. This is inside the tolerance of net +35..+95 and 10–12 files. The extra file is `shared_scenarios_negative_test.go`, the merge-triage negative test file the design names. The main drift is `frontmatter_pattern_test.go` at 57 lines against the ~35 estimated for the type plus its test. No PR was opened and no live CI was triggered.
+
+### Summary
+
+All four grader fixes from the design are implemented test-first in one commit (0a76dc18a) on the task branch: frontmatter-scoped patterns, the AC-1 citation in the fixture, a filing recognizer that accepts flags before the slug, and the reanchor journey graded as held at validation. Every falsifying edit in the test plan turned its test red, and reverting the edit turned it green again. The full `go test ./...` and `-race` runs are still unproven. A full machine disk stopped them at build time, and they need a rerun once space is freed.
