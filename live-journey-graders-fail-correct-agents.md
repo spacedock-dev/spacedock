@@ -75,7 +75,7 @@ gates:
 started: 2026-11-11T05:18:02Z
 worktree: .worktrees/spacedock-ensign-live-journey-graders-fail-correct-agents
 mod-block: merge:pr-merge
-pr: "#878"
+pr: pr-merge:878
 ---
 
 Four live journeys intermittently fail on runs where the first officer did what the contract requires. Each failure is a defect in the grader, fixture, or scenario runbook, so a red lane says nothing about the product, and the release gate needs reruns to go green. Target: 0.28.1.
