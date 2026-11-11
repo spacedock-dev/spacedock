@@ -1,11 +1,11 @@
 ---
 id: cvrwyn3xynbwg4wkgc5khyfq
 title: pi-live fails because pi-codemode no longer exports MCP_TYPESCRIPT_PREAMBLE
-status: validation
+status: done
 source: "Captain directive, 2026-11-10: the pi-live lane is red on main; pin-refresh already merged, so the repair is a new task."
 started: 2026-11-10T18:37:11Z
-completed:
-verdict:
+completed: 2026-11-11T05:15:30Z
+verdict: PASSED
 score: 0.9
 worktree: .worktrees/spacedock-ensign-pi-live-codemode-export-drift
 issue:
@@ -79,7 +79,8 @@ gates:
                     source: captain chat, 2026-11-11, directing the stack merge; preceded by "Get this to release"
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-11-11T05:15:30Z
 ---
 
 The pi-live job of Runtime Live E2E has not passed since 2026-10-07. Worker launches die before a child session exists with a Pi package mismatch, so no commit on `main` can be greened on the Pi lane. This blocks the 0.28.0 release, which must green its exact release SHA.
