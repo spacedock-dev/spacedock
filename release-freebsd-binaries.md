@@ -28,6 +28,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-11-11T05:43:41Z
 ---
 
 Spacedock releases ship darwin and linux binaries only, and `install.sh` rejects any other OS. A FreeBSD user has to build from source. Subspace, which the Spacedock installer also installs, now builds FreeBSD amd64 and arm64 binaries; Spacedock should match so a FreeBSD host can install the whole kit.
