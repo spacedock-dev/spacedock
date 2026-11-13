@@ -255,7 +255,7 @@ func TestVersionReportNamesAPluginBehindOnceWhenBothHostsAreBehind(t *testing.T)
 	}
 }
 
-func TestVersionReportGivesNoRowsAndNoProblemToAHostThatIsAbsentOrHoldsNoSpacedockPlugin(t *testing.T) {
+func TestVersionReportGivesNoRowsAndNoProblemToAHostThatIsAbsentOrHoldsNothingFromTheMarketplace(t *testing.T) {
 	cases := map[string]struct {
 		onPath  []string
 		codex   []pluginInventoryEntry
@@ -263,10 +263,10 @@ func TestVersionReportGivesNoRowsAndNoProblemToAHostThatIsAbsentOrHoldsNoSpacedo
 		absent  string
 		present string
 	}{
-		"codex absent":                       {[]string{"claude"}, codexPlugins("9.9.9"), nil, "(Codex)", "(Claude Code)"},
-		"codex without the Spacedock plugin": {[]string{"claude", "codex"}, codexPlugins("9.9.9")[1:], nil, "(Codex)", "(Claude Code)"},
-		"claude without the Spacedock plugin": {[]string{"claude", "codex"}, codexPlugins("1.0.1"),
-			func(s *stagedInstall) { s.host.inventory = s.host.inventory[1:] }, "(Claude Code)", "(Codex)"},
+		"codex absent": {[]string{"claude"}, codexPlugins("9.9.9"), nil, "(Codex)", "(Claude Code)"},
+		"codex holding nothing from the marketplace": {[]string{"claude", "codex"}, []pluginInventoryEntry{}, nil, "(Codex)", "(Claude Code)"},
+		"claude holding nothing from the marketplace": {[]string{"claude", "codex"}, codexPlugins("1.0.1"),
+			func(s *stagedInstall) { s.host.inventory = nil }, "(Claude Code)", "(Codex)"},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {

@@ -69,11 +69,12 @@ type versionInputs struct {
 	lookPath    func(string) (string, error)
 	selfPath    string
 	selfVersion string
+	piStatus    func(agentDir, home string) piPackageStatus
 }
 
 // hostStatus is what one plugin host holds: its plugin versions by id, or why it has
-// none to show. skipped is set for a host that is absent, holds no Spacedock plugin, or
-// fails to list its plugins; only the last still shows rows, at "unknown", because the
+// none to show. skipped is set for a host that is absent, holds nothing from the
+// Spacedock marketplaces, or fails to list its plugins; only the last still shows rows, at "unknown", because the
 // host is there and its state is not.
 type hostStatus struct {
 	name, title string
@@ -97,12 +98,29 @@ func readHosts(in versionInputs) []hostStatus {
 		switch {
 		case status.err != nil:
 			status.skipped = fmt.Sprintf("%s plugin list failed (%v), so its plugins were skipped.", h.name, status.err)
-		case status.lookup(channelPluginID(devBranch)) == notInstalled:
-			status.skipped = h.name + " has no Spacedock plugin, so its plugins were skipped."
+		case !holdsAny(status.lookup, inventoryPluginIDs()):
+			status.skipped = h.name + " holds nothing from the Spacedock marketplace, so its plugins were skipped."
 		}
 		hosts = append(hosts, status)
 	}
 	return hosts
+}
+
+func inventoryPluginIDs() []string {
+	ids := []string{channelPluginID(devBranch)}
+	for _, ext := range extensions {
+		ids = append(ids, extensionPluginID(ext.name))
+	}
+	return ids
+}
+
+func holdsAny(lookup func(id string) string, ids []string) bool {
+	for _, id := range ids {
+		if lookup(id) != notInstalled {
+			return true
+		}
+	}
+	return false
 }
 
 func (r versionReport) version(label string) string {
@@ -135,6 +153,9 @@ func collectVersions(in versionInputs) versionReport {
 	for _, h := range report.hosts {
 		if h.listed() {
 			addPlugin(h, "spacedock plugin", h.lookup(spacedockID), spacedockID)
+			if h.err == nil && h.lookup(spacedockID) == notInstalled {
+				problem("MISSING: the Spacedock plugin is not installed on %s. Run `spacedock install --host %s`.", h.title, h.name)
+			}
 		}
 	}
 
@@ -206,15 +227,37 @@ func collectVersions(in versionInputs) versionReport {
 	return report
 }
 
-func addPiPackages(report *versionReport, in versionInputs) bool {
+// piInventory is Pi's share of the inventory that doctor and update's final check read:
+// the Spacedock package and each extension package in settings.json.
+func piInventory(in versionInputs) (rows []pieceRow, skipped string) {
 	if _, err := in.lookPath("pi"); err != nil {
-		return false
+		return nil, "pi is not on PATH, so its packages were skipped."
 	}
 	cfg := piRuntimeConfigFromEnv(in.env, in.dir, "")
-	if _, _, ok := piRegisteredPackage(cfg.agentDir, cfg.home, "spacedock"); !ok {
+	piStatus := in.piStatus
+	if piStatus == nil {
+		piStatus = piSpacedockPackageStatus
+	}
+	if status := piStatus(cfg.agentDir, cfg.home); status.registered && !strings.HasPrefix(status.source, "git:") {
+		return nil, fmt.Sprintf("the Spacedock package in pi is %s, not a published source, so its packages were skipped.", status.source)
+	}
+	rows = piPackageRows(cfg.agentDir, cfg.home)
+	for _, row := range rows {
+		if row.version != notInstalled {
+			return rows, ""
+		}
+	}
+	return nil, "pi holds nothing from the Spacedock marketplace, so its packages were skipped."
+}
+
+func addPiPackages(report *versionReport, in versionInputs) bool {
+	rows, skipped := piInventory(in)
+	if skipped != "" {
 		return false
 	}
-	rows := piPackageRows(cfg.agentDir, cfg.home)
+	if rows[0].version == notInstalled {
+		report.problems = append(report.problems, "MISSING: the Spacedock package is not installed on Pi. Run `spacedock install --host pi`.")
+	}
 	for _, row := range rows[1:] {
 		report.rows = append(report.rows, pieceRow{row.label + " (Pi)", row.version, ""})
 	}
