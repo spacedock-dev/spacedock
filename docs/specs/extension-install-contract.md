@@ -183,8 +183,10 @@ when a session starts, so the closing line tells the user to start a new Codex
 session.
 
 `spacedock doctor` lists the same versions, with the plugins of each of Claude Code
-and Codex that is on PATH and has the Spacedock plugin installed, labelled by host. It
-names a program that differs from a host's plugin and says to run `spacedock update`
+and Codex that is on PATH and has the Spacedock plugin installed, labelled by host, and
+each extension's Pi package when Pi is on PATH and holds the Spacedock package;
+`doctor --host pi` lists those programs and Pi packages alone. It
+names a program that differs from a host's plugin or its Pi package and says to run `spacedock update`
 (on Homebrew, the `brew upgrade` command for the cask and both formulas), a second `spacedock` on PATH, and a
 missing program or plugin, each per host. An extension may add rows and problems of its
 own to that list. On a Homebrew install that lacks the program of an extension that

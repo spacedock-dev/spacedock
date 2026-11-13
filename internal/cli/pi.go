@@ -510,6 +510,10 @@ func runDoctorWithPi(ctx context.Context, args []string, hostOps hostOps, piOps 
 	cfg := piRuntimeConfigFromEnv(env, cwd(), pluginDir)
 	check := checkPiRuntime(piOps, cfg)
 	printPiDoctorReport(stdout, check)
+	selfPath, _ := resolvedLauncherBin()
+	if report, ok := piVersionReport(versionInputs{env: env, dir: cwd(), lookPath: piOps.LookPath, selfPath: selfPath}); ok {
+		printVersionReport(stdout, report)
+	}
 	return piDoctorExit(check)
 }
 

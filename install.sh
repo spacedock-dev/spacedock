@@ -229,10 +229,9 @@ listing_version() {
 		}'
 }
 
-# listing_body prints the marketplace listing. It reads over git, as Claude Code and
-# Codex do: raw.githubusercontent.com serves a listing up to five minutes after a
-# release stamps it, which would pair the program with the previous release.
-# Without git it falls back to the raw file.
+# Read over git, as Claude Code and Codex do: raw.githubusercontent.com serves a
+# listing up to five minutes after a release stamps it, which would pair the program
+# with the previous release.
 listing_body() {
 	lb_body=""
 	if command -v git >/dev/null 2>&1 && lb_dir="$(mktemp -d)"; then
@@ -247,12 +246,13 @@ listing_body() {
 # listed_tag: an extension's plugins and Pi package install from the listing, so its
 # program does too, whatever GitHub lists as the newest release.
 listed_tag() {
-	lt_tag="v$(listing_version "$1" "$(listing_body)")"
-	is_release_tag "$lt_tag" || {
-		err "the spacedock marketplace listing names no release of $1 (read $LISTING_REPO)"
-		return 1
-	}
-	printf '%s\n' "$lt_tag"
+	lt_version="$(listing_version "$1" "$(listing_body)")"
+	is_release_tag "v$lt_version" && { printf 'v%s\n' "$lt_version"; return 0; }
+	case "$CHANNEL:$lt_version" in
+		stable:*-*) err "refused $1 $lt_version: the spacedock marketplace listing names a prerelease, and the stable channel never installs one (read $LISTING_REPO)" ;;
+		*) err "the spacedock marketplace listing names no release of $1 (read $LISTING_REPO)" ;;
+	esac
+	return 1
 }
 
 # newest_tag prints the highest vMAJOR.MINOR.PATCH[-PRERELEASE] tag of a repo,

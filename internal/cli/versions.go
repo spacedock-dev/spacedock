@@ -208,6 +208,65 @@ func collectVersions(in versionInputs) versionReport {
 	return report
 }
 
+// addPiPackages compares each extension program with its Pi package, as update does
+// after a refresh, when Pi is on PATH and holds the published Spacedock package.
+func addPiPackages(report *versionReport, in versionInputs) bool {
+	if _, err := in.lookPath("pi"); err != nil {
+		return false
+	}
+	cfg := piRuntimeConfigFromEnv(in.env, in.dir, "")
+	if _, _, ok := piRegisteredPackage(cfg.agentDir, cfg.home, "spacedock"); !ok {
+		return false
+	}
+	rows := piPackageRows(cfg.agentDir, cfg.home)
+	for _, row := range rows[1:] {
+		report.rows = append(report.rows, pieceRow{row.label + " (Pi)", row.version, ""})
+	}
+	brew := in.selfPath != "" && isHomebrewPath(in.selfPath)
+	for _, m := range mixedPiPackages(rows, *report) {
+		report.mixed = append(report.mixed, m)
+		switch cmp, err := release.ComparePreVersion(m.program, m.plugin); {
+		case m.program == notInstalled:
+		case m.plugin == notInstalled:
+			report.problems = append(report.problems, fmt.Sprintf("MISSING: the %s package is not installed on Pi.", m.name))
+			report.needsUpdate = true
+		default:
+			report.problems = append(report.problems, fmt.Sprintf("MIXED: the %s program %s does not match its package %s on Pi.", m.name, m.program, m.plugin))
+			if brew && err == nil && cmp > 0 {
+				if !slices.Contains(report.pluginsBehind, m.name) {
+					report.pluginsBehind = append(report.pluginsBehind, m.name)
+				}
+			} else {
+				report.needsUpdate = true
+			}
+		}
+	}
+	return true
+}
+
+// piVersionReport is the version report `doctor --host pi` adds: the Pi extensions'
+// programs and packages only.
+func piVersionReport(in versionInputs) (versionReport, bool) {
+	report := versionReport{channel: selectedChannelWord(), hostPlugins: map[string][]pieceRow{}}
+	if in.selfPath != "" && isHomebrewPath(in.selfPath) {
+		report.brewUpgrade = brewUpgradeArgs(in.selfPath)
+	}
+	pathEnv := envMap(in.env)["PATH"]
+	for _, ext := range extensions {
+		if ext.piTitle == "" {
+			continue
+		}
+		programPath, programVersion := extensionProgram(ext, in.env, pathEnv)
+		report.rows = append(report.rows, pieceRow{ext.name + " program", programVersion, programPath})
+		if programVersion == notInstalled {
+			report.problems = append(report.problems, fmt.Sprintf("MISSING: the %s program is not on PATH.", ext.name))
+			report.needsUpdate = true
+		}
+	}
+	ok := addPiPackages(&report, in)
+	return report, ok
+}
+
 func pluginVersionLookup(h hostOps, host string) (lookup func(id string) string, err error) {
 	inventory, err := h.PluginInventory(host)
 	return func(id string) string {
@@ -361,5 +420,8 @@ func reportVersions(args, env []string, dir string, stdout io.Writer) {
 		return
 	}
 	selfPath, _ := resolvedLauncherBin()
-	printVersionReport(stdout, collectVersions(versionInputs{env: env, dir: dir, host: execHost{}, lookPath: exec.LookPath, selfPath: selfPath, selfVersion: displayVersion()}))
+	in := versionInputs{env: env, dir: dir, host: execHost{}, lookPath: exec.LookPath, selfPath: selfPath, selfVersion: displayVersion()}
+	report := collectVersions(in)
+	addPiPackages(&report, in)
+	printVersionReport(stdout, report)
 }

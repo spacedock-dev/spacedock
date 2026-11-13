@@ -567,6 +567,28 @@ func TestInstallExtrasInstallNothingWhenTheListingCannotBeRead(t *testing.T) {
 	}
 }
 
+func TestInstallExtrasStableRefusesAPrereleaseTheListingNames(t *testing.T) {
+	r := newExtrasRun(t, "1.0.1")
+	r.addProgram("claude", "exit 0")
+	osName, arch := goosArch(t)
+	log := r.stubCurl(osName, arch)
+	writeTarGzFiles(t, filepath.Join(r.extras, "beta_1.1.0-beta.1_"+osName+"_"+arch+".tar.gz"), map[string]string{
+		"beta/beta": "#!/bin/sh\necho beta\n"})
+	r.writeChecksums(r.extras)
+
+	stderr, code := r.runWith("SPACEDOCK_CHANNEL=stable", "STUB_LISTED_BETA=1.1.0-beta.1")
+	want := "refused beta 1.1.0-beta.1: the spacedock marketplace listing names a prerelease, and the stable channel never installs one"
+	if code != 1 || !strings.Contains(stderr, want) {
+		t.Errorf("exit=%d, want 1 and %q:\n%s", code, want, stderr)
+	}
+	if _, err := os.Lstat(filepath.Join(r.bin, "beta")); err == nil {
+		t.Error("stable installed the prerelease the listing names")
+	}
+	if urls, _ := os.ReadFile(log); strings.Contains(string(urls), "1.1.0-beta.1") {
+		t.Errorf("stable requested the prerelease:\n%s", urls)
+	}
+}
+
 func TestInstallExtrasReadTheListingOverGitBeforeTheCachedRawFile(t *testing.T) {
 	r := newExtrasRun(t, "1.0.1")
 	r.addProgram("claude", "exit 0")
