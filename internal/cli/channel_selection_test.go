@@ -59,11 +59,11 @@ func TestClaudeChannelInstallArgvSequence(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.channel, func(t *testing.T) {
 			want := []installStep{
-				{argv: []string{"plugin", "uninstall", tc.wantID}, tolerateExit: true, reportExit: true, ifInstalled: tc.wantID},
 				{argv: []string{"plugin", "uninstall", tc.wantSibling}, tolerateExit: true, reportExit: true, ifInstalled: tc.wantSibling},
 				{argv: []string{"plugin", "uninstall", "spacedock-edge@spacedock"}, tolerateExit: true, reportExit: true, ifInstalled: "spacedock-edge@spacedock"},
 				{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}},
 				{argv: []string{"plugin", "marketplace", "update", tc.wantMarketplace}, tolerateExit: true},
+				{argv: []string{"plugin", "uninstall", tc.wantID}, tolerateExit: true, reportExit: true, ifInstalled: tc.wantID},
 				{argv: []string{"plugin", "install", tc.wantID}},
 			}
 			got := installArgvSequence("spacedock-dev/marketplace", tc.devBranch)
