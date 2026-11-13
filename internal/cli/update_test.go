@@ -526,7 +526,7 @@ func TestDoctorAndUpdateCheckEveryHostThatHoldsAPieceFromTheMarketplace(t *testi
 				if spacedock == "present" {
 					ids = append(ids, channelPluginID(devBranch))
 				}
-				var entries []string
+				entries := []string{`{"id":"beta@spacedock","pluginId":"beta@spacedock","version":"1.0.1","installPath":"/p","installed":true,"enabled":true}`}
 				for _, id := range ids {
 					entries = append(entries, `{"id":"`+id+`","pluginId":"`+id+`","version":"0.16.0-beta.1","installPath":"/p","installed":true,"enabled":true}`)
 				}
