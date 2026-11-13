@@ -304,7 +304,7 @@ func TestUpdateOnHomebrewRefreshesCodexInProcess(t *testing.T) {
 	}
 }
 
-func TestUpdateSkipsAHostThatIsAbsentOrHoldsNoSpacedockPlugin(t *testing.T) {
+func TestUpdateSkipsAHostThatIsAbsentOrHoldsNothingFromTheMarketplace(t *testing.T) {
 	cases := []struct {
 		name    string
 		onPath  []string
