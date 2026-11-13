@@ -74,8 +74,8 @@ type versionInputs struct {
 
 // hostStatus is what one plugin host holds: its plugin versions by id, or why it has
 // none to show. skipped is set for a host that is absent, holds nothing from the
-// Spacedock marketplaces, or fails to list its plugins; only the last still shows rows, at "unknown", because the
-// host is there and its state is not.
+// Spacedock marketplaces, or fails to list its plugins; only the last still shows
+// rows, at "unknown", because the host is there and its state is not.
 type hostStatus struct {
 	name, title string
 	skipped     string
