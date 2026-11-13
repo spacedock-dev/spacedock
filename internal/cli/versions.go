@@ -208,8 +208,6 @@ func collectVersions(in versionInputs) versionReport {
 	return report
 }
 
-// addPiPackages compares each extension program with its Pi package, as update does
-// after a refresh, when Pi is on PATH and holds the published Spacedock package.
 func addPiPackages(report *versionReport, in versionInputs) bool {
 	if _, err := in.lookPath("pi"); err != nil {
 		return false
@@ -244,8 +242,6 @@ func addPiPackages(report *versionReport, in versionInputs) bool {
 	return true
 }
 
-// piVersionReport is the version report `doctor --host pi` adds: the Pi extensions'
-// programs and packages only.
 func piVersionReport(in versionInputs) (versionReport, bool) {
 	report := versionReport{channel: selectedChannelWord(), hostPlugins: map[string][]pieceRow{}}
 	if in.selfPath != "" && isHomebrewPath(in.selfPath) {
