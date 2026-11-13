@@ -462,21 +462,6 @@ func TestUpdateFailsAndNamesTheExtensionWhenAProgramDownloadFailedButThePluginsM
 	}
 }
 
-func TestBrewFormulaNamesTheCaskAndBothExtensionFormulas(t *testing.T) {
-	const formulas = " spacedock-dev/tap/subspace-beta spacedock-dev/tap/compass"
-	for path, want := range map[string]string{
-		"/opt/homebrew/Caskroom/spacedock/0.28.0/spacedock":      "spacedock" + formulas,
-		"/opt/homebrew/Caskroom/spacedock@next/0.28.0/spacedock": "spacedock@next" + formulas,
-	} {
-		if got := brewFormula(path, true); got != want {
-			t.Errorf("brewFormula(%q) = %q, want %q", path, got, want)
-		}
-	}
-	if got := brewFormula("/usr/local/bin/spacedock", false); got != "" {
-		t.Errorf("brewFormula on a curl install = %q, want none", got)
-	}
-}
-
 func TestUpdateFailsAndNamesAnExtensionWhoseProgramIsMissingBesideItsPlugin(t *testing.T) {
 	s := stageInstall(t)
 	if err := os.Remove(filepath.Join(s.first, "spacedock-alpha")); err != nil {

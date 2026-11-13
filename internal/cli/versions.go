@@ -128,9 +128,7 @@ func collectVersions(in versionInputs) versionReport {
 	}
 	pathEnv := envMap(in.env)["PATH"]
 	brew := in.selfPath != "" && isHomebrewPath(in.selfPath)
-	if brew {
-		report.brewUpgrade = brewUpgradeArgs(in.selfPath)
-	}
+	report.brewUpgrade = brewFormula(in.selfPath, brew)
 
 	add("spacedock", in.selfVersion, in.selfPath)
 	spacedockID := channelPluginID(devBranch)
@@ -220,7 +218,7 @@ func addPiPackages(report *versionReport, in versionInputs) bool {
 	for _, row := range rows[1:] {
 		report.rows = append(report.rows, pieceRow{row.label + " (Pi)", row.version, ""})
 	}
-	brew := in.selfPath != "" && isHomebrewPath(in.selfPath)
+	brew := report.brewUpgrade != ""
 	for _, m := range mixedPiPackages(rows, *report) {
 		report.mixed = append(report.mixed, m)
 		switch cmp, err := release.ComparePreVersion(m.program, m.plugin); {
@@ -244,9 +242,7 @@ func addPiPackages(report *versionReport, in versionInputs) bool {
 
 func piVersionReport(in versionInputs) (versionReport, bool) {
 	report := versionReport{channel: selectedChannelWord(), hostPlugins: map[string][]pieceRow{}}
-	if in.selfPath != "" && isHomebrewPath(in.selfPath) {
-		report.brewUpgrade = brewUpgradeArgs(in.selfPath)
-	}
+	report.brewUpgrade = brewFormula(in.selfPath, in.selfPath != "" && isHomebrewPath(in.selfPath))
 	pathEnv := envMap(in.env)["PATH"]
 	for _, ext := range extensions {
 		if ext.piTitle == "" {

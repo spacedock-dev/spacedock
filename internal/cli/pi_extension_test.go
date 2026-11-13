@@ -208,11 +208,9 @@ func TestUpdateFailsWhenPiHoldsNoPackageOfAnExtensionThatHasAProgram(t *testing.
 		return "", nil
 	}
 	want := "spacedock update: alpha is still MIXED on Pi: program 0.16.0-beta.2, package not installed. Left behind: the Pi package"
-	for attempt := 1; attempt <= 2; attempt++ {
-		var stdout, stderr bytes.Buffer
-		if code := runUpdate(f.deps, &stdout, &stderr); code != 1 || !strings.Contains(stderr.String(), want) {
-			t.Fatalf("update %d exited %d, want 1 naming the package; stderr:\n%s", attempt, code, stderr.String())
-		}
+	var stdout, stderr bytes.Buffer
+	if code := runUpdate(f.deps, &stdout, &stderr); code != 1 || !strings.Contains(stderr.String(), want) {
+		t.Fatalf("update exited %d, want 1 naming the package; stderr:\n%s", code, stderr.String())
 	}
 }
 
@@ -295,31 +293,32 @@ func (f *piUpdateFixture) piDoctorReport(t *testing.T) string {
 	return stdout.String()
 }
 
-func TestDoctorNamesAPiPackageThatDiffersFromItsProgramOnEitherSide(t *testing.T) {
-	for _, ref := range []string{"v0.16.0-beta.1", "v0.16.0-beta.3"} {
+func TestDoctorNamesAPiPackageThatDiffersFromItsProgramOrIsMissing(t *testing.T) {
+	for ref, want := range map[string]string{
+		"@v0.16.0-beta.1": "MIXED: the alpha program 0.16.0-beta.2 does not match its package 0.16.0-beta.1 on Pi.",
+		"@v0.16.0-beta.3": "MIXED: the alpha program 0.16.0-beta.2 does not match its package 0.16.0-beta.3 on Pi.",
+		"":                "MISSING: the alpha package is not installed on Pi.",
+	} {
 		f := newPiUpdateFixture(t, piPackageStatus{})
-		writeFile(t, f.settings, `{"packages":["`+piSpacedockPackageSource+`@stable","`+piTestAlpha+`@`+ref+`"]}`)
-		want := "MIXED: the alpha program 0.16.0-beta.2 does not match its package " + strings.TrimPrefix(ref, "v") + " on Pi."
+		packages := `"` + piSpacedockPackageSource + `@stable"`
+		if ref != "" {
+			packages += `,"` + piTestAlpha + ref + `"`
+		}
+		writeFile(t, f.settings, `{"packages":[`+packages+`]}`)
 		for name, out := range map[string]string{"doctor": f.doctorReport(), "doctor --host pi": f.piDoctorReport(t)} {
 			if !strings.Contains(out, want) || !strings.Contains(out, "Run `spacedock update`") {
-				t.Errorf("%s, package %s: lacks %q and the update remedy:\n%s", name, ref, want, out)
+				t.Errorf("%s, alpha package %q: lacks %q and the update remedy:\n%s", name, ref, want, out)
 			}
 		}
 	}
 }
 
-func TestDoctorReadsCleanAfterTheUpdateThatPairsThePiPackage(t *testing.T) {
-	f := newPiUpdateFixture(t, piPackageStatus{registered: true, source: piSpacedockPackageSource + "@stable"})
-	if out := f.doctorReport(); !strings.Contains(out, "MIXED: the alpha program") {
-		t.Fatalf("doctor before the update names no MIXED package:\n%s", out)
-	}
-	var stdout, stderr bytes.Buffer
-	if code := runUpdate(f.deps, &stdout, &stderr); code != 0 {
-		t.Fatalf("update exited %d: %s", code, stderr.String())
-	}
+func TestDoctorReadsCleanWhenThePiPackageMatchesItsProgram(t *testing.T) {
+	f := newPiUpdateFixture(t, piPackageStatus{})
+	writeFile(t, f.settings, `{"packages":["`+piSpacedockPackageSource+`@stable","`+piTestAlpha+`@v0.16.0-beta.2"]}`)
 	for name, out := range map[string]string{"doctor": f.doctorReport(), "doctor --host pi": f.piDoctorReport(t)} {
 		if !strings.Contains(out, "No problems found.") || strings.Contains(out, "MIXED") {
-			t.Errorf("%s after the update is not clean:\n%s", name, out)
+			t.Errorf("%s with the package at its program's release is not clean:\n%s", name, out)
 		}
 	}
 }

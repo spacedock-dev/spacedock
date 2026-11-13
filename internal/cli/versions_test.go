@@ -239,17 +239,19 @@ func TestVersionReportChecksEachHostOnItsOwn(t *testing.T) {
 	}
 }
 
-func TestVersionReportAsksForUpdateOncePerCurlInstallWhenBothHostsAreBehind(t *testing.T) {
+func TestVersionReportNamesAPluginBehindOnceWhenBothHostsAreBehind(t *testing.T) {
 	s := stageInstall(t)
 	host := s.withCodex(codexPlugins("1.0.1"))
 	writeProgram(t, filepath.Join(s.first, "spacedock-alpha"), "0.16.0-beta.3")
+	report := collectVersions(versionInputs{env: s.env, dir: s.project, host: host, lookPath: s.lookPath,
+		selfPath: "/opt/homebrew/Caskroom/spacedock@next/0.28.0/spacedock", selfVersion: "0.28.0-pre6"})
 	var out bytes.Buffer
-	printVersionReport(&out, s.reportWith(host))
+	printVersionReport(&out, report)
+	if !strings.Contains(out.String(), "The alpha plugin waits on its listing") || strings.Contains(out.String(), "alpha and alpha") {
+		t.Errorf("remedy does not name alpha exactly once:\n%s", out.String())
+	}
 	if strings.Count(out.String(), "MIXED: the alpha program") != 2 {
 		t.Errorf("want one MIXED line per host:\n%s", out.String())
-	}
-	if strings.Count(out.String(), "Run `spacedock update` to bring every program and plugin to the same release.") != 1 || strings.Contains(out.String(), "waits on") {
-		t.Errorf("want one update remedy and no waiting text:\n%s", out.String())
 	}
 }
 

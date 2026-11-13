@@ -142,13 +142,13 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 	for _, h := range hosts {
 		h.after = after.hostPlugins[h.name]
 	}
-	printUpdateChanges(stdout, before, after, brewFormula(d.selfPath, brew), hosts, pi)
+	printUpdateChanges(stdout, before, after, before.brewUpgrade, hosts, pi)
 	code := 0
 	mixed := after.mixed
 	if pi.refresh && pi.err == nil {
 		mixed = append(mixed, mixedPiPackages(pi.after, after)...)
 	}
-	for _, line := range mixedAfterUpdate(mixed, brew, before.brewUpgrade, addRefused) {
+	for _, line := range mixedAfterUpdate(mixed, before.brewUpgrade, addRefused) {
 		fmt.Fprintln(stderr, line)
 		code = 1
 	}
@@ -303,25 +303,22 @@ func mixedPiPackages(rows []pieceRow, after versionReport) []mixedExtension {
 	return mixed
 }
 
-// brewUpgradeArgs names the cask and both extension formulas: a cask upgrade
+// brewFormula names the cask and both extension formulas: a cask upgrade
 // leaves an installed formula where it is, so naming the cask alone leaves a
 // program behind its plugin.
-func brewUpgradeArgs(selfPath string) string {
-	cask := "spacedock"
-	if isEdgeCaskPath(selfPath) {
-		cask = "spacedock@next"
-	}
-	return cask + " spacedock-dev/tap/subspace-beta spacedock-dev/tap/compass"
-}
-
 func brewFormula(selfPath string, brew bool) string {
-	if !brew {
+	const formulas = " spacedock-dev/tap/subspace-beta spacedock-dev/tap/compass"
+	switch {
+	case !brew:
 		return ""
+	case isEdgeCaskPath(selfPath):
+		return "spacedock@next" + formulas
 	}
-	return brewUpgradeArgs(selfPath)
+	return "spacedock" + formulas
 }
 
-func mixedAfterUpdate(mixed []mixedExtension, brew bool, brewArgs string, addRefused map[string]bool) []string {
+func mixedAfterUpdate(mixed []mixedExtension, brewArgs string, addRefused map[string]bool) []string {
+	brew := brewArgs != ""
 	var lines []string
 	for _, m := range mixed {
 		kind := "plugin"
