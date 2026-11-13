@@ -494,3 +494,38 @@ func TestUpdateFailsAndNamesAnExtensionWhoseProgramIsMissingBesideItsPlugin(t *t
 		t.Errorf("stderr lacks %q:\n%s", want, stderr.String())
 	}
 }
+
+type execInstallHost struct{ *fakeHost }
+
+func (h execInstallHost) Install(host, source, branch string) (string, error) {
+	return execHost{}.Install(host, source, branch)
+}
+
+func TestUpdateNamesARefusedMarketplaceAddWithClaudesOwnMessage(t *testing.T) {
+	s := stageInstall(t)
+	s.host.inventory = s.host.inventory[:1]
+	refusal := `✘ Failed to add marketplace: Cannot add marketplace "spacedock": its source doesn't match its extraKnownMarketplaces entry`
+	bin := t.TempDir()
+	mustWrite(t, filepath.Join(bin, "refusal"), "Adding marketplace…"+refusal+"\n\n")
+	mustWrite(t, filepath.Join(bin, "claude"), "#!/bin/sh\ncase \"$*\" in\n"+
+		"'plugin list --json') echo '[]' ;;\n"+
+		"'plugin marketplace add spacedock-dev/marketplace') cat \"${0%/*}/refusal\"; exit 1 ;;\n"+
+		"esac\n")
+	if err := os.Chmod(filepath.Join(bin, "claude"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", bin+":/usr/bin:/bin")
+	script := filepath.Join(t.TempDir(), "install.sh")
+	mustWrite(t, script, "#!/bin/sh\n:\n")
+
+	var stdout, stderr bytes.Buffer
+	if code := runUpdate(updateDepsFor(s, execInstallHost{s.host}, script), &stdout, &stderr); code != 1 {
+		t.Fatalf("update exited %d, want 1; stderr:\n%s", code, stderr.String())
+	}
+	if want := "spacedock install: claude plugin marketplace add spacedock-dev/marketplace failed: exit status 1: Adding marketplace…" + refusal + "\n"; !strings.Contains(stdout.String(), want) {
+		t.Errorf("stdout lacks Claude Code's refusal %q:\n%s", want, stdout.String())
+	}
+	if want := "alpha is still MIXED on Claude Code: program 0.16.0-beta.2, plugin not installed. Left behind: the Claude Code plugin (failed: the Claude Code marketplace add"; !strings.Contains(stderr.String(), want) {
+		t.Errorf("stderr lacks %q:\n%s", want, stderr.String())
+	}
+}

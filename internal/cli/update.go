@@ -90,6 +90,7 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 	fmt.Fprintf(stdout, "Updating Spacedock on the %s channel (%s)\n", before.channel, owner)
 
 	hosts := planHostUpdates(before)
+	addRefused := map[string]bool{}
 	if !brew {
 		if err := runInstallScript(d, stdout, stderr); err != nil {
 			fmt.Fprintf(stderr, "spacedock update: %v\n", err)
@@ -109,6 +110,7 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 			out, h.err = d.runSelf("install", "--host", h.name)
 		}
 		printInstallFailures(stdout, out)
+		addRefused[h.title] = strings.Contains(out, "spacedock install: "+h.name+" plugin marketplace add ")
 		if h.err != nil && strings.TrimSpace(out) != "" {
 			h.err = fmt.Errorf("%w\n%s", h.err, strings.TrimSpace(out))
 		}
@@ -146,7 +148,7 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 	if pi.refresh && pi.err == nil {
 		mixed = append(mixed, mixedPiPackages(pi.after, after)...)
 	}
-	for _, line := range mixedAfterUpdate(mixed, brew, before.brewUpgrade) {
+	for _, line := range mixedAfterUpdate(mixed, brew, before.brewUpgrade, addRefused) {
 		fmt.Fprintln(stderr, line)
 		code = 1
 	}
@@ -319,7 +321,7 @@ func brewFormula(selfPath string, brew bool) string {
 	return brewUpgradeArgs(selfPath)
 }
 
-func mixedAfterUpdate(mixed []mixedExtension, brew bool, brewArgs string) []string {
+func mixedAfterUpdate(mixed []mixedExtension, brew bool, brewArgs string, addRefused map[string]bool) []string {
 	var lines []string
 	for _, m := range mixed {
 		kind := "plugin"
@@ -331,6 +333,8 @@ func mixedAfterUpdate(mixed []mixedExtension, brew bool, brewArgs string) []stri
 		case m.program == notInstalled && brew:
 			step = "Homebrew owns the program; see the MISSING line above"
 		case m.program == notInstalled:
+		case m.plugin == notInstalled && addRefused[m.host]:
+			behind, step = "the "+m.host+" "+kind, "the "+m.host+" marketplace add, refused with the message above"
 		case m.plugin == notInstalled || (err == nil && cmp > 0):
 			behind, step = "the "+m.host+" "+kind, "the "+m.host+" "+kind+" install"
 		case err != nil:

@@ -648,7 +648,11 @@ func runInstallSteps(host string, steps []installStep) (string, error) {
 		if err != nil {
 			if step.tolerateExit {
 				if step.reportExit {
-					fmt.Fprintf(&sb, "spacedock install: %s %s failed: %v\n", host, strings.Join(step.argv, " "), err)
+					fmt.Fprintf(&sb, "spacedock install: %s %s failed: %v", host, strings.Join(step.argv, " "), err)
+					if msg := strings.TrimSpace(string(out)); msg != "" {
+						sb.WriteString(": " + strings.TrimSpace(msg[strings.LastIndex(msg, "\n")+1:]))
+					}
+					sb.WriteString("\n")
 				}
 				continue
 			}
