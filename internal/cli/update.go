@@ -331,13 +331,14 @@ func mixedAfterUpdate(mixed []mixedExtension, brewArgs string, addRefused map[st
 		if m.host == "Pi" {
 			kind = "package"
 		}
-		behind, step := "the program", "the install script's download of the "+m.name+" program"
+		behind, step, next := "the program", "the install script's download of the "+m.name+" program", "Run `spacedock update` again."
 		switch cmp, err := release.ComparePreVersion(m.program, m.plugin); {
 		case m.program == notInstalled && brew:
 			step = "Homebrew owns the program; see the MISSING line above"
 		case m.program == notInstalled:
 		case m.plugin == notInstalled && addRefused[m.host]:
 			behind, step = "the "+m.host+" "+kind, "the "+m.host+" marketplace add, refused with the message above"
+			next = "Change the entry Claude Code names above, then run `spacedock update`."
 		case m.plugin == notInstalled || (err == nil && cmp > 0):
 			behind, step = "the "+m.host+" "+kind, "the "+m.host+" "+kind+" install"
 		case err != nil:
@@ -345,8 +346,8 @@ func mixedAfterUpdate(mixed []mixedExtension, brewArgs string, addRefused map[st
 		case brew:
 			step = "Homebrew has not upgraded it; run `brew upgrade " + brewArgs + "`"
 		}
-		lines = append(lines, fmt.Sprintf("spacedock update: %s is still MIXED on %s: program %s, %s %s. Left behind: %s (failed: %s). Run `spacedock update` again.",
-			m.name, m.host, m.program, kind, m.plugin, behind, step))
+		lines = append(lines, fmt.Sprintf("spacedock update: %s is still MIXED on %s: program %s, %s %s. Left behind: %s (failed: %s). %s",
+			m.name, m.host, m.program, kind, m.plugin, behind, step, next))
 	}
 	return lines
 }
