@@ -56,6 +56,9 @@ func (h *twoHosts) PluginInventory(host string) ([]pluginInventoryEntry, error) 
 func (h *twoHosts) Install(host, source, branch string) (string, error) {
 	if host == "codex" {
 		h.codexInstalls++
+		if h.codexInstallErr == nil {
+			h.codexPlugins = codexPlugins("1.0.1")
+		}
 		return "", h.codexInstallErr
 	}
 	return h.fakeHost.Install(host, source, branch)
@@ -164,8 +167,8 @@ func TestUpdateShowsTheInstallScriptsFailedPluginLinesWhenTheScriptSucceeds(t *t
 
 func TestUpdateOnHomebrewChangesNoProgramAndNamesTheBrewCommand(t *testing.T) {
 	for path, formula := range map[string]string{
-		"/opt/homebrew/Caskroom/spacedock/0.28.0/spacedock":      "brew upgrade spacedock\n",
-		"/opt/homebrew/Caskroom/spacedock@next/0.28.0/spacedock": "brew upgrade spacedock@next\n",
+		"/opt/homebrew/Caskroom/spacedock/0.28.0/spacedock":      "brew upgrade spacedock spacedock-dev/tap/subspace-beta spacedock-dev/tap/compass\n",
+		"/opt/homebrew/Caskroom/spacedock@next/0.28.0/spacedock": "brew upgrade spacedock@next spacedock-dev/tap/subspace-beta spacedock-dev/tap/compass\n",
 	} {
 		s := stageInstall(t)
 		ran := filepath.Join(t.TempDir(), "ran")
@@ -384,7 +387,11 @@ func TestUpdateLeavesAClaudeWithoutTheSpacedockPluginAlone(t *testing.T) {
 	d := updateDepsFor(s, host, script)
 	d.lookPath = hostsOnPath("claude", "codex")
 	var ran []string
-	d.runSelf = func(args ...string) (string, error) { ran = append(ran, strings.Join(args, " ")); return "", nil }
+	d.runSelf = func(args ...string) (string, error) {
+		ran = append(ran, strings.Join(args, " "))
+		host.codexPlugins = codexPlugins("1.0.1")
+		return "", nil
+	}
 
 	var stdout, stderr bytes.Buffer
 	if code := runUpdate(d, &stdout, &stderr); code != 0 {
@@ -401,7 +408,7 @@ func TestUpdateLeavesAClaudeWithoutTheSpacedockPluginAlone(t *testing.T) {
 	}
 }
 
-func TestUpdateFailsAndRefreshesNoPluginWhenGitHubLimitsAnExtensionLookup(t *testing.T) {
+func TestUpdateFailsAndRefreshesNoPluginWhenAnExtensionLookupFails(t *testing.T) {
 	s := stageInstall(t)
 	root := t.TempDir()
 	dist, stubs := filepath.Join(root, "dist"), filepath.Join(root, "stubs")
@@ -430,10 +437,80 @@ func TestUpdateFailsAndRefreshesNoPluginWhenGitHubLimitsAnExtensionLookup(t *tes
 	if code := runUpdate(d, &stdout, &stderr); code != 1 {
 		t.Fatalf("exit = %d, want 1; stderr:\n%s", code, stderr.String())
 	}
-	if !strings.Contains(stderr.String(), "rate limit") {
-		t.Errorf("stderr does not name GitHub's rate limit:\n%s", stderr.String())
+	if !strings.Contains(stderr.String(), "the spacedock marketplace listing names no release of subspace") {
+		t.Errorf("stderr does not name the unreadable listing:\n%s", stderr.String())
 	}
 	if strings.Contains(stdout.String(), "Claude Code plugins") || len(s.host.installCmds) != 0 {
 		t.Errorf("a failed lookup still refreshed plugins or printed a result table: installCmds=%v\n%s", s.host.installCmds, stdout.String())
+	}
+}
+
+func TestUpdateFailsAndNamesTheExtensionWhenAProgramDownloadFailedButThePluginsMoved(t *testing.T) {
+	s := stageInstall(t)
+	s.host.inventory[2].Version = "1.0.2"
+	host := &switchHost{fakeHost: s.host, flag: "", after: nil}
+	script := filepath.Join(t.TempDir(), "install.sh")
+	mustWrite(t, script, "#!/bin/sh\necho 'beta: download failed - skipped' >&2\n")
+
+	var stdout, stderr bytes.Buffer
+	if code := runUpdate(updateDepsFor(s, host, script), &stdout, &stderr); code != 1 {
+		t.Fatalf("update exited %d, want 1 while beta is MIXED; stderr:\n%s", code, stderr.String())
+	}
+	want := "spacedock update: beta is still MIXED on Claude Code: program 1.0.1, plugin 1.0.2. Left behind: the program (failed: the install script's download of the beta program)."
+	if !strings.Contains(stderr.String(), want) {
+		t.Errorf("stderr lacks %q:\n%s", want, stderr.String())
+	}
+}
+
+func TestUpdateFailsAndNamesAnExtensionWhoseProgramIsMissingBesideItsPlugin(t *testing.T) {
+	s := stageInstall(t)
+	if err := os.Remove(filepath.Join(s.first, "spacedock-alpha")); err != nil {
+		t.Fatal(err)
+	}
+	script := filepath.Join(t.TempDir(), "install.sh")
+	mustWrite(t, script, "#!/bin/sh\n:\n")
+
+	var stdout, stderr bytes.Buffer
+	if code := runUpdate(updateDepsFor(s, s.host, script), &stdout, &stderr); code != 1 {
+		t.Fatalf("update exited %d, want 1; stderr:\n%s", code, stderr.String())
+	}
+	want := "spacedock update: alpha is still MIXED on Claude Code: program not installed, plugin 0.16.0-beta.2. Left behind: the program (failed: the install script's download of the alpha program)."
+	if !strings.Contains(stderr.String(), want) {
+		t.Errorf("stderr lacks %q:\n%s", want, stderr.String())
+	}
+}
+
+type execInstallHost struct{ *fakeHost }
+
+func (h execInstallHost) Install(host, source, branch string) (string, error) {
+	return execHost{}.Install(host, source, branch)
+}
+
+func TestUpdateNamesARefusedMarketplaceAddWithClaudesOwnMessage(t *testing.T) {
+	s := stageInstall(t)
+	s.host.inventory = s.host.inventory[:1]
+	refusal := `✘ Failed to add marketplace: Cannot add marketplace "spacedock": its source doesn't match its extraKnownMarketplaces entry`
+	bin := t.TempDir()
+	mustWrite(t, filepath.Join(bin, "refusal"), "Adding marketplace…"+refusal+"\n\n")
+	mustWrite(t, filepath.Join(bin, "claude"), "#!/bin/sh\ncase \"$*\" in\n"+
+		"'plugin list --json') echo '[]' ;;\n"+
+		"'plugin marketplace add spacedock-dev/marketplace') cat \"${0%/*}/refusal\"; exit 1 ;;\n"+
+		"esac\n")
+	if err := os.Chmod(filepath.Join(bin, "claude"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", bin+":/usr/bin:/bin")
+	script := filepath.Join(t.TempDir(), "install.sh")
+	mustWrite(t, script, "#!/bin/sh\n:\n")
+
+	var stdout, stderr bytes.Buffer
+	if code := runUpdate(updateDepsFor(s, execInstallHost{s.host}, script), &stdout, &stderr); code != 1 {
+		t.Fatalf("update exited %d, want 1; stderr:\n%s", code, stderr.String())
+	}
+	if want := "spacedock install: claude plugin marketplace add spacedock-dev/marketplace failed: exit status 1: Adding marketplace…" + refusal + "\n"; !strings.Contains(stdout.String(), want) {
+		t.Errorf("stdout lacks Claude Code's refusal %q:\n%s", want, stdout.String())
+	}
+	if want := "alpha is still MIXED on Claude Code: program 0.16.0-beta.2, plugin not installed. Left behind: the Claude Code plugin (failed: the Claude Code marketplace add"; !strings.Contains(stderr.String(), want) {
+		t.Errorf("stderr lacks %q:\n%s", want, stderr.String())
 	}
 }

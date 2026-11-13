@@ -13,6 +13,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+
+	"github.com/spacedock-dev/spacedock/internal/release"
 )
 
 const installScriptURL = "https://raw.githubusercontent.com/spacedock-dev/spacedock/main/install.sh"
@@ -88,6 +90,7 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 	fmt.Fprintf(stdout, "Updating Spacedock on the %s channel (%s)\n", before.channel, owner)
 
 	hosts := planHostUpdates(before)
+	addRefused := map[string]bool{}
 	if !brew {
 		if err := runInstallScript(d, stdout, stderr); err != nil {
 			fmt.Fprintf(stderr, "spacedock update: %v\n", err)
@@ -107,6 +110,7 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 			out, h.err = d.runSelf("install", "--host", h.name)
 		}
 		printInstallFailures(stdout, out)
+		addRefused[h.title] = strings.Contains(out, "spacedock install: "+h.name+" plugin marketplace add ")
 		if h.err != nil && strings.TrimSpace(out) != "" {
 			h.err = fmt.Errorf("%w\n%s", h.err, strings.TrimSpace(out))
 		}
@@ -138,8 +142,16 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 	for _, h := range hosts {
 		h.after = after.hostPlugins[h.name]
 	}
-	printUpdateChanges(stdout, before, after, brewFormula(d.selfPath, brew), hosts, pi)
+	printUpdateChanges(stdout, before, after, before.brewUpgrade, hosts, pi)
 	code := 0
+	mixed := after.mixed
+	if pi.refresh && pi.err == nil {
+		mixed = append(mixed, mixedPiPackages(pi.after, after)...)
+	}
+	for _, line := range mixedAfterUpdate(mixed, before.brewUpgrade, addRefused) {
+		fmt.Fprintln(stderr, line)
+		code = 1
+	}
 	if pi.err != nil {
 		fmt.Fprintf(stderr, "spacedock update: the Pi package update failed: %v\n", pi.err)
 		code = 1
@@ -273,14 +285,64 @@ func printInstallFailures(w io.Writer, out string) {
 	}
 }
 
+func mixedPiPackages(rows []pieceRow, after versionReport) []mixedExtension {
+	var mixed []mixedExtension
+	for _, ext := range extensions {
+		if ext.piTitle == "" {
+			continue
+		}
+		program := after.version(ext.name + " program")
+		pkg := strings.TrimPrefix(pieceVersion(rows, ext.name+" package"), "v")
+		switch {
+		case program == "unknown" || pkg == "unpinned":
+		case pkg == notInstalled && program == notInstalled:
+		case pkg != program:
+			mixed = append(mixed, mixedExtension{ext.name, "Pi", program, pkg})
+		}
+	}
+	return mixed
+}
+
+// brewFormula names the cask and both extension formulas: a cask upgrade
+// leaves an installed formula where it is, so naming the cask alone leaves a
+// program behind its plugin.
 func brewFormula(selfPath string, brew bool) string {
+	const formulas = " spacedock-dev/tap/subspace-beta spacedock-dev/tap/compass"
 	switch {
 	case !brew:
 		return ""
 	case isEdgeCaskPath(selfPath):
-		return "spacedock@next"
+		return "spacedock@next" + formulas
 	}
-	return "spacedock"
+	return "spacedock" + formulas
+}
+
+func mixedAfterUpdate(mixed []mixedExtension, brewArgs string, addRefused map[string]bool) []string {
+	brew := brewArgs != ""
+	var lines []string
+	for _, m := range mixed {
+		kind := "plugin"
+		if m.host == "Pi" {
+			kind = "package"
+		}
+		behind, step := "the program", "the install script's download of the "+m.name+" program"
+		switch cmp, err := release.ComparePreVersion(m.program, m.plugin); {
+		case m.program == notInstalled && brew:
+			step = "Homebrew owns the program; see the MISSING line above"
+		case m.program == notInstalled:
+		case m.plugin == notInstalled && addRefused[m.host]:
+			behind, step = "the "+m.host+" "+kind, "the "+m.host+" marketplace add, refused with the message above"
+		case m.plugin == notInstalled || (err == nil && cmp > 0):
+			behind, step = "the "+m.host+" "+kind, "the "+m.host+" "+kind+" install"
+		case err != nil:
+			behind, step = "the program or the "+kind, "a step of this update"
+		case brew:
+			step = "Homebrew has not upgraded it; run `brew upgrade " + brewArgs + "`"
+		}
+		lines = append(lines, fmt.Sprintf("spacedock update: %s is still MIXED on %s: program %s, %s %s. Left behind: %s (failed: %s). Run `spacedock update` again.",
+			m.name, m.host, m.program, kind, m.plugin, behind, step))
+	}
+	return lines
 }
 
 var restartAdvice = map[string]string{

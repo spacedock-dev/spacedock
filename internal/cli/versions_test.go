@@ -243,8 +243,10 @@ func TestVersionReportNamesAPluginBehindOnceWhenBothHostsAreBehind(t *testing.T)
 	s := stageInstall(t)
 	host := s.withCodex(codexPlugins("1.0.1"))
 	writeProgram(t, filepath.Join(s.first, "spacedock-alpha"), "0.16.0-beta.3")
+	report := collectVersions(versionInputs{env: s.env, dir: s.project, host: host, lookPath: s.lookPath,
+		selfPath: "/opt/homebrew/Caskroom/spacedock@next/0.28.0/spacedock", selfVersion: "0.28.0-pre6"})
 	var out bytes.Buffer
-	printVersionReport(&out, s.reportWith(host))
+	printVersionReport(&out, report)
 	if !strings.Contains(out.String(), "The alpha plugin waits on its listing") || strings.Contains(out.String(), "alpha and alpha") {
 		t.Errorf("remedy does not name alpha exactly once:\n%s", out.String())
 	}
@@ -314,29 +316,45 @@ func TestVersionReportCopiesNamePathVersionAndTheOneThatRuns(t *testing.T) {
 	}
 }
 
-func TestVersionReportRemedyDependsOnWhichSideIsNewer(t *testing.T) {
+func TestVersionReportRemedyDependsOnWhoOwnsTheProgram(t *testing.T) {
+	const update = "Run `spacedock update` to bring every program and plugin to the same release."
+	const formulas = "spacedock-dev/tap/subspace-beta spacedock-dev/tap/compass"
+	cask := "/opt/homebrew/Caskroom/spacedock@next/0.28.0/spacedock"
 	cases := map[string]struct {
-		alphaVersion string
-		want, absent string
+		alphaVersion, selfPath string
+		want, absent           []string
 	}{
-		"program newer: the plugin waits on the marketplace": {"0.16.0-beta.3",
-			"The alpha plugin waits on its listing in the spacedock marketplace, which each extension's release keeps current. Run `spacedock update` after the listing shows the new version.",
-			"to bring every program and plugin"},
-		"program older: update fixes it": {"0.16.0-beta.1",
-			"Run `spacedock update` to bring every program and plugin to the same release.",
-			"waits on"},
+		"curl, program newer: update fixes it": {"0.16.0-beta.3", "",
+			[]string{update}, []string{"waits on"}},
+		"curl, program older: update fixes it": {"0.16.0-beta.1", "",
+			[]string{update}, []string{"waits on", "brew upgrade"}},
+		"Homebrew, program newer: the plugin waits on the marketplace": {"0.16.0-beta.3", cask,
+			[]string{"The alpha plugin waits on its listing in the spacedock marketplace, which each extension's release keeps current. Run `spacedock update` after the listing shows the new version."},
+			[]string{"to bring every program and plugin", "brew upgrade"}},
+		"Homebrew, program older: names the cask and both formulas": {"0.16.0-beta.1", cask,
+			[]string{"Run `brew upgrade spacedock@next " + formulas + "`, then `spacedock update`"}, []string{"waits on"}},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			s := stageInstall(t)
 			writeProgram(t, filepath.Join(s.first, "spacedock-alpha"), tc.alphaVersion)
-			var out bytes.Buffer
-			printVersionReport(&out, s.report())
-			if !strings.Contains(out.String(), tc.want) {
-				t.Errorf("report lacks %q:\n%s", tc.want, out.String())
+			selfPath := tc.selfPath
+			if selfPath == "" {
+				selfPath = filepath.Join(s.first, "spacedock")
 			}
-			if strings.Contains(out.String(), tc.absent) {
-				t.Errorf("report contains %q:\n%s", tc.absent, out.String())
+			report := collectVersions(versionInputs{env: s.env, dir: s.project, host: s.host, lookPath: s.lookPath,
+				selfPath: selfPath, selfVersion: "0.28.0-pre6"})
+			var out bytes.Buffer
+			printVersionReport(&out, report)
+			for _, want := range tc.want {
+				if !strings.Contains(out.String(), want) {
+					t.Errorf("report lacks %q:\n%s", want, out.String())
+				}
+			}
+			for _, absent := range tc.absent {
+				if strings.Contains(out.String(), absent) {
+					t.Errorf("report contains %q:\n%s", absent, out.String())
+				}
 			}
 		})
 	}

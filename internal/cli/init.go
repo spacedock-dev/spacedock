@@ -51,12 +51,12 @@ func runInit(ctx context.Context, args []string, ops hostOps, stdout, stderr io.
 	case "claude":
 		if !check {
 			out, err := ops.Install(host, channelMarketplaceSource(devBranch), devBranch)
+			if out != "" {
+				fmt.Fprintln(stdout, out)
+			}
 			if err != nil {
 				fmt.Fprintf(stderr, "spacedock install: host install failed: %v\n", err)
 				return 1
-			}
-			if out != "" {
-				fmt.Fprintln(stdout, out)
 			}
 		}
 		return runDoctor(ctx, []string{"--host", "claude"}, ops, stdout, stderr)

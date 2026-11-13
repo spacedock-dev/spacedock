@@ -56,7 +56,11 @@ type versionReport struct {
 	problems               []string
 	needsUpdate, extraCopy bool
 	pluginsBehind          []string
+	mixed                  []mixedExtension
+	brewUpgrade            string
 }
+
+type mixedExtension struct{ name, host, program, plugin string }
 
 type versionInputs struct {
 	env         []string
@@ -123,6 +127,8 @@ func collectVersions(in versionInputs) versionReport {
 		report.problems = append(report.problems, fmt.Sprintf(format, a...))
 	}
 	pathEnv := envMap(in.env)["PATH"]
+	brew := in.selfPath != "" && isHomebrewPath(in.selfPath)
+	report.brewUpgrade = brewFormula(in.selfPath, brew)
 
 	add("spacedock", in.selfVersion, in.selfPath)
 	spacedockID := channelPluginID(devBranch)
@@ -152,12 +158,17 @@ func collectVersions(in versionInputs) versionReport {
 			addPlugin(h, ext.name+" plugin", pluginVer, id)
 			switch {
 			case programVersion == notInstalled:
+				if h.err == nil && pluginVer != notInstalled && pluginVer != "unknown" {
+					report.mixed = append(report.mixed, mixedExtension{ext.name, h.title, programVersion, pluginVer})
+				}
 			case h.err == nil && pluginVer == notInstalled:
 				problem("MISSING: the %s plugin is not installed on %s from %s.", ext.name, h.title, extensionMarketplace)
 				report.needsUpdate = true
+				report.mixed = append(report.mixed, mixedExtension{ext.name, h.title, programVersion, pluginVer})
 			case programVersion != "unknown" && pluginVer != "unknown" && programVersion != pluginVer:
 				problem("MIXED: the %s program %s does not match its plugin %s on %s.", ext.name, programVersion, pluginVer, h.title)
-				if cmp, err := release.ComparePreVersion(programVersion, pluginVer); err == nil && cmp > 0 {
+				report.mixed = append(report.mixed, mixedExtension{ext.name, h.title, programVersion, pluginVer})
+				if cmp, err := release.ComparePreVersion(programVersion, pluginVer); brew && err == nil && cmp > 0 {
 					if !slices.Contains(report.pluginsBehind, ext.name) {
 						report.pluginsBehind = append(report.pluginsBehind, ext.name)
 					}
@@ -195,6 +206,59 @@ func collectVersions(in versionInputs) versionReport {
 	return report
 }
 
+func addPiPackages(report *versionReport, in versionInputs) bool {
+	if _, err := in.lookPath("pi"); err != nil {
+		return false
+	}
+	cfg := piRuntimeConfigFromEnv(in.env, in.dir, "")
+	if _, _, ok := piRegisteredPackage(cfg.agentDir, cfg.home, "spacedock"); !ok {
+		return false
+	}
+	rows := piPackageRows(cfg.agentDir, cfg.home)
+	for _, row := range rows[1:] {
+		report.rows = append(report.rows, pieceRow{row.label + " (Pi)", row.version, ""})
+	}
+	brew := report.brewUpgrade != ""
+	for _, m := range mixedPiPackages(rows, *report) {
+		report.mixed = append(report.mixed, m)
+		switch cmp, err := release.ComparePreVersion(m.program, m.plugin); {
+		case m.program == notInstalled:
+		case m.plugin == notInstalled:
+			report.problems = append(report.problems, fmt.Sprintf("MISSING: the %s package is not installed on Pi.", m.name))
+			report.needsUpdate = true
+		default:
+			report.problems = append(report.problems, fmt.Sprintf("MIXED: the %s program %s does not match its package %s on Pi.", m.name, m.program, m.plugin))
+			if brew && err == nil && cmp > 0 {
+				if !slices.Contains(report.pluginsBehind, m.name) {
+					report.pluginsBehind = append(report.pluginsBehind, m.name)
+				}
+			} else {
+				report.needsUpdate = true
+			}
+		}
+	}
+	return true
+}
+
+func piVersionReport(in versionInputs) (versionReport, bool) {
+	report := versionReport{channel: selectedChannelWord(), hostPlugins: map[string][]pieceRow{}}
+	report.brewUpgrade = brewFormula(in.selfPath, in.selfPath != "" && isHomebrewPath(in.selfPath))
+	pathEnv := envMap(in.env)["PATH"]
+	for _, ext := range extensions {
+		if ext.piTitle == "" {
+			continue
+		}
+		programPath, programVersion := extensionProgram(ext, in.env, pathEnv)
+		report.rows = append(report.rows, pieceRow{ext.name + " program", programVersion, programPath})
+		if programVersion == notInstalled {
+			report.problems = append(report.problems, fmt.Sprintf("MISSING: the %s program is not on PATH.", ext.name))
+			report.needsUpdate = true
+		}
+	}
+	ok := addPiPackages(&report, in)
+	return report, ok
+}
+
 func pluginVersionLookup(h hostOps, host string) (lookup func(id string) string, err error) {
 	inventory, err := h.PluginInventory(host)
 	return func(id string) string {
@@ -226,7 +290,10 @@ func printVersionReport(w io.Writer, report versionReport) {
 		fmt.Fprintln(w, p)
 	}
 	fmt.Fprintf(w, "\nProblems found: %d.", len(report.problems))
-	if report.needsUpdate {
+	switch {
+	case report.needsUpdate && report.brewUpgrade != "":
+		fmt.Fprintf(w, " Homebrew owns the programs. Run `brew upgrade %s`, then `spacedock update` to bring every plugin to the same release.", report.brewUpgrade)
+	case report.needsUpdate:
 		fmt.Fprint(w, " Run `spacedock update` to bring every program and plugin to the same release.")
 	}
 	if len(report.pluginsBehind) > 0 {
@@ -345,5 +412,8 @@ func reportVersions(args, env []string, dir string, stdout io.Writer) {
 		return
 	}
 	selfPath, _ := resolvedLauncherBin()
-	printVersionReport(stdout, collectVersions(versionInputs{env: env, dir: dir, host: execHost{}, lookPath: exec.LookPath, selfPath: selfPath, selfVersion: displayVersion()}))
+	in := versionInputs{env: env, dir: dir, host: execHost{}, lookPath: exec.LookPath, selfPath: selfPath, selfVersion: displayVersion()}
+	report := collectVersions(in)
+	addPiPackages(&report, in)
+	printVersionReport(stdout, report)
 }
