@@ -235,11 +235,14 @@ func TestUpdateLeavesPiAloneWhenItCannotRefreshThePublishedPackage(t *testing.T)
 		onPath bool
 		want   string
 	}{
-		"pi not on PATH":       {piPackageStatus{registered: true, source: piSpacedockPackageSource}, false, "pi is not on PATH"},
-		"no Spacedock package": {piPackageStatus{}, true, "pi has no Spacedock package"},
-		"local checkout":       {piPackageStatus{registered: true, source: "/work/spacedock"}, true, "is /work/spacedock, not a published source"},
+		"pi not on PATH":               {piPackageStatus{registered: true, source: piSpacedockPackageSource}, false, "pi is not on PATH"},
+		"nothing from the marketplace": {piPackageStatus{}, true, "pi holds nothing from the Spacedock marketplace"},
+		"local checkout":               {piPackageStatus{registered: true, source: "/work/spacedock"}, true, "is /work/spacedock, not a published source"},
 	} {
 		f := newPiUpdateFixture(t, tc.status)
+		if !tc.status.registered {
+			writeFile(t, f.settings, `{"packages":[]}`)
+		}
 		if !tc.onPath {
 			f.deps.lookPath = hostsOnPath()
 		}

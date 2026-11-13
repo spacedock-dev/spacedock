@@ -68,7 +68,8 @@ func newUpdateCommand(ctx context.Context, env []string, dir string, stdout, std
 	setSetupHelp(cmd, stdout, `
 Update every program and plugin on the channel of this binary, for each of Claude
 Code and Codex that is on PATH and has the Spacedock plugin installed, and the Pi
-packages when Pi holds the Spacedock package. Homebrew
+packages when Pi holds the Spacedock package. A host holding other Spacedock pieces
+without that plugin or package is named and fails the update. Homebrew
 owns its own programs: update prints the brew command and updates only the plugins.
 SPACEDOCK_INSTALL_SCRIPT=PATH runs that script in place of the downloaded one.
 `)
@@ -77,6 +78,9 @@ SPACEDOCK_INSTALL_SCRIPT=PATH runs that script in place of the downloaded one.
 
 func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 	inputs := versionInputs{env: d.env, dir: d.dir, host: d.host, lookPath: d.lookPath, selfPath: d.selfPath, selfVersion: displayVersion()}
+	if d.piOps != nil {
+		inputs.piStatus = d.piOps.SpacedockPackageStatus
+	}
 	if d.selfPath != "" {
 		inputs.selfVersion = programReportedVersion(d.selfPath, d.env, "spacedock ")
 	}
@@ -116,7 +120,7 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 		}
 	}
 
-	pi := planPiUpdate(d)
+	pi := planPiUpdate(inputs)
 	if pi.refresh {
 		var out string
 		if brew || d.runSelf == nil {
@@ -139,30 +143,30 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 		inputs.selfVersion = programReportedVersion(d.selfPath, d.env, "spacedock ")
 	}
 	after := collectVersions(inputs)
+	piHeld := addPiPackages(&after, inputs)
 	for _, h := range hosts {
 		h.after = after.hostPlugins[h.name]
 	}
 	printUpdateChanges(stdout, before, after, before.brewUpgrade, hosts, pi)
 	code := 0
-	mixed := after.mixed
-	if pi.refresh && pi.err == nil {
-		mixed = append(mixed, mixedPiPackages(pi.after, after)...)
-	}
-	for _, line := range mixedAfterUpdate(mixed, before.brewUpgrade, addRefused) {
+	for _, line := range mixedAfterUpdate(after.mixed, before.brewUpgrade, addRefused) {
 		fmt.Fprintln(stderr, line)
 		code = 1
 	}
 	if pi.err != nil {
 		fmt.Fprintf(stderr, "spacedock update: the Pi package update failed: %v\n", pi.err)
 		code = 1
+	} else if rows, _ := piInventory(inputs); piHeld && rows[0].version == notInstalled {
+		fmt.Fprintln(stderr, "spacedock update: the Spacedock package is not installed on Pi. Run: spacedock install --host pi")
+		code = 1
 	}
 	for _, h := range hosts {
-		switch {
-		case !h.refresh:
+		switch v := pieceVersion(h.after, "spacedock plugin"); {
+		case !h.checked:
 		case h.err != nil:
 			fmt.Fprintf(stderr, "spacedock update: the %s plugin update failed: %v\n", h.title, h.err)
 			code = 1
-		case len(h.after) == 0:
+		case v == notInstalled || v == "":
 			fmt.Fprintf(stderr, "spacedock update: the Spacedock plugin is not installed on %s. Run: spacedock install --host %s\n", h.title, h.name)
 			code = 1
 		}
@@ -170,11 +174,13 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 	return code
 }
 
-// hostUpdate is one host's share of an update. A host that is absent or holds no
-// Spacedock plugin is skipped, never installed into: update refreshes, install adds.
+// hostUpdate is one host's share of an update. Only a host holding the Spacedock plugin
+// is refreshed: update refreshes, install adds. A host holding any other piece from the
+// marketplace is still checked.
 type hostUpdate struct {
 	name, title   string
 	refresh       bool
+	checked       bool
 	skipped       string
 	before, after []pieceRow
 	err           error
@@ -183,8 +189,13 @@ type hostUpdate struct {
 func planHostUpdates(before versionReport) []*hostUpdate {
 	var updates []*hostUpdate
 	for _, status := range before.hosts {
-		updates = append(updates, &hostUpdate{name: status.name, title: status.title, skipped: status.skipped,
-			refresh: status.skipped == "", before: before.hostPlugins[status.name]})
+		u := &hostUpdate{name: status.name, title: status.title, skipped: status.skipped,
+			checked: status.skipped == "", before: before.hostPlugins[status.name]}
+		u.refresh = u.checked && status.lookup(channelPluginID(devBranch)) != notInstalled
+		if u.checked && !u.refresh {
+			u.skipped = status.name + " has no Spacedock plugin, so its plugins were not updated."
+		}
+		updates = append(updates, u)
 	}
 	return updates
 }
@@ -198,22 +209,17 @@ type piUpdate struct {
 	err            error
 }
 
-func planPiUpdate(d updateDeps) *piUpdate {
-	cfg := piRuntimeConfigFromEnv(d.env, d.dir, "")
+func planPiUpdate(in versionInputs) *piUpdate {
+	cfg := piRuntimeConfigFromEnv(in.env, in.dir, "")
 	u := &piUpdate{agentDir: cfg.agentDir, home: cfg.home}
-	if _, err := d.lookPath("pi"); err != nil {
-		u.skipped = "pi is not on PATH, so its packages were skipped."
-		return u
-	}
-	status := d.piOps.SpacedockPackageStatus(cfg.agentDir, cfg.home)
+	rows, skipped := piInventory(in)
 	switch {
-	case !status.registered:
-		u.skipped = "pi has no Spacedock package, so its packages were skipped."
-	case !strings.HasPrefix(status.source, "git:"):
-		u.skipped = fmt.Sprintf("the Spacedock package in pi is %s, not a published source, so its packages were skipped.", status.source)
+	case skipped != "":
+		u.skipped = skipped
+	case rows[0].version == notInstalled:
+		u.skipped = "pi has no Spacedock package, so its packages were not updated."
 	default:
-		u.refresh = true
-		u.before = piPackageRows(cfg.agentDir, cfg.home)
+		u.refresh, u.before = true, rows
 	}
 	return u
 }
@@ -325,13 +331,14 @@ func mixedAfterUpdate(mixed []mixedExtension, brewArgs string, addRefused map[st
 		if m.host == "Pi" {
 			kind = "package"
 		}
-		behind, step := "the program", "the install script's download of the "+m.name+" program"
+		behind, step, next := "the program", "the install script's download of the "+m.name+" program", "Run `spacedock update` again."
 		switch cmp, err := release.ComparePreVersion(m.program, m.plugin); {
 		case m.program == notInstalled && brew:
 			step = "Homebrew owns the program; see the MISSING line above"
 		case m.program == notInstalled:
 		case m.plugin == notInstalled && addRefused[m.host]:
 			behind, step = "the "+m.host+" "+kind, "the "+m.host+" marketplace add, refused with the message above"
+			next = "Change the entry Claude Code names above, then run `spacedock update`."
 		case m.plugin == notInstalled || (err == nil && cmp > 0):
 			behind, step = "the "+m.host+" "+kind, "the "+m.host+" "+kind+" install"
 		case err != nil:
@@ -339,8 +346,8 @@ func mixedAfterUpdate(mixed []mixedExtension, brewArgs string, addRefused map[st
 		case brew:
 			step = "Homebrew has not upgraded it; run `brew upgrade " + brewArgs + "`"
 		}
-		lines = append(lines, fmt.Sprintf("spacedock update: %s is still MIXED on %s: program %s, %s %s. Left behind: %s (failed: %s). Run `spacedock update` again.",
-			m.name, m.host, m.program, kind, m.plugin, behind, step))
+		lines = append(lines, fmt.Sprintf("spacedock update: %s is still MIXED on %s: program %s, %s %s. Left behind: %s (failed: %s). %s",
+			m.name, m.host, m.program, kind, m.plugin, behind, step, next))
 	}
 	return lines
 }

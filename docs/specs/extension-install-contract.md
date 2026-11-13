@@ -173,7 +173,11 @@ Claude Code or run `/reload-plugins`, start a new Codex session, or run `/reload
 `spacedock update` installs each extension's listed release. It exits non-zero, naming
 the extension, the piece left behind and the failed step, when a program and its plugin
 still differ afterwards. It refreshes the plugins of each of Claude Code and Codex that is on PATH and has the
-Spacedock plugin installed, and skips any other with a line naming it. It prints the
+Spacedock plugin installed, and the Pi packages when Pi holds the Spacedock package. A
+host that holds any other piece from the Spacedock marketplace but not the Spacedock
+plugin or package gets no install; update names it with `spacedock install --host NAME`
+and exits non-zero. A host that is not on PATH or holds nothing from the marketplace is
+skipped with a line naming it. It prints the
 version of every piece before and after, the plugin rows under a heading for their
 host. It runs the new program's `spacedock install --host NAME` for each, so a
 companion the new release adds reaches every refreshed host in the same run; it tells
@@ -182,9 +186,10 @@ replaced the program yet, so there the running program does it. Codex reads plug
 when a session starts, so the closing line tells the user to start a new Codex
 session.
 
-`spacedock doctor` lists the same versions, with the plugins of each of Claude Code
-and Codex that is on PATH and has the Spacedock plugin installed, labelled by host, and
-each extension's Pi package when Pi is on PATH and holds the Spacedock package;
+`spacedock doctor` reads the same inventory as update's final check: the plugins of each
+of Claude Code and Codex that is on PATH and holds any piece from the Spacedock
+marketplace, labelled by host, and each extension's Pi package when Pi is on PATH and
+holds any of them, naming a missing Spacedock plugin or package;
 `doctor --host pi` lists those programs and Pi packages alone. It
 names a program that differs from a host's plugin or its Pi package and says to run `spacedock update`
 (on Homebrew, the `brew upgrade` command for the cask and both formulas), a second `spacedock` on PATH, and a

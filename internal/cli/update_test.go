@@ -304,7 +304,7 @@ func TestUpdateOnHomebrewRefreshesCodexInProcess(t *testing.T) {
 	}
 }
 
-func TestUpdateSkipsAHostThatIsAbsentOrHoldsNoSpacedockPlugin(t *testing.T) {
+func TestUpdateSkipsAHostThatIsAbsentOrHoldsNothingFromTheMarketplace(t *testing.T) {
 	cases := []struct {
 		name    string
 		onPath  []string
@@ -312,7 +312,7 @@ func TestUpdateSkipsAHostThatIsAbsentOrHoldsNoSpacedockPlugin(t *testing.T) {
 		want    string
 	}{
 		{"codex absent", []string{"claude"}, codexPlugins("1.0.0"), "codex is not on PATH, so its plugins were skipped."},
-		{"codex without the plugin", []string{"claude", "codex"}, codexPlugins("1.0.0")[1:], "codex has no Spacedock plugin, so its plugins were skipped."},
+		{"codex holding nothing from the marketplace", []string{"claude", "codex"}, []pluginInventoryEntry{}, "codex holds nothing from the Spacedock marketplace, so its plugins were skipped."},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -377,7 +377,7 @@ func TestUpdateFailsAndNamesCodexWhenItsPluginUpdateFails(t *testing.T) {
 	}
 }
 
-func TestUpdateLeavesAClaudeWithoutTheSpacedockPluginAlone(t *testing.T) {
+func TestUpdateInstallsNothingIntoAClaudeWithoutTheSpacedockPluginAndFails(t *testing.T) {
 	s := stageInstall(t)
 	s.host.inventory = s.host.inventory[1:]
 	host := &twoHosts{fakeHost: s.host, codexPlugins: codexPlugins("1.0.0")}
@@ -394,8 +394,8 @@ func TestUpdateLeavesAClaudeWithoutTheSpacedockPluginAlone(t *testing.T) {
 	}
 
 	var stdout, stderr bytes.Buffer
-	if code := runUpdate(d, &stdout, &stderr); code != 0 {
-		t.Fatalf("update exited %d: %s", code, stderr.String())
+	if code := runUpdate(d, &stdout, &stderr); code != 1 {
+		t.Fatalf("update exited %d, want 1: %s", code, stderr.String())
 	}
 	if strings.Join(ran, "; ") != "install --host codex" {
 		t.Errorf("installs = %v, want Codex only", ran)
@@ -403,8 +403,8 @@ func TestUpdateLeavesAClaudeWithoutTheSpacedockPluginAlone(t *testing.T) {
 	if got, _ := os.ReadFile(seen); strings.TrimSpace(string(got)) != "none" {
 		t.Errorf("the install script was not told to skip its plugin step: %q", got)
 	}
-	if !strings.Contains(stdout.String(), "claude has no Spacedock plugin, so its plugins were skipped.") {
-		t.Errorf("output does not name the skipped claude:\n%s", stdout.String())
+	if want := "the Spacedock plugin is not installed on Claude Code. Run: spacedock install --host claude"; !strings.Contains(stderr.String(), want) {
+		t.Errorf("stderr lacks %q:\n%s", want, stderr.String())
 	}
 }
 
@@ -512,5 +512,63 @@ func TestUpdateNamesARefusedMarketplaceAddWithClaudesOwnMessage(t *testing.T) {
 	}
 	if want := "alpha is still MIXED on Claude Code: program 0.16.0-beta.2, plugin not installed. Left behind: the Claude Code plugin (failed: the Claude Code marketplace add"; !strings.Contains(stderr.String(), want) {
 		t.Errorf("stderr lacks %q:\n%s", want, stderr.String())
+	}
+}
+
+func TestDoctorAndUpdateCheckEveryHostThatHoldsAPieceFromTheMarketplace(t *testing.T) {
+	for _, host := range []string{"claude", "codex", "pi"} {
+		for _, spacedock := range []string{"present", "absent"} {
+			t.Run(host+" with the Spacedock plugin "+spacedock, func(t *testing.T) {
+				s := stageInstall(t)
+				extensions[0].piTitle = "Alpha"
+				bin, agentDir := t.TempDir(), t.TempDir()
+				ids := []string{"alpha@spacedock"}
+				if spacedock == "present" {
+					ids = append(ids, channelPluginID(devBranch))
+				}
+				entries := []string{`{"id":"beta@spacedock","pluginId":"beta@spacedock","version":"1.0.1","installPath":"/p","installed":true,"enabled":true}`}
+				for _, id := range ids {
+					entries = append(entries, `{"id":"`+id+`","pluginId":"`+id+`","version":"0.16.0-beta.1","installPath":"/p","installed":true,"enabled":true}`)
+				}
+				list := map[string]string{"claude": "[]", "codex": `{"installed":[]}`, "pi": ""}
+				switch host {
+				case "claude":
+					list["claude"] = "[" + strings.Join(entries, ",") + "]"
+				case "codex":
+					list["codex"] = `{"installed":[` + strings.Join(entries, ",") + `]}`
+				case "pi":
+					packages := `"` + piTestAlpha + `@v0.16.0-beta.1"`
+					if spacedock == "present" {
+						packages += `,"` + piSpacedockPackageSource + `@stable"`
+					}
+					writeFile(t, filepath.Join(agentDir, "settings.json"), `{"packages":[`+packages+`]}`)
+				}
+				mustWrite(t, filepath.Join(bin, host), "#!/bin/sh\n[ \"$*\" = 'plugin list --json' ] && echo '"+list[host]+"'\nexit 0\n")
+				if err := os.Chmod(filepath.Join(bin, host), 0o755); err != nil {
+					t.Fatal(err)
+				}
+				t.Setenv("PATH", bin+":/usr/bin:/bin")
+				env := append(append([]string{}, s.env...), "PI_CODING_AGENT_DIR="+agentDir)
+
+				var doctor bytes.Buffer
+				reportVersions(nil, env, s.project, &doctor)
+				if strings.Contains(doctor.String(), "No problems found.") {
+					t.Errorf("doctor reads clean while the alpha %s piece differs from its program:\n%s", host, doctor.String())
+				}
+				script := filepath.Join(t.TempDir(), "install.sh")
+				mustWrite(t, script, "#!/bin/sh\n:\n")
+				d := updateDeps{env: append(env, "SPACEDOCK_INSTALL_SCRIPT="+script), dir: s.project, host: execHost{}, selfPath: filepath.Join(s.first, "spacedock"),
+					lookPath: exec.LookPath, piOps: execPiRuntimeOps{}, fetchScript: func(string) error { return errors.New("no network in tests") },
+					runSelf: func(...string) (string, error) { return "", nil }}
+				var stdout, stderr bytes.Buffer
+				if code := runUpdate(d, &stdout, &stderr); code == 0 {
+					t.Errorf("update exited 0 while the alpha %s piece differs from its program:\n%s%s", host, stdout.String(), stderr.String())
+				}
+				remedy := "spacedock install --host " + host
+				if spacedock == "absent" && (!strings.Contains(doctor.String(), remedy) || !strings.Contains(stderr.String(), remedy)) {
+					t.Errorf("doctor or update does not tell the user to run %q:\n%s\n%s", remedy, doctor.String(), stderr.String())
+				}
+			})
+		}
 	}
 }
