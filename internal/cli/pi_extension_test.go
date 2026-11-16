@@ -323,6 +323,26 @@ func TestDoctorReadsCleanWhenThePiPackageMatchesItsProgram(t *testing.T) {
 	}
 }
 
+func TestDoctorAndUpdateCompareNoPiPackageOnABranchRef(t *testing.T) {
+	for _, ref := range []string{"stable", "main"} {
+		f := newPiUpdateFixture(t, piPackageStatus{registered: true, source: piSpacedockPackageSource + "@stable"})
+		f.piRef = ref
+		writeFile(t, f.settings, `{"packages":["`+piSpacedockPackageSource+`@stable","`+piTestAlpha+`@`+ref+`"]}`)
+		for name, out := range map[string]string{"doctor": f.doctorReport(), "doctor --host pi": f.piDoctorReport(t)} {
+			if !strings.Contains(out, "No problems found.") || strings.Contains(out, "MIXED") {
+				t.Errorf("%s, alpha package @%s: a branch ref names no version but was compared:\n%s", name, ref, out)
+			}
+		}
+		var stdout, stderr bytes.Buffer
+		if code := runUpdate(f.deps, &stdout, &stderr); code != 0 || strings.Contains(stderr.String(), "MIXED") {
+			t.Errorf("update with alpha package @%s exited %d, want 0 and no MIXED line; stderr:\n%s", ref, code, stderr.String())
+		}
+		if want := "alpha package      " + ref; !strings.Contains(stdout.String(), want) {
+			t.Errorf("update output lacks the branch ref row %q:\n%s", want, stdout.String())
+		}
+	}
+}
+
 func TestDoctorComparesNoPiPackageWithoutPiOrItsSpacedockPackage(t *testing.T) {
 	f := newPiUpdateFixture(t, piPackageStatus{})
 	f.deps.lookPath = hostsOnPath()

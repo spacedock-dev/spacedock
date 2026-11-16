@@ -140,6 +140,9 @@ the packages itself. Spacedock's own package is pinned to the channel (`@stable`
 stable binary, `@main` for edge), and each extension with a public repository
 (Subspace today) is installed at the `ref` its listing gives, read from the
 `spacedock` marketplace (`SPACEDOCK_EXTENSION_MARKETPLACE_SOURCE` on every channel).
+`doctor` and `update` compare that package with its program only when the `ref` is a
+version tag (`vX.Y.Z`); a branch ref such as `stable` names no version, so its package
+is shown and not compared.
 `pi install` over an installed package changes nothing, so each install is preceded by
 `pi remove`. `spacedock update` repeats both when Pi holds a published Spacedock
 package. An extension package that cannot be installed is named in the output and

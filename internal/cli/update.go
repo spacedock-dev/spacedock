@@ -285,6 +285,9 @@ func printInstallFailures(w io.Writer, out string) {
 	}
 }
 
+// mixedPiPackages compares each Pi extension package with its program. Only a
+// version-tag ref names a release; an unpinned package or a branch ref (a listing
+// may give `stable`) names none, so that package is not compared.
 func mixedPiPackages(rows []pieceRow, after versionReport) []mixedExtension {
 	var mixed []mixedExtension
 	for _, ext := range extensions {
@@ -293,8 +296,9 @@ func mixedPiPackages(rows []pieceRow, after versionReport) []mixedExtension {
 		}
 		program := after.version(ext.name + " program")
 		pkg := strings.TrimPrefix(pieceVersion(rows, ext.name+" package"), "v")
+		_, notVersion := release.ComparePreVersion(pkg, pkg)
 		switch {
-		case program == "unknown" || pkg == "unpinned":
+		case program == "unknown" || (pkg != notInstalled && notVersion != nil):
 		case pkg == notInstalled && program == notInstalled:
 		case pkg != program:
 			mixed = append(mixed, mixedExtension{ext.name, "Pi", program, pkg})

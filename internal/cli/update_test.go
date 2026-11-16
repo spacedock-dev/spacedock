@@ -480,6 +480,40 @@ func TestUpdateFailsAndNamesAnExtensionWhoseProgramIsMissingBesideItsPlugin(t *t
 	}
 }
 
+func TestUpdateOnHomebrewNamesTheBrewUpgradeWhenAProgramStaysBehindItsPlugin(t *testing.T) {
+	s := stageInstall(t)
+	s.host.inventory[2].Version = "1.0.2"
+	d := updateDepsFor(s, s.host, "")
+	d.selfPath = "/opt/homebrew/Caskroom/spacedock/0.28.0/spacedock"
+
+	var stdout, stderr bytes.Buffer
+	if code := runUpdate(d, &stdout, &stderr); code != 1 {
+		t.Fatalf("update exited %d, want 1 while beta is MIXED; stderr:\n%s", code, stderr.String())
+	}
+	want := "spacedock update: beta is still MIXED on Claude Code: program 1.0.1, plugin 1.0.2. Left behind: the program (failed: Homebrew has not upgraded it; run `brew upgrade spacedock spacedock-dev/tap/subspace-beta spacedock-dev/tap/compass`)."
+	if !strings.Contains(stderr.String(), want) {
+		t.Errorf("stderr lacks %q:\n%s", want, stderr.String())
+	}
+}
+
+func TestUpdateOnHomebrewPointsAMissingProgramAtItsMissingLine(t *testing.T) {
+	s := stageInstall(t)
+	if err := os.Remove(filepath.Join(s.first, "spacedock-alpha")); err != nil {
+		t.Fatal(err)
+	}
+	d := updateDepsFor(s, s.host, "")
+	d.selfPath = "/opt/homebrew/Caskroom/spacedock/0.28.0/spacedock"
+
+	var stdout, stderr bytes.Buffer
+	if code := runUpdate(d, &stdout, &stderr); code != 1 {
+		t.Fatalf("update exited %d, want 1; stderr:\n%s", code, stderr.String())
+	}
+	want := "spacedock update: alpha is still MIXED on Claude Code: program not installed, plugin 0.16.0-beta.2. Left behind: the program (failed: Homebrew owns the program; see the MISSING line above)."
+	if !strings.Contains(stderr.String(), want) {
+		t.Errorf("stderr lacks %q:\n%s", want, stderr.String())
+	}
+}
+
 type execInstallHost struct{ *fakeHost }
 
 func (h execInstallHost) Install(host, source, branch string) (string, error) {
