@@ -180,7 +180,10 @@ Spacedock plugin installed, and the Pi packages when Pi holds the Spacedock pack
 host that holds any other piece from the Spacedock marketplace but not the Spacedock
 plugin or package gets no install; update names it with `spacedock install --host NAME`
 and exits non-zero. A host that is not on PATH or holds nothing from the marketplace is
-skipped with a line naming it. It prints the
+skipped with a line naming it. So is a host whose Spacedock plugin or package is a
+development install, because the channel install would remove it: a Codex holding the
+`--plugin-dir` install (`spacedock@spacedock-local`), or a Pi whose Spacedock package is
+not a published `git:` source. `doctor` skips the same hosts. It prints the
 version of every piece before and after, the plugin rows under a heading for their
 host. It runs the new program's `spacedock install --host NAME` for each, so a
 companion the new release adds reaches every refreshed host in the same run; it tells

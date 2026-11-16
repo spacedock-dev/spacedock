@@ -606,3 +606,48 @@ func TestDoctorAndUpdateCheckEveryHostThatHoldsAPieceFromTheMarketplace(t *testi
 		}
 	}
 }
+
+// A Codex --plugin-dir dev install answers to codexLocalPluginID, not the channel id.
+// The channel install removes it, so doctor and update leave that Codex alone, as
+// piInventory leaves a Pi whose Spacedock package is not a published source.
+func TestDoctorAndUpdateLeaveACodexDevInstallAlone(t *testing.T) {
+	s := stageInstall(t)
+	bin := t.TempDir()
+	entries := []string{}
+	for _, id := range []string{codexLocalPluginID, "alpha@spacedock"} {
+		entries = append(entries, `{"id":"`+id+`","pluginId":"`+id+`","version":"0.16.0-beta.1","installPath":"/p","installed":true,"enabled":true}`)
+	}
+	mustWrite(t, filepath.Join(bin, "codex"), "#!/bin/sh\n[ \"$*\" = 'plugin list --json' ] && echo '{\"installed\":["+strings.Join(entries, ",")+"]}'\nexit 0\n")
+	if err := os.Chmod(filepath.Join(bin, "codex"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", bin+":/usr/bin:/bin")
+	skip := "the Spacedock plugin in codex is the --plugin-dir dev install " + codexLocalPluginID + ", not a published source, so its plugins were skipped."
+
+	var doctor bytes.Buffer
+	reportVersions(nil, s.env, s.project, &doctor)
+	if strings.Contains(doctor.String(), "(Codex)") || strings.Contains(doctor.String(), "--host codex") {
+		t.Errorf("doctor checks the Codex dev install:\n%s", doctor.String())
+	}
+
+	script := filepath.Join(t.TempDir(), "install.sh")
+	mustWrite(t, script, "#!/bin/sh\n:\n")
+	var ran []string
+	d := updateDeps{env: append(append([]string{}, s.env...), "SPACEDOCK_INSTALL_SCRIPT="+script), dir: s.project, host: execHost{},
+		selfPath: filepath.Join(s.first, "spacedock"), lookPath: exec.LookPath, piOps: execPiRuntimeOps{},
+		fetchScript: func(string) error { return errors.New("no network in tests") },
+		runSelf:     func(args ...string) (string, error) { ran = append(ran, strings.Join(args, " ")); return "", nil }}
+	var stdout, stderr bytes.Buffer
+	if code := runUpdate(d, &stdout, &stderr); code != 0 {
+		t.Errorf("update exited %d, want 0:\n%s%s", code, stdout.String(), stderr.String())
+	}
+	if len(ran) != 0 {
+		t.Errorf("update ran %v, want no install over the Codex dev install", ran)
+	}
+	if !strings.Contains(stdout.String(), skip) {
+		t.Errorf("update does not name the skipped dev install %q:\n%s", skip, stdout.String())
+	}
+	if strings.Contains(stderr.String(), "--host codex") {
+		t.Errorf("update tells the user to install over the Codex dev install:\n%s", stderr.String())
+	}
+}

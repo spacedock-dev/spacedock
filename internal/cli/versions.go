@@ -75,7 +75,10 @@ type versionInputs struct {
 // hostStatus is what one plugin host holds: its plugin versions by id, or why it has
 // none to show. skipped is set for a host that is absent, holds nothing from the
 // Spacedock marketplaces, or fails to list its plugins; only the last still shows
-// rows, at "unknown", because the host is there and its state is not.
+// rows, at "unknown", because the host is there and its state is not. A Codex holding
+// the --plugin-dir dev install (codexLocalPluginID, checked first as
+// resolveCodexManifest does) is skipped too, as piInventory skips a Pi whose Spacedock
+// package is not a published source: the channel install would remove it.
 type hostStatus struct {
 	name, title string
 	skipped     string
@@ -98,6 +101,8 @@ func readHosts(in versionInputs) []hostStatus {
 		switch {
 		case status.err != nil:
 			status.skipped = fmt.Sprintf("%s plugin list failed (%v), so its plugins were skipped.", h.name, status.err)
+		case h.name == "codex" && status.lookup(codexLocalPluginID) != notInstalled:
+			status.skipped = "the Spacedock plugin in codex is the --plugin-dir dev install " + codexLocalPluginID + ", not a published source, so its plugins were skipped."
 		case !holdsAny(status.lookup, inventoryPluginIDs()):
 			status.skipped = h.name + " holds nothing from the Spacedock marketplace, so its plugins were skipped."
 		}
