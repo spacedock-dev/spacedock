@@ -278,7 +278,6 @@ type piCheckResult struct {
 }
 
 func runPi(ctx context.Context, args []string, dir string, env []string, ops piRuntimeOps, stdout, stderr io.Writer) int {
-	_ = ctx
 	fd, pluginDirs, err := parsePiFrontDoorArgs(args)
 	if err != nil {
 		fmt.Fprintf(stderr, "spacedock pi: %v\n", err)
@@ -425,6 +424,7 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 		tasklessValue = "1"
 	}
 	launchEnvList := append(launchEnv(os.Environ()), piLaunchMarkerEnv+"=1", piLaunchTasklessEnv+"="+tasklessValue)
+	suiteVersionHint(ctx, fd, env, stdout)
 	code, err := ops.Launch(argv, launchEnvList)
 	if err != nil {
 		fmt.Fprintf(stderr, "spacedock pi: launch failed: %v\n", err)
@@ -521,6 +521,7 @@ func parsePiFrontDoorArgs(args []string) (fd frontDoorArgs, pluginDirs []string,
 	fs := pflag.NewFlagSet("spacedock-pi", pflag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	pluginDir := fs.StringArray("plugin-dir", nil, "Load local Spacedock skill checkout")
+	noUpdateCheck := fs.Bool("no-update-check", false, "Skip the daily Spacedock release check")
 	// The safehouse subset mirrors bindFrontDoorFlags' safehouse flags (same names
 	// for operator muscle-memory transfer across hosts). --skip-compat-check / --no-install
 	// are NOT registered: pi has no version gate, so advertising them would mislead.
@@ -533,6 +534,7 @@ func parsePiFrontDoorArgs(args []string) (fd frontDoorArgs, pluginDirs []string,
 		return frontDoorArgs{}, nil, err
 	}
 	fd.forceSafehouse = *forceSafehouse
+	fd.noUpdateCheck = *noUpdateCheck
 	for _, v := range *enable {
 		fd.safehouseFlags = append(fd.safehouseFlags, "enable="+v)
 	}

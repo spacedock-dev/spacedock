@@ -28,6 +28,7 @@ func TestFrontDoorHelpCarriesDetail(t *testing.T) {
 				"--safehouse-append-profile",
 				"Append a safehouse policy file; repeatable; relative paths use the launch directory",
 				"--skip-compat-check",
+				"--no-update-check",
 				"--plugin-dir",
 				"forward verbatim",
 				"Examples:",

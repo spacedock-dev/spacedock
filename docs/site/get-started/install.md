@@ -65,4 +65,9 @@ In Codex, run `spacedock doctor --host codex`. Follow the instructions in the do
 
 Run `spacedock update`. It updates Spacedock, Review, Compass and their plugins together. A Homebrew install prints the `brew upgrade` command to run instead.
 
+Interactive launches check once a day for a newer Spacedock and show a hint when one is available.
+The check asks `spacedock.md`, which redirects to GitHub's releases API.
+Neither request carries an identifier in its URL or headers, though both servers see the connecting IP address like any request.
+Use `--no-update-check` on `claude`, `codex` or `pi`, or set `SPACEDOCK_NO_UPDATE_CHECK=1`, to skip it.
+
 [Your first review](../review/use.md).

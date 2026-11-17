@@ -95,6 +95,49 @@ hello|spacedock-dev/hello|hello|hello-tui hello-client|hello-tui:spacedock-hello
 The Go table `extensions` in `internal/cli` names the same extensions, so that
 `spacedock doctor` and `spacedock update` can read them. The two tables must agree.
 
+Interactive front-door launches check Spacedock itself for a newer release once
+per UTC day, with one request. Extensions are not checked: `spacedock update`
+installs the version their marketplace listing names, so a newer extension
+release could name an update it cannot apply. The lookup lives in
+`internal/updatecheck`; the hook that calls it is in `internal/cli`.
+
+The request is `GET https://spacedock.md/latest-release/spacedock`, adding exactly
+`?prerelease=1` on edge and no query on stable, with only the header
+`User-Agent: spacedock/VERSION (OS; ARCH[; ci][; internal])`. The version,
+platform names and markers follow the installer's `lookup_user_agent` rules,
+using the `spacedock/` prefix for launches. There is no identifier, counting
+field or separate event; `spacedock.md` and the GitHub API it redirects to both
+see the connecting IP address, as they do for any request. The launch check does not use the installer's GitHub fallback.
+
+The channel is the one the binary selected (`selectedChannelWord`): stable
+excludes prereleases; edge compares prereleases with the same ordering as the
+updater. The edge selector matches the installer and selects the release
+channel. The route answers `spacedock/` clients with a redirect to the GitHub
+API, and only that redirect is followed: on stable,
+`https://api.github.com/repos/spacedock-dev/spacedock/releases/latest` with no
+query, answered with a release object; on edge, `/releases?per_page=1`, answered
+with a one-element array. The path is compared as sent, without resolving dot
+segments or percent-encoding. Every other host, including `github.com` (whose
+release-page redirect the route gives only to the installer), and any other
+repository, query, credential or fragment is refused, as are drafts, `+build`
+tags, answers over 64 KiB and, on stable, releases marked as prereleases.
+
+The whole exchange has a two-second budget. Spacedock saves the day before
+sending, prints at most one hint line on stdout before launching, and keeps
+errors silent. `--no-update-check` or `SPACEDOCK_NO_UPDATE_CHECK=1` skips the
+check. Noninteractive output and agent-facing commands, including host version
+and help flags, never run it.
+
+The day marker is `${XDG_STATE_HOME:-$HOME/.local/state}/spacedock/version-checks/YYYY-MM-DD`.
+The state root must be a real directory owned by the user and not
+world-writable; a group-writable root is accepted because a umask of 002 makes
+`~/.local/state` 0775. `spacedock` and `version-checks` are created 0700 and must
+be real directories owned by the user with mode exactly 0700; a symlink is
+refused. The marker is created with `O_CREAT|O_EXCL|O_NOFOLLOW` and mode 0600,
+so an existing file or symlink blocks a second check that day and concurrent
+launches make one check between them. On platforms without these checks the
+claim fails and no lookup is made.
+
 A failed extra (unresolvable release, failed download, checksum mismatch) is
 reported and skipped; Spacedock's own install still succeeds.
 
