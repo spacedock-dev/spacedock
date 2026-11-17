@@ -109,7 +109,7 @@ Used whenever a choice is needed.
    "Yes, upload it" and "No":
 
    ```text
-   Web uploads the file to review.spacedock.md. Anyone with the link can open it, and it expires automatically after seven days. Agree?
+   Review on the web uploads what you send for review to Spacedock Review and gives you a private link that only you have. Send it to the people you want comments from; they can open it and comment without signing in. Updates you publish show up at the same link, and it expires seven days after the last update. Continue?
    ```
 
    Yes: `spacedock review-mode set remote`. No: record nothing, say so, and end
