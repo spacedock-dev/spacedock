@@ -2,7 +2,7 @@
 title: "Installation"
 description: "Your agents are waiting on you. Spacedock brings you the calls that need you, keeps your agents on the goal, and lets you decide in one place."
 doc_version: "0.20.2"
-last_updated: "2026-11-17 09:26:33"
+last_updated: "2026-11-17 09:38:17"
 ---
 
 # Installation
@@ -38,6 +38,8 @@ In Codex, run `spacedock doctor --host codex`. Follow the instructions in the do
 ## Keep it up to date
 
 Run `spacedock update`. It updates Spacedock, Review, Compass and their plugins together. A Homebrew install prints the `brew upgrade` command to run instead.
+
+Interactive launches check once a day for a newer Spacedock and show a hint when one is available. The check asks `spacedock.md`, which redirects to GitHub's releases API. Neither request carries an identifier in its URL or headers, though both servers see the connecting IP address like any request. Use `--no-update-check` on `claude`, `codex` or `pi`, or set `SPACEDOCK_NO_UPDATE_CHECK=1`, to skip it.
 
 [Your first review](../../review/use/).
 

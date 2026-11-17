@@ -2,7 +2,7 @@
 title: "Command reference"
 description: "Your agents are waiting on you. Spacedock brings you the calls that need you, keeps your agents on the goal, and lets you decide in one place."
 doc_version: "0.20.2"
-last_updated: "2026-11-17 09:26:33"
+last_updated: "2026-11-17 09:38:17"
 ---
 
 # Command reference
@@ -30,6 +30,8 @@ spacedock claude "continue the workflow"
 ```
 
 Put agent-specific options after `--`. See [Supported sandboxes](../sandbox/) for sandbox options and [Local plugin development](../../advanced/plugin-development/) for local checkouts.
+
+Once per UTC day, an interactive launch asks `spacedock.md` for the newest Spacedock release, following its redirect to GitHub's releases API, and prints an update hint on stdout when it is newer. Neither request carries an identifier in its URL or headers, though both servers see the connecting IP address like any request. Use `--no-update-check` before `--`, or set `SPACEDOCK_NO_UPDATE_CHECK=1`, to skip the check. Machine modes, non-TTY stdout, help, version, completions and agent-facing subcommands such as `status` and `dispatch` never check. The day is recorded under `${XDG_STATE_HOME:-$HOME/.local/state}/spacedock/version-checks/`. A slow or failed check stays silent and does not hold up the launch.
 
 ## Setup
 
