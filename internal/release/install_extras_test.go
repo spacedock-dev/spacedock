@@ -559,7 +559,7 @@ func TestInstallExtrasInstallNothingWhenTheListingCannotBeRead(t *testing.T) {
 	r.stubCurl(osName, arch)
 
 	stderr, code := r.runWith("SPACEDOCK_CHANNEL=stable", "STUB_LISTING=fail")
-	if code != 1 || !strings.Contains(stderr, "the spacedock marketplace listing names no release of alpha") {
+	if code != 1 || !strings.Contains(stderr, "could not read the spacedock marketplace listing for alpha") {
 		t.Errorf("exit=%d, want 1 naming the listing:\n%s", code, stderr)
 	}
 	for _, name := range []string{"alpha-tui", "beta"} {
