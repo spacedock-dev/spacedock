@@ -129,12 +129,14 @@ func runInstallPrintTarget(t *testing.T) map[string]string {
 
 // scrubInstallEnv returns the process env with the install overrides removed so
 // the print-target run takes the PRODUCTION GitHub-resolution path, not a
-// local-dist override that a parent test or shell might have set.
+// local-dist override that a parent test or shell might have set. Always mark
+// these test lookups as CI so local test runs cannot count as user installs.
 func scrubInstallEnv() []string {
-	var env []string
+	env := []string{"CI=1"}
 	for _, kv := range os.Environ() {
 		switch {
-		case strings.HasPrefix(kv, "SPACEDOCK_INSTALL_FROM="),
+		case strings.HasPrefix(kv, "CI="),
+			strings.HasPrefix(kv, "SPACEDOCK_INSTALL_FROM="),
 			strings.HasPrefix(kv, "SPACEDOCK_INSTALL_VERSION="),
 			strings.HasPrefix(kv, "SPACEDOCK_PRINT_TARGET="):
 			continue
@@ -173,4 +175,26 @@ func fetchLatestRelease(t *testing.T) (ghRelease, bool) {
 		return ghRelease{}, false
 	}
 	return rel, true
+}
+
+// The live-route helpers must mark their lookups as CI so a local run is not
+// counted as an install. A curl stub first on PATH records the User-Agent in
+// place of any network request.
+func TestInstallLiveHelpersMarkLookupsAsCI(t *testing.T) {
+	for _, inherited := range []string{"", "false"} {
+		bin, log := t.TempDir(), filepath.Join(t.TempDir(), "ua")
+		stub := "#!/bin/sh\nwhile [ $# -gt 0 ]; do [ \"$1\" = -A ] && printf '%s\\n' \"$2\" >> '" + log + "'; shift; done\n" +
+			"printf 'https://github.com/spacedock-dev/spacedock/releases/tag/v9.9.9'\n"
+		if err := os.WriteFile(filepath.Join(bin, "curl"), []byte(stub), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		t.Setenv("PATH", bin+string(os.PathListSeparator)+"/usr/bin:/bin")
+		t.Setenv("HOME", t.TempDir())
+		t.Setenv("CI", inherited)
+		_, stderr, code := runInstallSh(t, installScript(), "stable", "SPACEDOCK_PRINT_TARGET=1")
+		ua, _ := os.ReadFile(log)
+		if code != 0 || !strings.HasPrefix(string(ua), "spacedock-install/") || !strings.Contains(string(ua), "; ci") {
+			t.Fatalf("CI=%q: exit=%d User-Agent=%q stderr=%s", inherited, code, ua, stderr)
+		}
+	}
 }

@@ -224,9 +224,10 @@ func runInstallCapture(t *testing.T, script, distDir, channel string) (installDi
 
 // runInstallSh runs install.sh with an explicit env — the process env minus every
 // install override (SPACEDOCK_CHANNEL included, which scrubInstallEnv predates),
-// plus the requested channel and extras. An empty channel leaves the variable
-// UNSET, which is the default-channel case a leaked env var would otherwise turn
-// into an edge run. stdout and stderr come back separately: the resolved-tag
+// plus the requested channel and extras. scrubInstallEnv forces CI=1, so live
+// lookups from a developer machine are not counted as installs. An empty channel
+// leaves the variable UNSET, which is the default-channel case a leaked env var
+// would otherwise turn into an edge run. stdout and stderr come back separately: the resolved-tag
 // disclosure is stderr-only by design, and stdout must stay machine-parseable.
 func runInstallSh(t *testing.T, script, channel string, extra ...string) (stdout, stderr string, code int) {
 	t.Helper()
