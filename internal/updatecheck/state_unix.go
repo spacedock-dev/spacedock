@@ -38,7 +38,7 @@ func openMarker(base, day string) (*os.File, error) {
 // would silently disable the check) but not world-writable; Spacedock's own
 // directories must be exactly 0700.
 func privateDirectory(info os.FileInfo, ownerOnly bool) bool {
-	if info == nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
+	if info == nil || !info.IsDir() { // from Lstat, so a symlink is not a directory
 		return false
 	}
 	stat, ok := info.Sys().(*syscall.Stat_t)

@@ -24,10 +24,10 @@ spacedock claude "continue the workflow"
 
 Put agent-specific options after `--`. See [Supported sandboxes](sandbox.md) for sandbox options and [Local plugin development](../advanced/plugin-development.md) for local checkouts.
 
-Once per UTC day, an interactive launch makes one network request to `spacedock.md` for the newest Spacedock release, and prints an update hint on stdout when it is newer.
-The request carries no identifier in its URL or headers, though the server sees the connecting IP address like any request.
+Once per UTC day, an interactive launch asks `spacedock.md` for the newest Spacedock release, following its redirect to GitHub's releases API, and prints an update hint on stdout when it is newer.
+Neither request carries an identifier in its URL or headers, though both servers see the connecting IP address like any request.
 Use `--no-update-check` before `--`, or set `SPACEDOCK_NO_UPDATE_CHECK=1`, to skip the check.
-Machine modes, non-TTY stdout, help, version, completions and workflow commands never check.
+Machine modes, non-TTY stdout, help, version, completions and agent-facing subcommands such as `status` and `dispatch` never check.
 The day is recorded under `${XDG_STATE_HOME:-$HOME/.local/state}/spacedock/version-checks/`.
 A slow or failed check stays silent and does not hold up the launch.
 

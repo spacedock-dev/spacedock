@@ -69,8 +69,9 @@ channel that follows the prereleases. You select the channel at install time, no
 with a flag afterwards. If you want edge, install the `spacedock@next` cask, or
 run the install script with `SPACEDOCK_CHANNEL=edge`.
 
-Interactive launches make one network request a day to `spacedock.md` to check
-for a newer Spacedock and print a hint when there is one. Add `--no-update-check`
+Interactive launches check once a day for a newer Spacedock and print a hint
+when there is one. The check asks `spacedock.md`, which redirects to GitHub's
+releases API, so both see the request. Add `--no-update-check`
 to a launch command, or set `SPACEDOCK_NO_UPDATE_CHECK=1`, to skip it.
 
 Then launch. The first launch sets up the plugin for you, so a single line gets

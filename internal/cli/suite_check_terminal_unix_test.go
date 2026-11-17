@@ -59,6 +59,12 @@ func TestSuiteCheckTerminalAndProductionRequest(t *testing.T) {
 	t.Cleanup(func() { http.DefaultTransport = old; tr.CloseIdleConnections() })
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
 	t.Setenv("SPACEDOCK_NO_UPDATE_CHECK", "")
+	suiteVersionHint(context.Background(), frontDoorArgs{}, os.Environ(), w)
+	select {
+	case got := <-headers:
+		t.Fatalf("a pipe made a lookup: %v", got)
+	default:
+	}
 	suiteVersionHint(context.Background(), frontDoorArgs{}, os.Environ(), slave)
 	select {
 	case got := <-headers:

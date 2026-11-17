@@ -16,16 +16,18 @@ type roundTrip func(*http.Request) (*http.Response, error)
 func (f roundTrip) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 
 // lookup answers the first request with a 302 to location (when set) and every
-// other request with status and body, and returns Latest's answer and the
-// number of requests made.
+// other request with status and body (404 unless it went to location), and
+// returns Latest's answer and the number of requests made.
 func lookup(channel, location string, status int, body string) (string, int) {
 	calls := 0
-	client := &http.Client{Transport: roundTrip(func(*http.Request) (*http.Response, error) {
+	client := &http.Client{Transport: roundTrip(func(r *http.Request) (*http.Response, error) {
 		calls++
 		res := &http.Response{StatusCode: status, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(body))}
 		if location != "" && (calls == 1 || location == loop) {
 			res.StatusCode = http.StatusFound
 			res.Header.Set("Location", strings.TrimPrefix(location, "loop:"))
+		} else if location != "" && r.URL.String() != location {
+			res.StatusCode = http.StatusNotFound
 		}
 		return res, nil
 	})}

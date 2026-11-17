@@ -34,7 +34,7 @@ func TestClaimDayStateDirectories(t *testing.T) {
 		}, false},
 		{"shared version-checks", func(t *testing.T, root string) {
 			mkdir(t, filepath.Join(root, "spacedock", "version-checks"))
-			chmod(t, filepath.Join(root, "spacedock", "version-checks"), 0o777)
+			chmod(t, filepath.Join(root, "spacedock", "version-checks"), 0o770)
 		}, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

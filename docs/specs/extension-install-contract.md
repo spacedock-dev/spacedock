@@ -106,8 +106,8 @@ The request is `GET https://spacedock.md/latest-release/spacedock`, adding exact
 `User-Agent: spacedock/VERSION (OS; ARCH[; ci][; internal])`. The version,
 platform names and markers follow the installer's `lookup_user_agent` rules,
 using the `spacedock/` prefix for launches. There is no identifier, counting
-field or separate event; the server sees the connecting IP address as it does
-for any request. The launch check does not use the installer's GitHub fallback.
+field or separate event; `spacedock.md` and the GitHub API it redirects to both
+see the connecting IP address, as they do for any request. The launch check does not use the installer's GitHub fallback.
 
 The channel is the one the binary selected (`selectedChannelWord`): stable
 excludes prereleases; edge compares prereleases with the same ordering as the
