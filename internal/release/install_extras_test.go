@@ -190,6 +190,33 @@ func TestInstallPluginsRunThroughTheJustInstalledBinary(t *testing.T) {
 	}
 }
 
+// The plugin step's closing doctor looks up the extension programs on PATH, so the
+// install directory must come first there even before the user adds it to PATH.
+func TestInstallPluginsSeeTheInstallDirectoryFirstOnPath(t *testing.T) {
+	r := newExtrasRun(t, "1.0.1")
+	osName, arch := goosArch(t)
+	pathLog := filepath.Join(t.TempDir(), "path.log")
+	spacedock := "#!/bin/sh\n[ \"$1\" = install ] && echo \"$PATH\" >> '" + pathLog + "'\necho 'spacedock " + r.launcherVersion + "'\n"
+	writeTarGzFiles(t, filepath.Join(r.dist, "spacedock_"+r.launcherVersion+"_"+osName+"_"+arch+".tar.gz"), map[string]string{"spacedock": spacedock})
+	r.writeChecksums(r.dist)
+	r.addProgram("claude", "exit 0")
+
+	stderr, code := r.run()
+	if code != 0 {
+		t.Fatalf("install.sh exited %d", code)
+	}
+	data, err := os.ReadFile(pathLog)
+	if err != nil {
+		t.Fatalf("the plugin step did not run: %v", err)
+	}
+	if first, _, _ := strings.Cut(strings.TrimSpace(string(data)), ":"); first != r.bin {
+		t.Errorf("plugin step PATH = %q, want it to start with the install directory %s", strings.TrimSpace(string(data)), r.bin)
+	}
+	if !strings.Contains(stderr, "note: "+r.bin+" is not on PATH; add it to run 'spacedock' directly") {
+		t.Errorf("stderr lacks the hint to add the install directory to PATH:\n%s", stderr)
+	}
+}
+
 func TestInstallWithoutClaudeSaysHowToAddThePluginsLater(t *testing.T) {
 	r := newExtrasRun(t, "1.0.1")
 	stderr, code := r.run()
