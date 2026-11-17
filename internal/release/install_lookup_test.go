@@ -161,11 +161,11 @@ func TestInstallFinishesTheOtherStepsThenFailsWhenAnExtensionLookupFails(t *test
 	r, _ := lookupRun(t)
 	r.addProgram("claude", "exit 0")
 
-	stderr, code := r.runWith("SPACEDOCK_INSTALL_FROM="+r.dist, "SPACEDOCK_EXTRAS=1", "STUB_FAIL_REPO=spacedock-dev/alpha")
+	stderr, code := r.runWith("SPACEDOCK_INSTALL_FROM="+r.dist, "SPACEDOCK_EXTRAS=1", "STUB_LISTING=noalpha")
 	if code != 1 {
 		t.Errorf("exit = %d, want 1 when an extension release cannot be looked up", code)
 	}
-	for _, want := range []string{"rate limit", "spacedock-dev/alpha", "installed beta v1.0.1", "installed spacedock"} {
+	for _, want := range []string{"names no release of alpha", "installed beta v1.0.1", "installed spacedock"} {
 		if !strings.Contains(stderr, want) {
 			t.Errorf("stderr lacks %q:\n%s", want, stderr)
 		}
@@ -174,7 +174,7 @@ func TestInstallFinishesTheOtherStepsThenFailsWhenAnExtensionLookupFails(t *test
 		t.Errorf("the plugin step did not run after the failed lookup: %q", r.calls())
 	}
 	if _, err := os.Stat(filepath.Join(r.bin, "alpha-tui")); err == nil {
-		t.Errorf("alpha was installed although its release could not be looked up")
+		t.Errorf("alpha was installed although the listing names no release of it")
 	}
 }
 

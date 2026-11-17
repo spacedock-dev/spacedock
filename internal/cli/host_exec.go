@@ -431,11 +431,12 @@ const retiredRouteAID = "spacedock-edge@spacedock"
 // uses `plugin marketplace remove`. That command names a marketplace which also
 // holds unrelated plugins, and probe 1 measured that it uninstalls all of them.
 //
-// The uninstalls come before the marketplace add. Claude tracks an installed plugin
-// through its marketplace record, so a removed record leaves the uninstall with
-// nothing to act on. The sibling uninstall keeps one channel on the host. Both
-// channels use the entry name `spacedock` and the same skill names. If both stay
-// installed, the plugin that serves is unpredictable.
+// The sibling and retired uninstalls come before the marketplace add. Claude tracks
+// an installed plugin through its marketplace record, so a removed record leaves the
+// uninstall with nothing to act on. The sibling uninstall keeps one channel on the
+// host. Both channels use the entry name `spacedock` and the same skill names. If
+// both stay installed, the plugin that serves is unpredictable. The channel's own
+// uninstall comes after the add, so an add Claude refuses leaves that plugin installed.
 //
 // The cleanup steps are tolerated. Claude exits 1 on a fresh box and on an
 // already-current source. No stable stderr shape separates those cases from a real
@@ -444,11 +445,11 @@ const retiredRouteAID = "spacedock-edge@spacedock"
 func installArgvSequence(source, devBranch string) []installStep {
 	id := channelPluginID(devBranch)
 	steps := []installStep{
-		uninstallStep(id),
 		uninstallStep("spacedock@" + otherChannelMarketplace(devBranch)),
 		uninstallStep(retiredRouteAID),
 		{argv: []string{"plugin", "marketplace", "add", source}},
 		{argv: []string{"plugin", "marketplace", "update", channelMarketplace(devBranch)}, tolerateExit: true},
+		uninstallStep(id),
 		{argv: []string{"plugin", "install", id}},
 	}
 	if addsExtensionMarketplace(devBranch) {
@@ -648,7 +649,11 @@ func runInstallSteps(host string, steps []installStep) (string, error) {
 		if err != nil {
 			if step.tolerateExit {
 				if step.reportExit {
-					fmt.Fprintf(&sb, "spacedock install: %s %s failed: %v\n", host, strings.Join(step.argv, " "), err)
+					fmt.Fprintf(&sb, "spacedock install: %s %s failed: %v", host, strings.Join(step.argv, " "), err)
+					if msg := strings.TrimSpace(string(out)); msg != "" {
+						sb.WriteString(": " + strings.TrimSpace(msg[strings.LastIndex(msg, "\n")+1:]))
+					}
+					sb.WriteString("\n")
 				}
 				continue
 			}

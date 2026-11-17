@@ -145,6 +145,7 @@ type piUpdateFixture struct {
 	deps     updateDeps
 	settings string
 	ran      []string
+	piRef    string
 }
 
 func newPiUpdateFixture(t *testing.T, status piPackageStatus) *piUpdateFixture {
@@ -154,14 +155,14 @@ func newPiUpdateFixture(t *testing.T, status piPackageStatus) *piUpdateFixture {
 	script := filepath.Join(t.TempDir(), "install.sh")
 	mustWrite(t, script, "#!/bin/sh\n:\n")
 	agentDir := t.TempDir()
-	f := &piUpdateFixture{deps: updateDepsFor(s, s.host, script), settings: filepath.Join(agentDir, "settings.json")}
-	writeFile(t, f.settings, `{"packages":["`+piSpacedockPackageSource+`@stable","`+piTestAlpha+`@v1"]}`)
+	f := &piUpdateFixture{deps: updateDepsFor(s, s.host, script), settings: filepath.Join(agentDir, "settings.json"), piRef: "v0.16.0-beta.2"}
+	writeFile(t, f.settings, `{"packages":["`+piSpacedockPackageSource+`@stable","`+piTestAlpha+`@v0.16.0-beta.1"]}`)
 	f.deps.env = append(f.deps.env, "PI_CODING_AGENT_DIR="+agentDir)
 	f.deps.lookPath = hostsOnPath("pi")
 	f.deps.piOps = &fakePiRuntimeOps{packageStatus: status}
 	f.deps.runSelf = func(args ...string) (string, error) {
 		f.ran = append(f.ran, strings.Join(args, " "))
-		writeFile(t, f.settings, `{"packages":["`+piSpacedockPackageSource+`@stable","`+piTestAlpha+`@v2"]}`)
+		writeFile(t, f.settings, `{"packages":["`+piSpacedockPackageSource+`@stable","`+piTestAlpha+`@`+f.piRef+`"]}`)
 		return "noise\nspacedock install: pi install \"" + piTestAlpha + "@v2\" failed: exit status 1\n", nil
 	}
 	return f
@@ -177,7 +178,7 @@ func TestUpdateRefreshesThePiPackagesWithTheNewProgramAndShowsTheirRefs(t *testi
 		t.Errorf("runSelf calls = %v, want one install --host pi", f.ran)
 	}
 	out := stdout.String()
-	for _, want := range []string{"alpha package      v1 -> v2", "spacedock package  stable          unchanged", "Open Pi sessions keep the old skills until you run /reload.", "spacedock install: pi install"} {
+	for _, want := range []string{"alpha package      v0.16.0-beta.1 -> v0.16.0-beta.2", "spacedock package  stable          unchanged", "Open Pi sessions keep the old skills until you run /reload.", "spacedock install: pi install"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("update output lacks %q:\n%s", want, out)
 		}
@@ -187,17 +188,61 @@ func TestUpdateRefreshesThePiPackagesWithTheNewProgramAndShowsTheirRefs(t *testi
 	}
 }
 
+func TestUpdateFailsAndNamesPiWhenItsPackageStaysBehindTheProgram(t *testing.T) {
+	f := newPiUpdateFixture(t, piPackageStatus{registered: true, source: piSpacedockPackageSource + "@stable"})
+	f.piRef = "v0.16.0-beta.1"
+	var stdout, stderr bytes.Buffer
+	if code := runUpdate(f.deps, &stdout, &stderr); code != 1 {
+		t.Fatalf("update exited %d, want 1; stderr:\n%s", code, stderr.String())
+	}
+	want := "spacedock update: alpha is still MIXED on Pi: program 0.16.0-beta.2, package 0.16.0-beta.1. Left behind: the Pi package (failed: the Pi package install)."
+	if !strings.Contains(stderr.String(), want) {
+		t.Errorf("stderr lacks %q:\n%s", want, stderr.String())
+	}
+}
+
+func TestUpdateFailsWhenPiHoldsNoPackageOfAnExtensionThatHasAProgram(t *testing.T) {
+	f := newPiUpdateFixture(t, piPackageStatus{registered: true, source: piSpacedockPackageSource + "@stable"})
+	f.deps.runSelf = func(args ...string) (string, error) {
+		writeFile(t, f.settings, `{"packages":["`+piSpacedockPackageSource+`@stable"]}`)
+		return "", nil
+	}
+	want := "spacedock update: alpha is still MIXED on Pi: program 0.16.0-beta.2, package not installed. Left behind: the Pi package"
+	var stdout, stderr bytes.Buffer
+	if code := runUpdate(f.deps, &stdout, &stderr); code != 1 || !strings.Contains(stderr.String(), want) {
+		t.Fatalf("update exited %d, want 1 naming the package; stderr:\n%s", code, stderr.String())
+	}
+}
+
+func TestUpdateFailsWhenAnExtensionProgramIsMissingBesideItsPiPackage(t *testing.T) {
+	f := newPiUpdateFixture(t, piPackageStatus{registered: true, source: piSpacedockPackageSource + "@stable"})
+	for _, entry := range filepath.SplitList(envMap(f.deps.env)["PATH"]) {
+		os.Remove(filepath.Join(entry, "spacedock-alpha"))
+	}
+	var stdout, stderr bytes.Buffer
+	if code := runUpdate(f.deps, &stdout, &stderr); code != 1 {
+		t.Fatalf("update exited %d, want 1; stderr:\n%s", code, stderr.String())
+	}
+	want := "alpha is still MIXED on Pi: program not installed, package 0.16.0-beta.2. Left behind: the program"
+	if !strings.Contains(stderr.String(), want) {
+		t.Errorf("stderr lacks %q:\n%s", want, stderr.String())
+	}
+}
+
 func TestUpdateLeavesPiAloneWhenItCannotRefreshThePublishedPackage(t *testing.T) {
 	for name, tc := range map[string]struct {
 		status piPackageStatus
 		onPath bool
 		want   string
 	}{
-		"pi not on PATH":       {piPackageStatus{registered: true, source: piSpacedockPackageSource}, false, "pi is not on PATH"},
-		"no Spacedock package": {piPackageStatus{}, true, "pi has no Spacedock package"},
-		"local checkout":       {piPackageStatus{registered: true, source: "/work/spacedock"}, true, "is /work/spacedock, not a published source"},
+		"pi not on PATH":               {piPackageStatus{registered: true, source: piSpacedockPackageSource}, false, "pi is not on PATH"},
+		"nothing from the marketplace": {piPackageStatus{}, true, "pi holds nothing from the Spacedock marketplace"},
+		"local checkout":               {piPackageStatus{registered: true, source: "/work/spacedock"}, true, "is /work/spacedock, not a published source"},
 	} {
 		f := newPiUpdateFixture(t, tc.status)
+		if !tc.status.registered {
+			writeFile(t, f.settings, `{"packages":[]}`)
+		}
 		if !tc.onPath {
 			f.deps.lookPath = hostsOnPath()
 		}
@@ -232,5 +277,86 @@ func TestReadExtensionListingReadsADirectoryAndRefusesAnythingElse(t *testing.T)
 	}
 	if _, err := (execPiRuntimeOps{}).ReadExtensionListing(filepath.Join(dir, "missing")); err == nil {
 		t.Error("a source that is neither a directory nor owner/repo was accepted")
+	}
+}
+
+func (f *piUpdateFixture) doctorReport() string {
+	in := versionInputs{env: f.deps.env, dir: f.deps.dir, host: f.deps.host, lookPath: f.deps.lookPath, selfPath: f.deps.selfPath, selfVersion: "0.28.0-pre6"}
+	report := collectVersions(in)
+	addPiPackages(&report, in)
+	var out bytes.Buffer
+	printVersionReport(&out, report)
+	return out.String()
+}
+
+func (f *piUpdateFixture) piDoctorReport(t *testing.T) string {
+	t.Helper()
+	var stdout, stderr bytes.Buffer
+	runDoctorWithPi(context.Background(), []string{"--host", "pi"}, &fakeHost{}, &fakePiRuntimeOps{lookPath: piHealthyPathFixtures()}, f.deps.env, &stdout, &stderr)
+	return stdout.String()
+}
+
+func TestDoctorNamesAPiPackageThatDiffersFromItsProgramOrIsMissing(t *testing.T) {
+	for ref, want := range map[string]string{
+		"@v0.16.0-beta.1": "MIXED: the alpha program 0.16.0-beta.2 does not match its package 0.16.0-beta.1 on Pi.",
+		"@v0.16.0-beta.3": "MIXED: the alpha program 0.16.0-beta.2 does not match its package 0.16.0-beta.3 on Pi.",
+		"":                "MISSING: the alpha package is not installed on Pi.",
+	} {
+		f := newPiUpdateFixture(t, piPackageStatus{})
+		packages := `"` + piSpacedockPackageSource + `@stable"`
+		if ref != "" {
+			packages += `,"` + piTestAlpha + ref + `"`
+		}
+		writeFile(t, f.settings, `{"packages":[`+packages+`]}`)
+		for name, out := range map[string]string{"doctor": f.doctorReport(), "doctor --host pi": f.piDoctorReport(t)} {
+			if !strings.Contains(out, want) || !strings.Contains(out, "Run `spacedock update`") {
+				t.Errorf("%s, alpha package %q: lacks %q and the update remedy:\n%s", name, ref, want, out)
+			}
+		}
+	}
+}
+
+func TestDoctorReadsCleanWhenThePiPackageMatchesItsProgram(t *testing.T) {
+	f := newPiUpdateFixture(t, piPackageStatus{})
+	writeFile(t, f.settings, `{"packages":["`+piSpacedockPackageSource+`@stable","`+piTestAlpha+`@v0.16.0-beta.2"]}`)
+	for name, out := range map[string]string{"doctor": f.doctorReport(), "doctor --host pi": f.piDoctorReport(t)} {
+		if !strings.Contains(out, "No problems found.") || strings.Contains(out, "MIXED") {
+			t.Errorf("%s with the package at its program's release is not clean:\n%s", name, out)
+		}
+	}
+}
+
+func TestDoctorAndUpdateCompareNoPiPackageOnABranchRef(t *testing.T) {
+	for _, ref := range []string{"stable", "main"} {
+		f := newPiUpdateFixture(t, piPackageStatus{registered: true, source: piSpacedockPackageSource + "@stable"})
+		f.piRef = ref
+		writeFile(t, f.settings, `{"packages":["`+piSpacedockPackageSource+`@stable","`+piTestAlpha+`@`+ref+`"]}`)
+		for name, out := range map[string]string{"doctor": f.doctorReport(), "doctor --host pi": f.piDoctorReport(t)} {
+			if !strings.Contains(out, "No problems found.") || strings.Contains(out, "MIXED") {
+				t.Errorf("%s, alpha package @%s: a branch ref names no version but was compared:\n%s", name, ref, out)
+			}
+		}
+		var stdout, stderr bytes.Buffer
+		if code := runUpdate(f.deps, &stdout, &stderr); code != 0 || strings.Contains(stderr.String(), "MIXED") {
+			t.Errorf("update with alpha package @%s exited %d, want 0 and no MIXED line; stderr:\n%s", ref, code, stderr.String())
+		}
+		if want := "alpha package      " + ref; !strings.Contains(stdout.String(), want) {
+			t.Errorf("update output lacks the branch ref row %q:\n%s", want, stdout.String())
+		}
+	}
+}
+
+func TestDoctorComparesNoPiPackageWithoutPiOrItsSpacedockPackage(t *testing.T) {
+	f := newPiUpdateFixture(t, piPackageStatus{})
+	f.deps.lookPath = hostsOnPath()
+	if out := f.doctorReport(); strings.Contains(out, "(Pi)") || !strings.Contains(out, "No problems found.") {
+		t.Errorf("pi not on PATH: doctor compared its packages:\n%s", out)
+	}
+	f = newPiUpdateFixture(t, piPackageStatus{})
+	writeFile(t, f.settings, `{"packages":[]}`)
+	for name, out := range map[string]string{"doctor": f.doctorReport(), "doctor --host pi": f.piDoctorReport(t)} {
+		if strings.Contains(out, "(Pi)") || strings.Contains(out, "MISSING: the alpha package") {
+			t.Errorf("%s with no Spacedock package in Pi named a Pi package:\n%s", name, out)
+		}
 	}
 }
