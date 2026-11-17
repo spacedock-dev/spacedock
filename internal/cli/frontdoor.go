@@ -496,6 +496,7 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 		argv = safehouse.Wrap(inner, append(launcherBinEnvPassFlags(), extra...))
 	}
 
+	suiteVersionHint(ctx, fd, os.Environ(), stdout)
 	code, err := ops.Launch(argv, withAgentTeams(launchEnv(os.Environ())))
 	if err != nil {
 		fmt.Fprintf(stderr, "spacedock claude: launch failed: %v\n", err)
@@ -777,6 +778,7 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 		argv = safehouse.Wrap(inner, append(launcherBinEnvPassFlags(), extra...))
 	}
 
+	suiteVersionHint(ctx, fd, os.Environ(), stdout)
 	code, err := ops.Launch(argv, launchEnv(os.Environ()))
 	if err != nil {
 		fmt.Fprintf(stderr, "spacedock codex: launch failed: %v\n", err)
@@ -887,7 +889,8 @@ type frontDoorArgs struct {
 	skipCheck bool
 	// noInstall is set by `--no-install` (opt out of the no-plugin auto-install,
 	// preserving the refuse-and-instruct behavior).
-	noInstall bool
+	noInstall     bool
+	noUpdateCheck bool
 }
 
 // frontDoorFlags binds the spacedock-owned front-door flags onto a pflag.FlagSet
@@ -901,6 +904,7 @@ type frontDoorFlags struct {
 	safehouse     *bool
 	skipCheck     *bool
 	noInstall     *bool
+	noUpdateCheck *bool
 	enable        *[]string
 	addDirs       *[]string
 	addDirsRO     *[]string
@@ -914,6 +918,7 @@ func bindFrontDoorFlags(fs *pflag.FlagSet) frontDoorFlags {
 			"Force the safehouse sandbox wrap even without a .safehouse profile in the directory"),
 		skipCheck: fs.Bool("skip-compat-check", false,
 			"Bypass the version gate and launch without resolving the installed plugin (bootstrap)"),
+		noUpdateCheck: fs.Bool("no-update-check", false, "Skip the daily Spacedock release check"),
 		noInstall: fs.Bool("no-install", false,
 			"Do not auto-install the plugin when none is found; refuse and print install instructions instead"),
 		enable: fs.StringArray("safehouse-enable", nil,
@@ -951,6 +956,7 @@ func parseFrontDoorArgs(args []string) (fd frontDoorArgs, err error) {
 	fd.forceSafehouse = *flags.safehouse
 	fd.skipCheck = *flags.skipCheck
 	fd.noInstall = *flags.noInstall
+	fd.noUpdateCheck = *flags.noUpdateCheck
 	for _, v := range *flags.enable {
 		fd.safehouseFlags = append(fd.safehouseFlags, "enable="+v)
 	}

@@ -102,6 +102,7 @@ Examples:
 // claude/codex); parsePiFrontDoorArgs owns the real parsing.
 func setPiHelp(cmd *cobra.Command, w io.Writer) {
 	cmd.Flags().StringArray("plugin-dir", nil, "Load a local Spacedock skill checkout")
+	cmd.Flags().Bool("no-update-check", false, "Skip the daily Spacedock release check")
 	cmd.Flags().Bool("safehouse", false, "Force the safehouse sandbox wrap even without a .safehouse profile in the directory")
 	cmd.Flags().StringArray("safehouse-enable", nil, "Enable a safehouse capability (KEY[,KEY]); repeatable; e.g. --safehouse-enable ssh,docker")
 	cmd.Flags().StringArray("safehouse-add-dirs", nil, "Grant safehouse read-write access to a directory; repeatable")
