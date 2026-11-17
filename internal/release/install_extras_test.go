@@ -352,17 +352,22 @@ esac
 case "$url" in
 	https://spacedock.md/latest-release/*)
 		echo "$ua" >> '` + log + `.ua'
-		[ -n "$STUB_ROUTE" ] || exit 22
+		route="$STUB_ROUTE"; [ "${product%%\?*}" = spacedock ] || [ -z "$STUB_EXTENSION_ROUTE" ] || route="$STUB_EXTENSION_ROUTE"
+		[ -n "$route" ] || exit 22
 		if [ "${url##*prerelease=}" = 1 ]; then
-			json="[{\"tag_name\": \"$STUB_ROUTE\"}]"; effective="$url"
-			[ "$STUB_ROUTE" != html ] || json='<html>"tag_name": "v8.8.8"</html>'
-			[ "$STUB_ROUTE" != foreign ] || { json='[{"tag_name": "v8.8.8"}]'; effective=https://other.example/x; }
+			json="[{\"tag_name\": \"$route\"}]"; effective="$url"
+			[ "$route" != html ] || json='<html>"tag_name": "v8.8.8"</html>'
+			[ "$route" != foreign ] || { json='[{"tag_name": "v8.8.8"}]'; effective=https://other.example/x; }
 			printf '%s\n%s' "$json" "$effective"
 		else
-			to="https://github.com/$repo/releases/tag/$STUB_ROUTE"
-			[ "$STUB_ROUTE" != foreign ] || to=https://other.example/releases/tag/v8.8.8
+			to="https://github.com/$repo/releases/tag/$route"
+			[ "$route" != foreign ] || to=https://other.example/releases/tag/v8.8.8
 			printf '%s' "$to"
 		fi ;;
+	https://raw.githubusercontent.com/spacedock-dev/marketplace/main/.claude-plugin/marketplace.json)
+		[ "$STUB_LISTING" != fail ] || exit 22
+		alpha='{"name":"alpha","version":"0.16.0"},'; [ "$STUB_LISTING" != noalpha ] || alpha=""
+		printf '{"name":"spacedock","plugins":[%s{"name":"beta","version":"%s"}]}\n' "$alpha" "${STUB_LISTED_BETA:-1.0.1}" ;;
 	https://api.github.com/*)
 		[ "$STUB_API" = fail ] || [ "$repo" = "$STUB_FAIL_REPO" ] && exit 22
 		[ "$STUB_API" != null ] || { printf '[{"tag_name":null}]\n'; exit 0; }
@@ -386,7 +391,14 @@ esac
 	if err := os.WriteFile(filepath.Join(dir, "curl"), []byte(body), 0o755); err != nil {
 		r.t.Fatal(err)
 	}
-	r.addProgram("git", `for t in $STUB_TAGS; do printf 'abc123\trefs/tags/%s\n' "$t"; done`)
+	r.addProgram("git", `case "$1" in
+	clone)
+		[ -z "$STUB_GIT_LISTED_BETA" ] && exit 0
+		for last; do :; done
+		mkdir -p "$last/.claude-plugin"
+		printf '{"plugins":[{"name":"alpha","version":"0.16.0"},{"name":"beta","version":"%s"}]}\n' "$STUB_GIT_LISTED_BETA" > "$last/.claude-plugin/marketplace.json" ;;
+	*) for t in $STUB_TAGS; do printf 'abc123\trefs/tags/%s\n' "$t"; done ;;
+esac`)
 	return log
 }
 
@@ -488,5 +500,110 @@ func TestInstallExtrasRespectStableLauncherBoundary(t *testing.T) {
 				t.Errorf("plugin bootstrap ran=%v, want %v; calls=%q", pluginStep, tc.extension, r.calls())
 			}
 		})
+	}
+}
+
+func TestInstallExtrasInstallTheListedVersionWhateverGitHubListsNewest(t *testing.T) {
+	for _, tc := range []struct{ channel, newest string }{
+		{"stable", "v1.2.0"},
+		{"edge", "v1.1.0-beta.1"},
+	} {
+		t.Run(tc.channel, func(t *testing.T) {
+			r := newExtrasRun(t, "1.0.1")
+			r.addProgram("claude", "exit 0")
+			osName, arch := goosArch(t)
+			log := r.stubCurl(osName, arch)
+
+			stderr, code := r.runWith("SPACEDOCK_CHANNEL="+tc.channel, "STUB_EXTENSION_ROUTE="+tc.newest)
+			urls, _ := os.ReadFile(log)
+			if code != 0 || !strings.Contains(stderr, "installed beta v1.0.1") {
+				t.Fatalf("exit=%d, want beta installed at the listed 1.0.1:\n%s", code, stderr)
+			}
+			if strings.Contains(string(urls), "download/"+tc.newest) {
+				t.Errorf("a download was requested at the newest release %s:\n%s", tc.newest, urls)
+			}
+			if n := strings.Count(string(urls), "https://spacedock.md/latest-release/beta"); n != 1 {
+				t.Errorf("the counted route was requested %d times for beta, want once:\n%s", n, urls)
+			}
+		})
+	}
+}
+
+func TestInstallExtrasReplaceAProgramThatIsAheadOfTheListing(t *testing.T) {
+	r := newExtrasRun(t, "1.1.0-beta.1")
+	r.addProgram("claude", "exit 0")
+	osName, arch := goosArch(t)
+	r.stubCurl(osName, arch)
+	writeTarGzFiles(t, filepath.Join(r.extras, "beta_1.0.1_"+osName+"_"+arch+".tar.gz"), map[string]string{
+		"beta/beta": "#!/bin/sh\necho beta\n"})
+	r.writeChecksums(r.extras)
+
+	if stderr, code := r.runWith("SPACEDOCK_CHANNEL=edge", "STUB_LISTED_BETA=1.1.0-beta.1"); code != 0 || !strings.Contains(stderr, "installed beta v1.1.0-beta.1") {
+		t.Fatalf("setup: exit=%d, want beta at 1.1.0-beta.1:\n%s", code, stderr)
+	}
+	stderr, code := r.runWith("SPACEDOCK_CHANNEL=edge", "STUB_LISTED_BETA=1.0.1")
+	if code != 0 || !strings.Contains(stderr, "installed beta v1.0.1") {
+		t.Fatalf("exit=%d, want beta replaced by the listed 1.0.1:\n%s", code, stderr)
+	}
+	if target, err := os.Readlink(filepath.Join(r.bin, "beta")); err != nil || !strings.Contains(target, filepath.Join("beta", "1.0.1")) {
+		t.Errorf("beta links to %q (%v), want the 1.0.1 tree", target, err)
+	}
+}
+
+func TestInstallExtrasInstallNothingWhenTheListingCannotBeRead(t *testing.T) {
+	r := newExtrasRun(t, "1.0.1")
+	r.addProgram("claude", "exit 0")
+	osName, arch := goosArch(t)
+	r.stubCurl(osName, arch)
+
+	stderr, code := r.runWith("SPACEDOCK_CHANNEL=stable", "STUB_LISTING=fail")
+	if code != 1 || !strings.Contains(stderr, "the spacedock marketplace listing names no release of alpha") {
+		t.Errorf("exit=%d, want 1 naming the listing:\n%s", code, stderr)
+	}
+	for _, name := range []string{"alpha-tui", "beta"} {
+		if _, err := os.Lstat(filepath.Join(r.bin, name)); err == nil {
+			t.Errorf("%s was installed without a readable listing", name)
+		}
+	}
+}
+
+func TestInstallExtrasStableRefusesAPrereleaseTheListingNames(t *testing.T) {
+	r := newExtrasRun(t, "1.0.1")
+	r.addProgram("claude", "exit 0")
+	osName, arch := goosArch(t)
+	log := r.stubCurl(osName, arch)
+	writeTarGzFiles(t, filepath.Join(r.extras, "beta_1.1.0-beta.1_"+osName+"_"+arch+".tar.gz"), map[string]string{
+		"beta/beta": "#!/bin/sh\necho beta\n"})
+	r.writeChecksums(r.extras)
+
+	stderr, code := r.runWith("SPACEDOCK_CHANNEL=stable", "STUB_LISTED_BETA=1.1.0-beta.1")
+	want := "refused beta 1.1.0-beta.1: the spacedock marketplace listing names a prerelease, and the stable channel never installs one"
+	if code != 1 || !strings.Contains(stderr, want) {
+		t.Errorf("exit=%d, want 1 and %q:\n%s", code, want, stderr)
+	}
+	if _, err := os.Lstat(filepath.Join(r.bin, "beta")); err == nil {
+		t.Error("stable installed the prerelease the listing names")
+	}
+	if urls, _ := os.ReadFile(log); strings.Contains(string(urls), "1.1.0-beta.1") {
+		t.Errorf("stable requested the prerelease:\n%s", urls)
+	}
+}
+
+func TestInstallExtrasReadTheListingOverGitBeforeTheCachedRawFile(t *testing.T) {
+	r := newExtrasRun(t, "1.0.1")
+	r.addProgram("claude", "exit 0")
+	osName, arch := goosArch(t)
+	log := r.stubCurl(osName, arch)
+	writeTarGzFiles(t, filepath.Join(r.extras, "beta_1.0.2_"+osName+"_"+arch+".tar.gz"), map[string]string{
+		"beta/beta": "#!/bin/sh\necho beta\n"})
+	r.writeChecksums(r.extras)
+
+	stderr, code := r.runWith("SPACEDOCK_CHANNEL=stable", "STUB_GIT_LISTED_BETA=1.0.2")
+	urls, _ := os.ReadFile(log)
+	if code != 0 || !strings.Contains(stderr, "installed beta v1.0.2") {
+		t.Fatalf("exit=%d, want beta at the git listing's 1.0.2, not the raw file's 1.0.1:\n%s", code, stderr)
+	}
+	if strings.Contains(string(urls), "raw.githubusercontent.com/spacedock-dev/marketplace") {
+		t.Errorf("the raw listing was read although git served it:\n%s", urls)
 	}
 }

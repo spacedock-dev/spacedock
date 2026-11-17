@@ -47,10 +47,10 @@ to the extension's own skill or to `spacedock NAME`. It never reimplements exten
 
 An extension that Spacedock installs publishes, on its GitHub repository:
 
-1. Releases on the channel the user installs Spacedock from. The stable
-   channel reads `releases/latest`, which skips prereleases. The edge channel
-   (`SPACEDOCK_CHANNEL=edge`) reads the newest release, prereleases included, so
-   an extension's beta reaches beta users through a GitHub prerelease.
+1. Stable releases, which Spacedock installs on both channels: the version its
+   `spacedock` marketplace listing names. A prerelease may exist on GitHub, but
+   Spacedock never installs one, and the release never writes it into the listing
+   or into its Homebrew formula.
 2. One archive per target, named `PREFIX_VERSION_OS_ARCH.tar.gz`, where `OS` is
    `darwin` or `linux` and `ARCH` is `arm64` or `amd64`. All four must exist,
    even when the payload is the same.
@@ -99,9 +99,10 @@ A failed extra (unresolvable release, failed download, checksum mismatch) is
 reported and skipped; Spacedock's own install still succeeds.
 
 Both channels install the extensions: `install.sh`, `spacedock install`, `doctor` and
-`update` read the same table on stable and on edge. Each extension comes from its
-newest release on the channel: stable reads the latest stable release, edge the newest
-release including prereleases. `SPACEDOCK_EXTRAS=none` skips the extensions. A run with
+`update` read the same table on stable and on edge. On both channels each extension's
+program comes from the release that its `spacedock` listing names, whichever release
+GitHub lists newest, so the program and the plugin of an extension are one release;
+the channel picks only Spacedock's own release. `SPACEDOCK_EXTRAS=none` skips the extensions. A run with
 `SPACEDOCK_INSTALL_FROM` set skips them too unless `SPACEDOCK_EXTRAS` is set to another
 value, so tests and CI stay offline. `install.sh` runs the Claude Code plugin step after
 the extensions.
@@ -139,13 +140,18 @@ the packages itself. Spacedock's own package is pinned to the channel (`@stable`
 stable binary, `@main` for edge), and each extension with a public repository
 (Subspace today) is installed at the `ref` its listing gives, read from the
 `spacedock` marketplace (`SPACEDOCK_EXTENSION_MARKETPLACE_SOURCE` on every channel).
+`doctor` and `update` compare that package with its program only when the `ref` is a
+version tag (`vX.Y.Z`); a branch ref such as `stable` names no version, so its package
+is shown and not compared.
 `pi install` over an installed package changes nothing, so each install is preceded by
 `pi remove`. `spacedock update` repeats both when Pi holds a published Spacedock
 package. An extension package that cannot be installed is named in the output and
 does not fail Spacedock's.
 
 Each extension's own release keeps its listing on the `spacedock` marketplace
-current. The edge marketplace lists Spacedock only. An extension without a listing on
+current: on a stable tag only, after refusing a stable tag below `releases/latest`, and
+followed by a read-back that fails the release unless `releases/latest`, the listing
+and its Homebrew formula name one version. The edge marketplace lists Spacedock only. An extension without a listing on
 the `spacedock` marketplace has no companion plugin: the companion install fails.
 `SPACEDOCK_EXTENSION_MARKETPLACE_SOURCE` replaces the source of that marketplace, so a
 test can stage a newer release. On stable, Spacedock's own marketplace is that
@@ -167,9 +173,17 @@ Before a hand-off, the skill runs `--supports` for that program. When the answer
 no, the skill stops and tells the user to run `spacedock update`, then restart
 Claude Code or run `/reload-plugins`, start a new Codex session, or run `/reload` in Pi.
 
-`spacedock update` installs each extension's newest release on its channel. It
-refreshes the plugins of each of Claude Code and Codex that is on PATH and has the
-Spacedock plugin installed, and skips any other with a line naming it. It prints the
+`spacedock update` installs each extension's listed release. It exits non-zero, naming
+the extension, the piece left behind and the failed step, when a program and its plugin
+still differ afterwards. It refreshes the plugins of each of Claude Code and Codex that is on PATH and has the
+Spacedock plugin installed, and the Pi packages when Pi holds the Spacedock package. A
+host that holds any other piece from the Spacedock marketplace but not the Spacedock
+plugin or package gets no install; update names it with `spacedock install --host NAME`
+and exits non-zero. A host that is not on PATH or holds nothing from the marketplace is
+skipped with a line naming it. So is a host whose Spacedock plugin or package is a
+development install, because the channel install would remove it: a Codex holding the
+`--plugin-dir` install (`spacedock@spacedock-local`), or a Pi whose Spacedock package is
+not a published `git:` source. `doctor` skips the same hosts. It prints the
 version of every piece before and after, the plugin rows under a heading for their
 host. It runs the new program's `spacedock install --host NAME` for each, so a
 companion the new release adds reaches every refreshed host in the same run; it tells
@@ -178,9 +192,13 @@ replaced the program yet, so there the running program does it. Codex reads plug
 when a session starts, so the closing line tells the user to start a new Codex
 session.
 
-`spacedock doctor` lists the same versions, with the plugins of each of Claude Code
-and Codex that is on PATH and has the Spacedock plugin installed, labelled by host. It
-names a program that differs from a host's plugin, a second `spacedock` on PATH, and a
+`spacedock doctor` reads the same inventory as update's final check: the plugins of each
+of Claude Code and Codex that is on PATH and holds any piece from the Spacedock
+marketplace, labelled by host, and each extension's Pi package when Pi is on PATH and
+holds any of them, naming a missing Spacedock plugin or package;
+`doctor --host pi` lists those programs and Pi packages alone. It
+names a program that differs from a host's plugin or its Pi package and says to run `spacedock update`
+(on Homebrew, the `brew upgrade` command for the cask and both formulas), a second `spacedock` on PATH, and a
 missing program or plugin, each per host. An extension may add rows and problems of its
 own to that list. On a Homebrew install that lacks the program of an extension that
 declares a Homebrew remedy, it names that remedy and not `spacedock update`, which
