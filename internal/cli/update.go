@@ -304,6 +304,7 @@ func mixedPiPackages(rows []pieceRow, after versionReport) []mixedExtension {
 		pkg := strings.TrimPrefix(pieceVersion(rows, ext.name+" package"), "v")
 		_, notVersion := release.ComparePreVersion(pkg, pkg)
 		switch {
+		case program == notInstalled && after.programsOptedOut:
 		case program == "unknown" || (pkg != notInstalled && notVersion != nil):
 		case pkg == notInstalled && program == notInstalled:
 		case pkg != program:
@@ -313,18 +314,23 @@ func mixedPiPackages(rows []pieceRow, after versionReport) []mixedExtension {
 	return mixed
 }
 
-// brewFormula names the cask and both extension formulas: a cask upgrade
+// brewFormula names the cask and extension formulas: a cask upgrade
 // leaves an installed formula where it is, so naming the cask alone leaves a
 // program behind its plugin.
 func brewFormula(selfPath string, brew bool) string {
-	const formulas = " spacedock-dev/tap/subspace-beta spacedock-dev/tap/compass"
-	switch {
-	case !brew:
+	if !brew {
 		return ""
-	case isEdgeCaskPath(selfPath):
-		return "spacedock@next" + formulas
 	}
-	return "spacedock" + formulas
+	args := []string{"spacedock"}
+	if isEdgeCaskPath(selfPath) {
+		args[0] = "spacedock@next"
+	}
+	for _, ext := range extensions {
+		if ext.homebrewFormula != "" {
+			args = append(args, ext.homebrewFormula)
+		}
+	}
+	return strings.Join(args, " ")
 }
 
 func mixedAfterUpdate(mixed []mixedExtension, brewArgs string, addRefused map[string]bool) []string {
@@ -396,6 +402,9 @@ func printUpdateChanges(w io.Writer, before, after versionReport, formula string
 	}
 	for _, r := range pi.after {
 		printRow(r.label, pieceVersion(pi.before, r.label), r.version)
+	}
+	for _, notice := range after.notices {
+		fmt.Fprintln(w, notice)
 	}
 	if len(after.problems) > 0 {
 		fmt.Fprintln(w)

@@ -167,8 +167,8 @@ func TestUpdateShowsTheInstallScriptsFailedPluginLinesWhenTheScriptSucceeds(t *t
 
 func TestUpdateOnHomebrewChangesNoProgramAndNamesTheBrewCommand(t *testing.T) {
 	for path, formula := range map[string]string{
-		"/opt/homebrew/Caskroom/spacedock/0.28.0/spacedock":      "brew upgrade spacedock spacedock-dev/tap/subspace-beta spacedock-dev/tap/compass\n",
-		"/opt/homebrew/Caskroom/spacedock@next/0.28.0/spacedock": "brew upgrade spacedock@next spacedock-dev/tap/subspace-beta spacedock-dev/tap/compass\n",
+		"/opt/homebrew/Caskroom/spacedock/0.28.0/spacedock":      "brew upgrade spacedock fixture/tap/alpha fixture/tap/beta\n",
+		"/opt/homebrew/Caskroom/spacedock@next/0.28.0/spacedock": "brew upgrade spacedock@next fixture/tap/alpha fixture/tap/beta\n",
 	} {
 		s := stageInstall(t)
 		ran := filepath.Join(t.TempDir(), "ran")
@@ -437,7 +437,7 @@ func TestUpdateFailsAndRefreshesNoPluginWhenAnExtensionLookupFails(t *testing.T)
 	if code := runUpdate(d, &stdout, &stderr); code != 1 {
 		t.Fatalf("exit = %d, want 1; stderr:\n%s", code, stderr.String())
 	}
-	if !strings.Contains(stderr.String(), "the spacedock marketplace listing names no release of subspace") {
+	if !strings.Contains(stderr.String(), "could not read the spacedock marketplace listing for subspace") {
 		t.Errorf("stderr does not name the unreadable listing:\n%s", stderr.String())
 	}
 	if strings.Contains(stdout.String(), "Claude Code plugins") || len(s.host.installCmds) != 0 {
@@ -490,7 +490,7 @@ func TestUpdateOnHomebrewNamesTheBrewUpgradeWhenAProgramStaysBehindItsPlugin(t *
 	if code := runUpdate(d, &stdout, &stderr); code != 1 {
 		t.Fatalf("update exited %d, want 1 while beta is MIXED; stderr:\n%s", code, stderr.String())
 	}
-	want := "spacedock update: beta is still MIXED on Claude Code: program 1.0.1, plugin 1.0.2. Left behind: the program (failed: Homebrew has not upgraded it; run `brew upgrade spacedock spacedock-dev/tap/subspace-beta spacedock-dev/tap/compass`)."
+	want := "spacedock update: beta is still MIXED on Claude Code: program 1.0.1, plugin 1.0.2. Left behind: the program (failed: Homebrew has not upgraded it; run `brew upgrade spacedock fixture/tap/alpha fixture/tap/beta`)."
 	if !strings.Contains(stderr.String(), want) {
 		t.Errorf("stderr lacks %q:\n%s", want, stderr.String())
 	}
@@ -649,5 +649,110 @@ func TestDoctorAndUpdateLeaveACodexDevInstallAlone(t *testing.T) {
 	}
 	if strings.Contains(stderr.String(), "--host codex") {
 		t.Errorf("update tells the user to install over the Codex dev install:\n%s", stderr.String())
+	}
+}
+
+func TestOptOutOnlyExemptsAbsentPrograms(t *testing.T) {
+	for _, setting := range []string{"SPACEDOCK_EXTRAS=none", "SPACEDOCK_INSTALL_FROM=/fixture/dist"} {
+		t.Run(setting, func(t *testing.T) {
+			s := stageInstall(t)
+			s.env = append(s.env, setting)
+			if err := os.Remove(filepath.Join(s.first, "spacedock-alpha")); err != nil {
+				t.Fatal(err)
+			}
+			var doctor bytes.Buffer
+			printVersionReport(&doctor, s.report())
+			if !strings.Contains(doctor.String(), "alpha program skipped by opt-out") || strings.Contains(doctor.String(), "MISSING") || strings.Contains(doctor.String(), "MIXED") || strings.Contains(doctor.String(), "Run `spacedock update`") {
+				t.Fatalf("intentional absence was diagnosed as damage:\n%s", doctor.String())
+			}
+			script := filepath.Join(t.TempDir(), "install.sh")
+			mustWrite(t, script, "#!/bin/sh\n:\n")
+			var out, errOut bytes.Buffer
+			if code := runUpdate(updateDepsFor(s, s.host, script), &out, &errOut); code != 0 {
+				t.Fatalf("update=%d: %s", code, errOut.String())
+			}
+			if !strings.Contains(out.String(), "alpha program skipped by opt-out") {
+				t.Fatalf("update omitted the opt-out notice: %s", out.String())
+			}
+			if _, err := os.Stat(filepath.Join(s.first, "spacedock-alpha")); !os.IsNotExist(err) {
+				t.Fatalf("update restored an opted-out program: %v", err)
+			}
+			writeProgram(t, filepath.Join(s.first, "spacedock-alpha"), "0.16.0-beta.1")
+			out.Reset()
+			errOut.Reset()
+			if code := runUpdate(updateDepsFor(s, s.host, script), &out, &errOut); code != 1 || !strings.Contains(errOut.String(), "still MIXED") {
+				t.Fatalf("installed skew hidden: exit=%d %s", code, errOut.String())
+			}
+			if err := os.Remove(filepath.Join(s.first, "spacedock-alpha")); err != nil {
+				t.Fatal(err)
+			}
+			s.env = s.env[:len(s.env)-1]
+			out.Reset()
+			errOut.Reset()
+			if code := runUpdate(updateDepsFor(s, s.host, script), &out, &errOut); code != 1 || !strings.Contains(errOut.String(), "program not installed") {
+				t.Fatalf("opt-out persisted: exit=%d %s", code, errOut.String())
+			}
+		})
+	}
+}
+
+func TestUpdateHonorsExplicitExtrasOverride(t *testing.T) {
+	for _, tc := range []struct {
+		name, extras string
+		code         int
+	}{
+		{"empty still opts out", "", 0},
+		{"none still opts out", "none", 0},
+		{"nonempty opts in", "1", 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			s := stageInstall(t)
+			s.env = append(s.env, "SPACEDOCK_INSTALL_FROM=/fixture/dist", "SPACEDOCK_EXTRAS="+tc.extras)
+			if err := os.Remove(filepath.Join(s.first, "spacedock-alpha")); err != nil {
+				t.Fatal(err)
+			}
+			script := filepath.Join(t.TempDir(), "install.sh")
+			mustWrite(t, script, "#!/bin/sh\n:\n")
+			var out, errOut bytes.Buffer
+			if code := runUpdate(updateDepsFor(s, s.host, script), &out, &errOut); code != tc.code {
+				t.Fatalf("update=%d want %d: %s", code, tc.code, errOut.String())
+			}
+		})
+	}
+}
+
+func TestFormulaMetadataDrivesUpdateAndDoctor(t *testing.T) {
+	for _, cask := range []string{"spacedock", "spacedock@next"} {
+		t.Run(cask, func(t *testing.T) {
+			table := fakeExtensions()
+			table[0].homebrewFormula = "fixture/tap/renamed-alpha"
+			table[1].homebrewFormula = "fixture/tap/beta"
+			table = append(table, extension{name: "gamma", program: "spacedock-gamma", homebrewFormula: "fixture/tap/gamma"}, extension{name: "delta", program: "spacedock-delta"})
+			s := stageInstallWith(t, table)
+			if err := os.Remove(filepath.Join(s.first, "spacedock-alpha")); err != nil {
+				t.Fatal(err)
+			}
+			deps := updateDepsFor(s, s.host, "")
+			deps.selfPath = filepath.Join(t.TempDir(), "Caskroom", cask, "0.28.0", "spacedock")
+			writeProgram(t, deps.selfPath, "spacedock 0.28.0-pre6")
+			deps.runSelf = func(...string) (string, error) {
+				t.Fatal("Homebrew updater must not replace the binary")
+				return "", nil
+			}
+			var out, errOut bytes.Buffer
+			if code := runUpdate(deps, &out, &errOut); code != 1 {
+				t.Fatalf("missing program update=%d", code)
+			}
+			want := "brew upgrade " + cask + " fixture/tap/renamed-alpha fixture/tap/beta fixture/tap/gamma"
+			if !strings.Contains(out.String(), want) {
+				t.Fatalf("advice did not follow changed table: %s", out.String())
+			}
+			in := versionInputs{env: s.env, dir: s.project, host: s.host, lookPath: s.lookPath, selfPath: deps.selfPath, selfVersion: "0.28.0-pre6"}
+			out.Reset()
+			printVersionReport(&out, collectVersions(in))
+			if !strings.Contains(out.String(), "brew install fixture/tap/renamed-alpha") {
+				t.Fatalf("missing remedy did not follow changed table: %s", out.String())
+			}
+		})
 	}
 }

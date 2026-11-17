@@ -150,6 +150,23 @@ the channel picks only Spacedock's own release. `SPACEDOCK_EXTRAS=none` skips th
 value, so tests and CI stay offline. `install.sh` runs the Claude Code plugin step after
 the extensions.
 
+The opt-out comes from the current command's environment and is not saved.
+If a program is absent while either opt-out applies, `update` leaves it absent
+and succeeds if its other checks pass.
+`doctor` and `update` show that program as skipped by opt-out, without MISSING,
+MIXED or a repair instruction for that absence.
+An installed program is still compared with its plugin or Pi package.
+An installed mismatch still fails `update`.
+
+For extension release lookup, each installer run reuses one marketplace listing
+result, including an unreadable result.
+The Git HTTP fetch stops after five seconds below one byte per second, then
+tries the existing bounded raw-file fallback.
+This limits stalled transfers, not the total duration of a clone that continues
+to transfer data.
+An unreadable listing is reported separately from a readable listing that names
+no release of the extension.
+
 For stable launchers before 0.28.0, `install.sh` installs only the Spacedock binary.
 It skips extensions and plugin installation, even when `SPACEDOCK_EXTRAS` is set.
 This boundary uses the resolved archive version and does not change edge behavior.
@@ -188,8 +205,10 @@ version tag (`vX.Y.Z`); a branch ref such as `stable` names no version, so its p
 is shown and not compared.
 `pi install` over an installed package changes nothing, so each install is preceded by
 `pi remove`. `spacedock update` repeats both when Pi holds a published Spacedock
-package. An extension package that cannot be installed is named in the output and
-does not fail Spacedock's.
+package. During `spacedock install --host pi`, a failed extension package install
+is reported but does not fail Spacedock's own package install.
+During `spacedock update`, the final inventory check fails if an installed program
+has no extension package.
 
 Each extension's own release keeps its listing on the `spacedock` marketplace
 current: on a stable tag only, after refusing a stable tag below `releases/latest`, and
@@ -216,9 +235,13 @@ Before a hand-off, the skill runs `--supports` for that program. When the answer
 no, the skill stops and tells the user to run `spacedock update`, then restart
 Claude Code or run `/reload-plugins`, start a new Codex session, or run `/reload` in Pi.
 
-`spacedock update` installs each extension's listed release. It exits non-zero, naming
-the extension, the piece left behind and the failed step, when a program and its plugin
-still differ afterwards. It refreshes the plugins of each of Claude Code and Codex that is on PATH and has the
+`spacedock update` installs each extension's listed release.
+It fails if a program differs from its plugin or version-tagged Pi package,
+or an installed program's plugin or package is missing.
+The error names the extension, the piece left behind and the failed step.
+The branch-ref and intentional-program-absence exceptions above still apply.
+An installed program gets no opt-out exemption.
+It refreshes the plugins of each of Claude Code and Codex that is on PATH and has the
 Spacedock plugin installed, and the Pi packages when Pi holds the Spacedock package. A
 host that holds any other piece from the Spacedock marketplace but not the Spacedock
 plugin or package gets no install; update names it with `spacedock install --host NAME`
@@ -263,9 +286,13 @@ including a Homebrew copy, is read from the program.
 
 ### Homebrew
 
-Subspace's formula, `subspace-beta`, and Compass's formula, `compass` (from Compass
-v1.4.0), both in `spacedock-dev/tap`, are dependencies of both casks. `doctor` on a
-Homebrew install without `spacedock-compass` names `brew install spacedock-dev/tap/compass`.
+The authoritative formula names are each row's `homebrewFormula` in the
+[`extensions` table](../../internal/cli/versions.go).
+Both casks depend on those formulas.
+`update` builds its `brew upgrade` advice from that table.
+`doctor` names `brew install` with the same formula when its program is missing.
+Compass has supplied its formula since v1.4.0.
+`update` never runs Homebrew itself.
 
 ### Hand-offs
 

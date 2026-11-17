@@ -391,7 +391,9 @@ esac
 	if err := os.WriteFile(filepath.Join(dir, "curl"), []byte(body), 0o755); err != nil {
 		r.t.Fatal(err)
 	}
-	r.addProgram("git", `case "$1" in
+	r.addProgram("git", `echo "$*" >> '`+log+`.git'
+while [ "${1:-}" = -c ]; do shift 2; done
+case "$1" in
 	clone)
 		[ -z "$STUB_GIT_LISTED_BETA" ] && exit 0
 		for last; do :; done
