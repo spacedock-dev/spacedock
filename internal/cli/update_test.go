@@ -692,6 +692,13 @@ func TestOptOutOnlyExemptsAbsentPrograms(t *testing.T) {
 			if code := runUpdate(updateDepsFor(s, s.host, script), &out, &errOut); code != 1 || !strings.Contains(errOut.String(), "program not installed") {
 				t.Fatalf("opt-out persisted: exit=%d %s", code, errOut.String())
 			}
+			s.env = append(s.env, setting)
+			s.host.inventory = s.host.inventory[1:]
+			out.Reset()
+			errOut.Reset()
+			if code := runUpdate(updateDepsFor(s, s.host, script), &out, &errOut); code != 1 || !strings.Contains(errOut.String(), "Spacedock plugin is not installed on Claude Code") {
+				t.Fatalf("host plugin failure hidden: exit=%d %s", code, errOut.String())
+			}
 		})
 	}
 }
@@ -744,7 +751,7 @@ func TestFormulaMetadataDrivesUpdateAndDoctor(t *testing.T) {
 				t.Fatalf("missing program update=%d", code)
 			}
 			want := "brew upgrade " + cask + " fixture/tap/renamed-alpha fixture/tap/beta fixture/tap/gamma"
-			if !strings.Contains(out.String(), want) {
+			if !strings.Contains(out.String(), want+"\n") {
 				t.Fatalf("advice did not follow changed table: %s", out.String())
 			}
 			in := versionInputs{env: s.env, dir: s.project, host: s.host, lookPath: s.lookPath, selfPath: deps.selfPath, selfVersion: "0.28.0-pre6"}

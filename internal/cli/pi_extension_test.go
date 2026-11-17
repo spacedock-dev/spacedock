@@ -377,6 +377,13 @@ func TestOptOutReachesPiInventoryAndKeepsHostFailures(t *testing.T) {
 	if code := runUpdate(f.deps, &out, &errOut); code != 0 {
 		t.Fatalf("Pi update=%d: %s", code, errOut.String())
 	}
+	writeProgram(t, filepath.Join(dir, "spacedock-alpha"), "0.16.0-beta.2")
+	f.piRef = "v0.16.0-beta.1"
+	out.Reset()
+	errOut.Reset()
+	if code := runUpdate(f.deps, &out, &errOut); code != 1 || !strings.Contains(errOut.String(), "still MIXED on Pi") {
+		t.Fatalf("installed Pi skew hidden: %d %s", code, errOut.String())
+	}
 	f.deps.runSelf = func(...string) (string, error) {
 		writeFile(t, f.settings, `{"packages":["`+piTestAlpha+`@v0.16.0-beta.2"]}`)
 		return "", nil
