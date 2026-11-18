@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:3kn22a1d5v5x7rdnrcva0h5a:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation design: land candidate c3895378d unchanged (AC stub in commission seed body and experiment/refinement snippets, plus TestCommissionedEntitiesPassACScan)?",
+  "artifacts": [
+    {
+      "id": "artifact:3kn22a1d5v5x7rdnrcva0h5a:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/96e038bd141085a5111ca23a25c0370fa5ef1458/commission-seed-entities-carry-acceptance-criteria.md",
+      "rev": "sha256:03a3562a57a976792e7dbe6ab8fdc25f65fbf36ec9d1eb5c69c3d37e818834da",
+      "mediaType": "text/markdown",
+      "summary": "Defect confirmed on origin/main: real --ac-scan exits 1 on a commissioned seed (all templates and fallback) and on experiment/refinement tasks; exits 0 with the candidate. Candidate test fails 3 subtests on origin/main, passes 5 on c3895378d; go test ./... green. One-off live claude -p commission run with the candidate wrote a filled AC-1 into the seeds. Surface +146 net across 4 files."
+    }
+  ]
+}

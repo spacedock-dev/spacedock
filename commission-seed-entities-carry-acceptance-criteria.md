@@ -33,6 +33,14 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:3kn22a1d5v5x7rdnrcva0h5a:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:3kn22a1d5v5x7rdnrcva0h5a-ideation-1
+              briefing:
+                id: briefing:3kn22a1d5v5x7rdnrcva0h5a:ideation:attempt-1:revision-1
+                digest: sha256:82a3725c527228bdef52affba7ce12fa550f941b0479146ca279da220e4f3cdf
+                room-ref: '@review/ideation/briefing-1'
 ---
 
 A workflow made with `spacedock:commission` must give its seed tasks, and every task its templates produce, a `## Acceptance criteria` section, so the first officer's `status --read --ac-scan` works at the first gate.
