@@ -367,8 +367,8 @@ func TestLiveReviewNoArgumentWithNothingRecordedAsksTerminalOrWeb(t *testing.T) 
 	l := newReviewLive(t, map[string]string{"choice": "Web", "agree": "No"})
 	l.turn("/spacedock:review")
 	l.wantMenus("choice", "agree")
-	if q := l.asked[1]; !strings.Contains(q.Question, "review.spacedock.md") || !q.has("Yes") || !q.has("No") {
-		t.Errorf("agreement question lacks the host or its Yes/No options: %q %v", q.Question, q.Options)
+	if q := l.asked[1]; !strings.Contains(q.Question, "Spacedock Review") || !q.has("Yes") || !q.has("No") {
+		t.Errorf("agreement question lacks the product name or its Yes/No options: %q %v", q.Question, q.Options)
 	}
 	if strings.Contains(l.flat(), "review-mode set") || l.mode() != "" {
 		t.Errorf("declining the upload still recorded %q: %s", l.mode(), l.flat())
@@ -414,8 +414,8 @@ func TestLiveReviewWebWordDeclinedRecordsNothing(t *testing.T) {
 	l := newReviewLive(t, map[string]string{"agree": "No"})
 	l.turn("/spacedock:review WebUI")
 	l.wantMenus("agree")
-	if q := l.asked[0]; !strings.Contains(q.Question, "review.spacedock.md") || !q.has("Yes") || !q.has("No") {
-		t.Errorf("agreement question lacks the host or its Yes/No options: %q %v", q.Question, q.Options)
+	if q := l.asked[0]; !strings.Contains(q.Question, "Spacedock Review") || !q.has("Yes") || !q.has("No") {
+		t.Errorf("agreement question lacks the product name or its Yes/No options: %q %v", q.Question, q.Options)
 	}
 	if strings.Contains(l.flat(), "review-mode set") || l.mode() != "" {
 		t.Errorf("declining the upload still recorded %q: %s", l.mode(), l.flat())
