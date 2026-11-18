@@ -1,7 +1,7 @@
 ---
 id: 3kn22a1d5v5x7rdnrcva0h5a
 title: Commissioned seed tasks carry an Acceptance criteria section
-status: backlog
+status: ideation
 source: launch probe 2026-11-17, release defect 4 (CL)
 started:
 completed:
@@ -32,7 +32,7 @@ gates:
                 reason: 'Captain in chat 2026-11-17: ''file defect 4. and check if any existing live tests cover the commission skill first. then dispatch.'' then ''override. you can push and continue dispatching.'' Accepts the seed and directs ideation.'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 A workflow made with `spacedock:commission` must give its seed tasks, and every task its templates produce, a `## Acceptance criteria` section, so the first officer's `status --read --ac-scan` works at the first gate.
