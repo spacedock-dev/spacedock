@@ -384,12 +384,13 @@ install_extra() {
 }
 
 # install_plugins uses the spacedock this script just installed, not an older copy
-# that comes first on PATH.
+# that comes first on PATH. Its closing doctor looks up the extension programs on
+# PATH, so the install directory goes first there.
 install_plugins() {
 	[ "${SPACEDOCK_PLUGINS:-}" = none ] && return 0
 	if command -v claude >/dev/null 2>&1; then
 		err "adding the Claude Code plugins (spacedock install --host claude)"
-		"$INSTALL_DIR/spacedock" install --host claude \
+		PATH="$INSTALL_DIR:$PATH" "$INSTALL_DIR/spacedock" install --host claude \
 			|| err "the plugin install failed; run: spacedock install --host claude"
 	else
 		err "claude is not on PATH; run \`spacedock install --host claude\` after you install Claude Code"
