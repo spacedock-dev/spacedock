@@ -204,5 +204,10 @@ For decisions, follow the companion's trusted result: Hold pauses dependent work
 and leaves the file unchanged. Comments, question answers, advisory feedback or
 successful publication alone never approve dependent work.
 
-If the `subspace:r` or `subspace:remote-review` skill is not available, the Subspace
-plugin is missing or too old. Give the same remedy as step 3, and stop.
+If the `subspace:r` or `subspace:remote-review` skill is not available, stop and
+publish nothing. The program step 3 checked (`spacedock-review` or
+`subspace-relay-client`) is current, so do not name it as the cause. Say the Subspace
+plugin is missing, out of date, or shadowed by an older local copy, such as one
+loaded with `--plugin-dir`. Tell the user to update that plugin or remove the local
+copy, then restart Claude Code or run `/reload-plugins`, or in Codex start a new
+session, or in Pi run `/reload`, then ask again.
