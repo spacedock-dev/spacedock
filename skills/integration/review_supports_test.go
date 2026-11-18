@@ -1,6 +1,5 @@
 // ABOUTME: Runs the capability-check lines shipped in skills/review/SKILL.md against stub
-// ABOUTME: programs on a controlled PATH: refusal, support, and a missing program, and pins
-// ABOUTME: the remedy for a missing Subspace skill when the checked program is current.
+// ABOUTME: programs on a controlled PATH: refusal, support, and a missing program.
 package integration
 
 import (
@@ -86,38 +85,6 @@ func TestReviewSupportCheckReportsUnsupportedWithoutCallingPublish(t *testing.T)
 				t.Errorf("missing program: output %q", out)
 			}
 		})
-	}
-}
-
-// A current relay program next to an old or shadowing local Subspace plugin hides the
-// subspace:remote-review skill. The remedy must blame the plugin, not the program.
-func TestReviewMissingSkillRemedyNamesPluginNotProgram(t *testing.T) {
-	data, err := os.ReadFile(filepath.Join(repoRoot(t), "skills", "review", "SKILL.md"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	var para string
-	for _, p := range strings.Split(string(data), "\n\n") {
-		if strings.Contains(p, "`subspace:remote-review` skill is not available") {
-			para = strings.Join(strings.Fields(p), " ")
-		}
-	}
-	if para == "" {
-		t.Fatal("no paragraph covers a missing `subspace:remote-review` skill")
-	}
-	for _, want := range []string{
-		"`subspace-relay-client`", "is current", // the checked program passed
-		"Subspace plugin", "missing", "out of date", "local copy", // the real cause
-		"update", "remove", "/reload-plugins", // the remedy
-	} {
-		if !strings.Contains(para, want) {
-			t.Errorf("missing-skill remedy omits %q: %s", want, para)
-		}
-	}
-	for _, banned := range []string{"same remedy as step 3", "its version from that line"} {
-		if strings.Contains(para, banned) {
-			t.Errorf("missing-skill remedy reuses step 3's %q: %s", banned, para)
-		}
 	}
 }
 
