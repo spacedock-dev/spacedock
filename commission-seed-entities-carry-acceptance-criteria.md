@@ -9,7 +9,7 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-commission-seed-entities-carry-acceptance-criteria
 issue:
-pr: "#887"
+pr: pr-merge:887
 mod-block: merge:pr-merge
 gates:
     version: 1
