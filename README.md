@@ -1,99 +1,101 @@
 # Spacedock
 
-**Spacedock is a multi-agent orchestrator where nothing ships without a decision.**
-It lives within your existing harness: Claude Code, Codex, or Pi. It breaks work
-into stages and surfaces the decisions each stage needs, batched for you. Each
-decision arrives with evidence measured against a predefined bar for what good
-looks like. You approve, send back, or escalate. Or you delegate the call to an
-agent. Either way, the decision is recorded with its evidence and reason.
+**Spacedock is the judgement layer for agent work.**
 
-**Why?**
+It works inside Claude Code and Codex, so there is no new agent to learn.
+It runs on macOS and Linux.
 
-- You're the human, and agents from a dozen sessions ping you all day: a design
-  call, a one-line approval, "ship without full coverage?", none of it on a
-  schedule you can plan around. You stopped deciding the work and started just
-  answering the agent.
-- You're the agent, and you stall every few steps waiting on a human who isn't
-  watching, with no clear scope and no clear bar for done, so you ask and then
-  you wait.
-- Generation got cheap. Your attention and judgment are now the bottleneck.
-  Every task still ends in a decision, and no one owns it, so it falls on
-  whoever's around.
+| Feature | What it does | Start it | Code |
+| --- | --- | --- | --- |
+| **Spacedock Review** | Highlight what needs changing, add your comments, and submit your decision. The requesting agent receives it all. | `/spacedock:review plan.md decision` | [spacedock-dev/subspace](https://github.com/spacedock-dev/subspace) |
+| **Spacedock Compass** | See where agent work departed from your goal, with evidence to help you course-correct. | `/spacedock:compass` | [spacedock-dev/compass](https://github.com/spacedock-dev/compass) |
+| **Spacedock Workflow** | Define what agents must check, which decisions they can make, and when they need you. Workflow records each decision with its evidence and reason. | `/spacedock:commission` | This repository |
 
-**Start with what you already built.** Point Spacedock at a project you
-vibe-coded into spaghetti and run `/spacedock:survey`. It reads your own agent
-history and shows you three things: the workflow you've been running without
-naming it, how you've been calling work done, and the decisions still open and
-waiting on you.
+The commands are for Claude Code. In Codex, Review and Compass start with `$`
+in place of `/`, for example `$spacedock:review plan.md decision`.
 
-## What's different
-
-- **The agent doesn't get to judge its own work.** Review runs as a separate
-  stage with fresh context, no access to the maker's reasoning. It pushes back on
-  thin evidence and work that looks busy without proving its claim.
-- **Every decision leaves a trail.** Each gate, the decision point at the end of
-  a stage, carries a stage report: findings, verdicts, artifacts, anomalies. You
-  decide on evidence, not the transcript.
-  The record outlives the reviewer, so you can trace a bad result back to the
-  call that caused it.
-- **The bar sharpens as you use it.** Each stage declares what good means, and
-  the agent works to that line on its own. When a standard turns out fuzzy in
-  practice, the agent proposes an edit to the stage's written criteria for your
-  approval. `/spacedock:debrief` captures each session's learnings so the next
-  one starts from them.
-- **Batch the work; decide as it flows back.** Queue many items at once. Agents
-  advance each through its stages. You handle gates as they surface, not one
-  session at a time.
-- **Isolation when it matters.** Stages that touch shared state run in their own
-  git worktree. Lighter stages run inline.
-- **Native sandbox integration.** Drop a profile in the project and Spacedock
-  runs the agent sandboxed.
-- **Work survives the context limit.** When an agent runs out of context, a
-  successor carries forward what's in flight.
+This repository holds Spacedock Workflow, the `spacedock` command and its
+installer. One install brings Review and Compass with it.
 
 ## Install
 
-Prerequisite: a coding agent harness. Claude Code, Codex, and Pi are tier-1
-supported; through skill systems it also runs in most other harnesses, including
-Hermes-class agents.
+```sh
+# macOS with Homebrew
+brew trust spacedock-dev/tap
+brew install --cask spacedock-dev/tap/spacedock
 
-Install the stable channel with Homebrew:
-
-```bash
-brew tap spacedock-dev/tap
-brew install spacedock
+# Linux, or macOS without Homebrew
+curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/main/install.sh | sh
+export PATH="${SPACEDOCK_INSTALL_DIR:-$HOME/.local/bin}:$PATH"
 ```
 
-These commands install the **stable** channel. Spacedock also has an **edge**
-channel that follows the prereleases. You select the channel at install time, not
-with a flag afterwards. If you want edge, install the `spacedock@next` cask, or
-run the install script with `SPACEDOCK_CHANNEL=edge`.
+Then connect your agent with `spacedock install --host claude` or
+`spacedock install --host codex`. Run `spacedock doctor` to check the setup
+(`spacedock doctor --host codex` for Codex). The
+[installation guide](https://spacedock.md/docs/get-started/install/) has the
+full steps.
 
-Interactive launches check once a day for a newer Spacedock and print a hint
-when there is one. The check asks `spacedock.md`, which redirects to GitHub's
-releases API, so both see the request. Add `--no-update-check`
-to a launch command, or set `SPACEDOCK_NO_UPDATE_CHECK=1`, to skip it.
+Interactive launches check once a day for a newer Spacedock. The check asks
+spacedock.md, which redirects to GitHub's releases API, so both see the
+request. Add `--no-update-check` to a launch command, or set
+`SPACEDOCK_NO_UPDATE_CHECK=1`, to skip it.
 
-Then launch. The first launch sets up the plugin for you, so a single line gets
-you a working session. Point it at a project you already have and let it survey:
+## Your first review
 
-```bash
-spacedock claude "/spacedock:survey"
+Paste this into Claude Code or Codex:
+
+```text
+Install Spacedock using https://spacedock.md/agents.md. Help me choose a plan to review, then open it in Spacedock Review.
 ```
 
-Using Codex or Pi instead? Swap the subcommand: `spacedock codex "/spacedock:survey"`
-or `spacedock pi "/spacedock:survey"`.
+Your agent installs Spacedock and opens the plan in Review. Comment on the
+text, then approve, request changes or hold. The agent receives your decision
+and comments.
 
-Full docs — the install walkthrough, the Codex and Pi paths, concepts, and the
-command reference — live at **[spacedock.md/docs](https://spacedock.md/docs/)**.
-Browsing the repo on GitHub? The same install guide is at
-[`docs/site/get-started/install.md`](docs/site/get-started/install.md).
+## For agents
 
-## License
+Read [spacedock.md/agents.md](https://spacedock.md/agents.md) for the install
+steps and how to bring a first artifact to Review.
 
-Spacedock is released under the [Apache License 2.0](LICENSE).
+## Spacedock Workflow
 
-## Contributing
+A workflow gives recurring work a set of stages, such as design,
+implementation and review. You set the standards for each stage. You choose
+where work pauses for your decision; these pauses are called gates. The stages
+and standards live in plain text in your repository.
 
-Spacedock is early; we welcome proposals as [GitHub issues](https://github.com/spacedock-dev/spacedock/issues).
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+To start from the work you already did, run `/spacedock:survey` in Claude
+Code. It reads your local agent history, without changes, and reports repeated
+work, current workstreams and unresolved decisions. Your agent can then
+propose a workflow from the findings.
+
+To describe a workflow yourself:
+
+```sh
+spacedock claude "/spacedock:commission ship features through design, implementation, and review"
+```
+
+Run `/spacedock:debrief` before you end a session. Run `spacedock claude` to
+resume.
+
+### What's different
+
+- **The agent does not judge its own work.** Review runs as a separate stage
+  with fresh context and no access to the maker's reasoning.
+- **Every decision leaves a trail.** Each gate carries a stage report with
+  findings, verdicts and artifacts. You decide on evidence, not the transcript.
+- **The standards improve as you use them.** Each stage states what good
+  means. When a standard is unclear in practice, the agent proposes an edit for
+  your approval.
+- **Work keeps moving.** Queue many items at once and handle gates as they
+  arrive. When an agent runs out of context, a successor continues the work.
+
+## Links
+
+- [Documentation](https://spacedock.md/docs/)
+- [Release notes](https://github.com/spacedock-dev/spacedock/releases)
+- [Discord](https://discord.gg/3Ux2NKmSw)
+- [spacedock-dev/subspace](https://github.com/spacedock-dev/subspace): Spacedock Review
+- [spacedock-dev/compass](https://github.com/spacedock-dev/compass): Spacedock Compass
+- [Contributing](CONTRIBUTING.md)
+- [License: Apache License 2.0](LICENSE)
