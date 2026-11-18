@@ -2,7 +2,7 @@
 title: "Mods & standing teammates"
 description: "Your agents are waiting on you. Spacedock brings you the calls that need you, keeps your agents on the goal, and lets you decide in one place."
 doc_version: "0.20.2"
-last_updated: "2026-11-18 06:04:38"
+last_updated: "2026-11-18 06:14:55"
 ---
 
 # Mods and standing teammates
