@@ -11,6 +11,17 @@ worktree:
 issue:
 pr:
 mod-block:
+gates:
+    version: 1
+    records:
+        - id: gate:3kn22a1d5v5x7rdnrcva0h5a:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:3kn22a1d5v5x7rdnrcva0h5a-backlog-1
+              briefing:
+                id: briefing:3kn22a1d5v5x7rdnrcva0h5a:backlog:attempt-1:revision-1
+                digest: sha256:82123b6b0dd21245098c471638edfb4809b48d3821078c332e427a040137d1a2
+                room-ref: '@review/backlog/briefing-1'
 ---
 
 A workflow made with `spacedock:commission` must give its seed tasks, and every task its templates produce, a `## Acceptance criteria` section, so the first officer's `status --read --ac-scan` works at the first gate.

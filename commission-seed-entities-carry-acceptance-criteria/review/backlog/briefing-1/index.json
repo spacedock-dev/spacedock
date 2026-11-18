@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:3kn22a1d5v5x7rdnrcva0h5a:backlog:attempt-1:revision-1",
+  "question": "Start ideation on commissioned seed tasks carrying an Acceptance criteria section?",
+  "artifacts": [
+    {
+      "id": "artifact:3kn22a1d5v5x7rdnrcva0h5a:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/8a82d88892152dc42c8492e1520310411ecc7262/commission-seed-entities-carry-acceptance-criteria.md",
+      "rev": "sha256:fecd155c7a64c17d3d1aeff77ff0d7867b0783981cc6912422aa480d0ef4a7cd",
+      "mediaType": "text/markdown",
+      "summary": "Seed for release defect 4: commission writes seed tasks (and experiment/refinement tasks) with no ## Acceptance criteria, so --ac-scan fails at their first gate. No live test drives commission today. Candidate fix branch fix/commission-seed-ac c3895378d is for ideation to keep or drop."
+    }
+  ]
+}
