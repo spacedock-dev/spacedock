@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:3kn22a1d5v5x7rdnrcva0h5a:validation:attempt-1:revision-1",
+  "question": "Approve validation of ae82b1ff3 (commission seed tasks and experiment/refinement templates carry an AC section) and proceed to delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:3kn22a1d5v5x7rdnrcva0h5a:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/f21284906a9d0344094c6765c41e64e34607f5a1/commission-seed-entities-carry-acceptance-criteria.md",
+      "rev": "sha256:db70af6bfa90af9b8f2f07b5fe890a81433ec48b08083064c9de3563db5daa88",
+      "mediaType": "text/markdown",
+      "summary": "Validator reproduced AC-1 on throwaway exports: new test passes on ae82b1ff3, fails the seed/experiment/refinement subtests on origin/main, and three falsifying edits each fail their matching subtest. Full suite green except one unrelated timing flake that passes in isolation. No material findings; two deferred risks recorded. Recommendation PASSED."
+    }
+  ]
+}
