@@ -314,10 +314,10 @@ only when their first word after the file is a location or modifier word, with o
 corrected example. Other text remains a prompt.
 
 The question "Terminal (TUI) or Web?" keeps the file on this machine for Terminal
-(TUI). Choosing Web asks a second question: what is sent for review uploads to
-Spacedock Review behind a private link the user shares with the people they want
-comments from, who open it without signing in; updates appear at the same link, and it
-expires seven days after the last update; continue? Declining
+(TUI). Choosing Web asks a second question: what is sent uploads to Spacedock Review
+with a private link the user shares with the people they want comments from, and
+whoever has the link can read and comment without signing in; updates appear at the
+same link, which expires seven days after the last update; continue? Declining
 records nothing and offers Terminal (TUI). After either answer the skill says the
 setting can be changed at any time with `/spacedock:review` and no argument
 (switching to Web asks the second question). Where the harness offers a question tool

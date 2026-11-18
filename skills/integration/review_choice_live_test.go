@@ -728,7 +728,7 @@ func TestLiveReviewKeywordForms(t *testing.T) {
 			}
 			if len(tc.menus) == 1 && tc.menus[0] == "agree" {
 				q := l.asked[0]
-				for _, term := range []string{"Spacedock Review", "private link", "seven days"} {
+				for _, term := range []string{"Spacedock Review", "private link", "whoever has it", "seven days"} {
 					if !strings.Contains(q.Question, term) {
 						t.Errorf("upload agreement omitted %q: %s", term, q.Question)
 					}
@@ -761,7 +761,7 @@ func TestLiveReviewOneOffWebDeclined(t *testing.T) {
 			l.turn("/spacedock:review plan.md web decision")
 			l.wantMenus("agree")
 			q := l.asked[0]
-			for _, term := range []string{"Spacedock Review", "private link", "seven days"} {
+			for _, term := range []string{"Spacedock Review", "private link", "whoever has it", "seven days"} {
 				if !strings.Contains(q.Question, term) {
 					t.Errorf("upload agreement omitted %q: %s", term, q.Question)
 				}
