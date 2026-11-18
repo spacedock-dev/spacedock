@@ -186,3 +186,16 @@ Validation runs `go test ./...`, `go test ./... -race` and `gofmt -l ./cmd ./int
 ### Summary
 
 The defect is confirmed. On origin/main, a commissioned seed body, and every experiment or refinement task built from its README template, lacks `## Acceptance criteria`, so the first `--ac-scan` gate exits 1. The prepared candidate fixes all of these shapes and its deterministic test fails on origin/main, so ideation recommends landing `c3895378d` unchanged. A one-off live commission run on the candidate skill showed a real agent writing a filled AC-1 into the seeds. Two neighbouring gaps are recorded as out of scope: the loose snippet lists in `decomposed-snippets.md`, and the Claude first officer's literal `## Task Template` lookup when it files later tasks.
+
+## Stage Report: implementation
+
+- DONE: The approved change from candidate commit c3895378d (AC section in the commission seed body and in the experiment and refinement task snippets, plus TestCommissionedEntitiesPassACScan) is committed unchanged on this task's worktree branch, on top of origin/main.
+  Branch `commission-seed-entities-carry-acceptance-criteria` was fast-forwarded b2524f043 -> origin/main 647d55163, then `cherry-pick -x c3895378d` produced `ae82b1ff3`. `git patch-id` is 3f7d5c3c for both commits, and `git diff c3895378d HEAD` over the four touched paths is empty.
+- DONE: TestCommissionedEntitiesPassACScan passes on the branch, and `go test ./...`, `go test ./... -race` and `gofmt -l ./cmd ./internal` were run with their results recorded (name any failure and show it also fails on origin/main before calling it unrelated).
+  The named test passes all 5 subtests (seed, generic README template, development, experiment, refinement): each runs the real `status --read --stage implementation --ac-scan --json` and asserts exit 0 with first AC `AC-1`. On an origin/main export with only the test file added, it FAILs the seed, experiment and refinement subtests with `ac-scan exit=1 ... no ## Acceptance criteria section in this file`, so removing an AC block makes it fail. `GOPROXY=off go test ./... -timeout 30m`: exit 0, 22 packages ok. `go test ./... -race -timeout 30m`: exit 0, 22 packages ok (ensigncycle 556s). `gofmt -l ./cmd ./internal` lists only `internal/release/runtime_live_evidence_workflow_test.go`, which is byte-identical to origin/main (known, not fixed here).
+- DONE: The actual net LOC and file count are recorded and fall within the approved tolerance (net +120 to +170, at most 5 files).
+  `git diff --numstat origin/main..HEAD`: +148/-2, net +146, across 4 files (test +125, SKILL.md +7, experiment.md +8/-1, refinement.md +8/-1). This equals the ideation estimate.
+
+### Summary
+
+The approved candidate landed unchanged as `ae82b1ff3` on the task branch, on top of origin/main `647d55163`. The new test passes on the branch and fails on origin/main in the three expected subtests. The full suite and the race suite pass. The only gofmt finding is a known file that is identical on origin/main. The code branch was not pushed.
