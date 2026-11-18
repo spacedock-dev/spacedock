@@ -1,7 +1,7 @@
 ---
 id: 3kn22a1d5v5x7rdnrcva0h5a
 title: Commissioned seed tasks carry an Acceptance criteria section
-status: implementation
+status: validation
 source: launch probe 2026-11-17, release defect 4 (CL)
 started: 2026-11-18T01:26:38Z
 completed:
