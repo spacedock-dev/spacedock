@@ -41,6 +41,17 @@ gates:
                 id: briefing:3kn22a1d5v5x7rdnrcva0h5a:ideation:attempt-1:revision-1
                 digest: sha256:82a3725c527228bdef52affba7ce12fa550f941b0479146ca279da220e4f3cdf
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:3kn22a1d5v5x7rdnrcva0h5a:ideation:1
+                briefing: briefing:3kn22a1d5v5x7rdnrcva0h5a:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-11-18T02:23:44.468907Z"
+                decision: approve
+                reason: 'Captain approved in chat 2026-11-17: accepts landing c3895378d unchanged with TestCommissionedEntitiesPassACScan as the AC-1 proof.'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 A workflow made with `spacedock:commission` must give its seed tasks, and every task its templates produce, a `## Acceptance criteria` section, so the first officer's `status --read --ac-scan` works at the first gate.
