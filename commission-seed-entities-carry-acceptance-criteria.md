@@ -22,6 +22,17 @@ gates:
                 id: briefing:3kn22a1d5v5x7rdnrcva0h5a:backlog:attempt-1:revision-1
                 digest: sha256:82123b6b0dd21245098c471638edfb4809b48d3821078c332e427a040137d1a2
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:3kn22a1d5v5x7rdnrcva0h5a:backlog:1
+                briefing: briefing:3kn22a1d5v5x7rdnrcva0h5a:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-11-18T01:26:07.250128Z"
+                decision: approve
+                reason: 'Captain in chat 2026-11-17: ''file defect 4. and check if any existing live tests cover the commission skill first. then dispatch.'' then ''override. you can push and continue dispatching.'' Accepts the seed and directs ideation.'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 A workflow made with `spacedock:commission` must give its seed tasks, and every task its templates produce, a `## Acceptance criteria` section, so the first officer's `status --read --ac-scan` works at the first gate.
