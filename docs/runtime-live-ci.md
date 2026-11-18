@@ -110,10 +110,17 @@ Environment during the migration; the lane uses it only when its OAuth secret
 is absent.
 
 Create or rotate the shared secret from a trusted workstation without printing
-it:
+it. Sign in with a device code into a throwaway `CODEX_HOME`, not your own
+`~/.codex`. A refresh token can be used only once: if your workstation and CI
+hold the same login, the first one to refresh makes the other copy fail with
+`refresh_token_reused` or `token_expired`.
 
-    gh secret set CODEX_AUTH_JSON --env CI-E2E-CODEX < "$HOME/.codex/auth.json"
-    gh secret set CODEX_AUTH_JSON --env CI-E2E-PI < "$HOME/.codex/auth.json"
+    export CODEX_HOME="$(mktemp -d)"
+    codex login --device-auth
+    gh secret set CODEX_AUTH_JSON --env CI-E2E-CODEX < "$CODEX_HOME/auth.json"
+    gh secret set CODEX_AUTH_JSON --env CI-E2E-PI < "$CODEX_HOME/auth.json"
+    rm -rf "$CODEX_HOME"
+    unset CODEX_HOME
 
 For Codex the runner writes this object directly to the isolated
 `CODEX_HOME/auth.json`. For Pi it safely transforms `tokens.access_token`,
