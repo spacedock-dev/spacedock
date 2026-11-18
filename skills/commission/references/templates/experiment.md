@@ -175,6 +175,13 @@ pr:
 
 {Fixed before evidence is gathered. What evidence accepts the hypothesis vs rejects.}
 
+## Acceptance criteria
+
+Each AC names a property of the finished experiment (not a stage action) and how it is verified.
+
+**AC-1 — {End-state property.}**
+Verified by: {test name / command output or exit code / file the change produces / resulting on-disk state — something outside this experiment body that a future reader can reproduce and that can fail; name the concrete change that would make it fail.}
+
 ## Smoke result
 
 {Filled in at the smoke tier — pass/fail and any instrumentation notes.}
@@ -237,7 +244,7 @@ pr:
 
 ### Inject entity-template snippet
 
-Use the hypothesis-result snippet (hypothesis / methodology / success criteria / smoke result / run result / holdout result / verdict) shown in the Experiment Template section above.
+Use the hypothesis-result snippet (hypothesis / methodology / success criteria / acceptance criteria / smoke result / run result / holdout result / verdict) shown in the Experiment Template section above.
 
 ### Surface variants
 
