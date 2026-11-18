@@ -60,6 +60,17 @@ gates:
                 id: briefing:3kn22a1d5v5x7rdnrcva0h5a:validation:attempt-1:revision-1
                 digest: sha256:3386171f94279e5f2a92995a3c4f4a201ad4a19d61655f66f0188ebf5ab5a331
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:3kn22a1d5v5x7rdnrcva0h5a:validation:1
+                briefing: briefing:3kn22a1d5v5x7rdnrcva0h5a:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-11-18T04:08:52.373636Z"
+                decision: approve
+                reason: 'Captain approved in chat 2026-11-17: ''approve pr and its ci env'' — accepts validation PASSED and authorizes the PR and its CI environment.'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 A workflow made with `spacedock:commission` must give its seed tasks, and every task its templates produce, a `## Acceptance criteria` section, so the first officer's `status --read --ac-scan` works at the first gate.
