@@ -7,7 +7,7 @@ started: 2026-11-18T01:26:38Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-commission-seed-entities-carry-acceptance-criteria
 issue:
 pr:
 mod-block:
