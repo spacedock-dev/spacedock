@@ -518,6 +518,13 @@ pr:
 ---
 
 (Body: write the description or thesis from the captain's seed input as plain prose. Do NOT carry brace-syntax placeholders into the body — rewrite any `{var}` phrasing as natural language or backticked words.)
+
+## Acceptance criteria
+
+Each AC names a property of the finished {entity_label} (not a stage action) and how it is verified.
+
+**AC-1 — (End-state property drawn from the captain's seed input.)**
+Verified by: (test name / command output or exit code / file the change produces / resulting on-disk state — something outside this {entity_label} body that a future reader can reproduce and that can fail; name the concrete change that would make it fail.)
 ```
 
 ### 2c. Install Mods (conditional)

@@ -117,6 +117,13 @@ pr:
 
 Brief description of this artifact and what it aims to achieve.
 
+## Acceptance criteria
+
+Each AC names a property of the finished artifact (not a stage action) and how it is verified.
+
+**AC-1 — {End-state property.}**
+Verified by: {test name / command output or exit code / file the change produces / resulting on-disk state — something outside this artifact body that a future reader can reproduce and that can fail; name the concrete change that would make it fail.}
+
 ## Draft
 
 The current draft of the artifact lives here.
@@ -162,7 +169,7 @@ None by default. Variants that activate the parked-stages layer (e.g., outreach 
 
 ### Inject entity-template snippet
 
-Use the refinement snippet (draft / review notes / final) shown in the Artifact Template section above. Variants override this with their own snippet (see below).
+Use the refinement snippet (acceptance criteria / draft / review notes / final) shown in the Artifact Template section above. Variants override this with their own snippet (see below); every variant snippet keeps the `## Acceptance criteria` section, because each gate's AC scan requires it.
 
 ### Surface variants
 
