@@ -1,7 +1,7 @@
 ---
 id: 3kn22a1d5v5x7rdnrcva0h5a
 title: Commissioned seed tasks carry an Acceptance criteria section
-status: ideation
+status: implementation
 source: launch probe 2026-11-17, release defect 4 (CL)
 started: 2026-11-18T01:26:38Z
 completed:
@@ -51,7 +51,7 @@ gates:
                 reason: 'Captain approved in chat 2026-11-17: accepts landing c3895378d unchanged with TestCommissionedEntitiesPassACScan as the AC-1 proof.'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 A workflow made with `spacedock:commission` must give its seed tasks, and every task its templates produce, a `## Acceptance criteria` section, so the first officer's `status --read --ac-scan` works at the first gate.
