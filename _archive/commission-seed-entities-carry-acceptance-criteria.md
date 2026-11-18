@@ -1,16 +1,16 @@
 ---
 id: 3kn22a1d5v5x7rdnrcva0h5a
 title: Commissioned seed tasks carry an Acceptance criteria section
-status: validation
+status: done
 source: launch probe 2026-11-17, release defect 4 (CL)
 started: 2026-11-18T01:26:38Z
-completed:
-verdict:
+completed: 2026-11-18T06:15:19Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-commission-seed-entities-carry-acceptance-criteria
 issue:
 pr: pr-merge:887
-mod-block: merge:pr-merge
+mod-block:
 gates:
     version: 1
     records:
@@ -70,7 +70,8 @@ gates:
                 reason: 'Captain approved in chat 2026-11-17: ''approve pr and its ci env'' — accepts validation PASSED and authorizes the PR and its CI environment.'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-11-18T06:15:19Z
 ---
 
 A workflow made with `spacedock:commission` must give its seed tasks, and every task its templates produce, a `## Acceptance criteria` section, so the first officer's `status --read --ac-scan` works at the first gate.
