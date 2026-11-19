@@ -189,3 +189,56 @@ func TestInstallExitsZeroWhenAnExtensionDownloadFailsAfterItsTagResolved(t *test
 		t.Errorf("exit=%d, want 0 with the download failure reported:\n%s", code, stderr)
 	}
 }
+
+func TestInstallSharesTheListingResultWithinOneRun(t *testing.T) {
+	for _, tc := range []struct {
+		name, listing, gitVersion string
+		code, raw                 int
+		want, absent              string
+	}{
+		{"unreadable", "fail", "", 1, 1, "could not read the spacedock marketplace listing", "names no release"},
+		{"readable missing release", "noalpha", "", 1, 1, "names no release of alpha", "could not read"},
+		{"raw fallback", "", "", 0, 1, "installed beta v1.0.1", "could not read"},
+		{"git snapshot", "", "1.0.1", 0, 0, "installed beta v1.0.1", "could not read"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r, log := lookupRun(t)
+			r.addProgram("claude", "exit 0")
+			for attempt := 0; attempt < 2; attempt++ {
+				stderr, code := r.runWith("SPACEDOCK_INSTALL_FROM="+r.dist, "SPACEDOCK_EXTRAS=1",
+					"STUB_LISTING="+tc.listing, "STUB_GIT_LISTED_BETA="+tc.gitVersion)
+				want := tc.want
+				if attempt > 0 && tc.code == 0 {
+					want = "beta 1.0.1 unchanged"
+				}
+				if code != tc.code || !strings.Contains(stderr, want) || strings.Contains(stderr, tc.absent) {
+					t.Fatalf("attempt=%d exit=%d, want %d and %q without %q:\n%s", attempt, code, tc.code, want, tc.absent, stderr)
+				}
+				if !strings.Contains(r.calls(), "install --host claude") {
+					t.Fatal("the remaining plugin step was skipped")
+				}
+				git, err := os.ReadFile(log + ".git")
+				if err != nil {
+					t.Fatal(err)
+				}
+				if strings.Count(string(git), "clone ") != attempt+1 || strings.Contains(string(git), "ls-remote") {
+					t.Fatalf("listing was not read once per run, or counting started a tag lookup:\n%s", git)
+				}
+				if !strings.Contains(string(git), "-c http.lowSpeedLimit=1 -c http.lowSpeedTime=5 clone ") {
+					t.Fatalf("listing fetch omitted its stall bound:\n%s", git)
+				}
+				urls, err := os.ReadFile(log)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if strings.Count(string(urls), "raw.githubusercontent.com/") != tc.raw*(attempt+1) {
+					t.Fatalf("raw fallback count differs:\n%s", urls)
+				}
+				if strings.Count(string(urls), "spacedock.md/latest-release/") != 2*(attempt+1) ||
+					strings.Contains(string(urls), "/releases/latest") {
+					t.Fatalf("counting used a fallback or did not issue one request per extension:\n%s", urls)
+				}
+			}
+		})
+	}
+}

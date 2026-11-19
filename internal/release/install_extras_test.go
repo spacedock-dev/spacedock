@@ -418,7 +418,9 @@ esac
 	if err := os.WriteFile(filepath.Join(dir, "curl"), []byte(body), 0o755); err != nil {
 		r.t.Fatal(err)
 	}
-	r.addProgram("git", `case "$1" in
+	r.addProgram("git", `echo "$*" >> '`+log+`.git'
+while [ "${1:-}" = -c ]; do shift 2; done
+case "$1" in
 	clone)
 		[ -z "$STUB_GIT_LISTED_BETA" ] && exit 0
 		for last; do :; done
@@ -584,7 +586,7 @@ func TestInstallExtrasInstallNothingWhenTheListingCannotBeRead(t *testing.T) {
 	r.stubCurl(osName, arch)
 
 	stderr, code := r.runWith("SPACEDOCK_CHANNEL=stable", "STUB_LISTING=fail")
-	if code != 1 || !strings.Contains(stderr, "the spacedock marketplace listing names no release of alpha") {
+	if code != 1 || !strings.Contains(stderr, "could not read the spacedock marketplace listing for alpha") {
 		t.Errorf("exit=%d, want 1 naming the listing:\n%s", code, stderr)
 	}
 	for _, name := range []string{"alpha-tui", "beta"} {

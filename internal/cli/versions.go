@@ -29,6 +29,7 @@ type extension struct {
 	program           string
 	tree              bool
 	missingOnHomebrew string
+	homebrewFormula   string
 	piTitle           string
 	check             func(in versionInputs) (rows []pieceRow, problems []string)
 	afterUpdate       []string
@@ -37,8 +38,8 @@ type extension struct {
 // extensions lists the extensions Spacedock installs. install.sh holds the matching
 // EXTRAS rows, and the two must name the same programs.
 var extensions = []extension{
-	{name: "subspace", program: "spacedock-review", piTitle: "Subspace", check: reviewChoiceCheck},
-	{name: "compass", program: "spacedock-compass", tree: true, missingOnHomebrew: "Install it with: brew install spacedock-dev/tap/compass", afterUpdate: []string{
+	{name: "subspace", program: "spacedock-review", piTitle: "Subspace", homebrewFormula: "spacedock-dev/tap/subspace-beta", check: reviewChoiceCheck},
+	{name: "compass", program: "spacedock-compass", tree: true, homebrewFormula: "spacedock-dev/tap/compass", afterUpdate: []string{
 		"A Compass dashboard that already runs keeps its old version until you restart it:",
 		"  spacedock compass --port 4553 --stop && spacedock compass --port 4553 --daemon",
 	}},
@@ -58,6 +59,27 @@ type versionReport struct {
 	pluginsBehind          []string
 	mixed                  []mixedExtension
 	brewUpgrade            string
+	programsOptedOut       bool
+	notices                []string
+}
+
+func extensionProgramsOptedOut(env []string) bool {
+	vars := envMap(env)
+	return vars["SPACEDOCK_EXTRAS"] == "none" || (vars["SPACEDOCK_INSTALL_FROM"] != "" && vars["SPACEDOCK_EXTRAS"] == "")
+}
+
+func (r *versionReport) missingProgram(ext extension) {
+	switch {
+	case r.programsOptedOut:
+		r.notices = append(r.notices, ext.name+" program skipped by opt-out.")
+	case r.brewUpgrade != "" && ext.homebrewFormula != "":
+		r.problems = append(r.problems, fmt.Sprintf("MISSING: the %s program is not on PATH. Install it with: brew install %s", ext.name, ext.homebrewFormula))
+	case r.brewUpgrade != "" && ext.missingOnHomebrew != "":
+		r.problems = append(r.problems, fmt.Sprintf("MISSING: the %s program is not on PATH. %s", ext.name, ext.missingOnHomebrew))
+	default:
+		r.problems = append(r.problems, fmt.Sprintf("MISSING: the %s program is not on PATH.", ext.name))
+		r.needsUpdate = true
+	}
 }
 
 type mixedExtension struct{ name, host, program, plugin string }
@@ -138,7 +160,7 @@ func (r versionReport) version(label string) string {
 }
 
 func collectVersions(in versionInputs) versionReport {
-	report := versionReport{channel: selectedChannelWord(), hosts: readHosts(in), hostPlugins: map[string][]pieceRow{}}
+	report := versionReport{channel: selectedChannelWord(), hosts: readHosts(in), hostPlugins: map[string][]pieceRow{}, programsOptedOut: extensionProgramsOptedOut(in.env)}
 	add := func(label, version, where string) {
 		report.rows = append(report.rows, pieceRow{label, version, where})
 	}
@@ -169,12 +191,7 @@ func collectVersions(in versionInputs) versionReport {
 		add(ext.name+" program", programVersion, programPath)
 		id := extensionPluginID(ext.name)
 		if programVersion == notInstalled {
-			if ext.missingOnHomebrew != "" && in.selfPath != "" && isHomebrewPath(in.selfPath) {
-				problem("MISSING: the %s program is not on PATH. %s", ext.name, ext.missingOnHomebrew)
-			} else {
-				problem("MISSING: the %s program is not on PATH.", ext.name)
-				report.needsUpdate = true
-			}
+			report.missingProgram(ext)
 		}
 		for _, h := range report.hosts {
 			if !h.listed() {
@@ -183,6 +200,7 @@ func collectVersions(in versionInputs) versionReport {
 			pluginVer := h.lookup(id)
 			addPlugin(h, ext.name+" plugin", pluginVer, id)
 			switch {
+			case programVersion == notInstalled && report.programsOptedOut:
 			case programVersion == notInstalled:
 				if h.err == nil && pluginVer != notInstalled && pluginVer != "unknown" {
 					report.mixed = append(report.mixed, mixedExtension{ext.name, h.title, programVersion, pluginVer})
@@ -289,7 +307,7 @@ func addPiPackages(report *versionReport, in versionInputs) bool {
 }
 
 func piVersionReport(in versionInputs) (versionReport, bool) {
-	report := versionReport{channel: selectedChannelWord(), hostPlugins: map[string][]pieceRow{}}
+	report := versionReport{channel: selectedChannelWord(), hostPlugins: map[string][]pieceRow{}, programsOptedOut: extensionProgramsOptedOut(in.env)}
 	report.brewUpgrade = brewFormula(in.selfPath, in.selfPath != "" && isHomebrewPath(in.selfPath))
 	pathEnv := envMap(in.env)["PATH"]
 	for _, ext := range extensions {
@@ -299,8 +317,7 @@ func piVersionReport(in versionInputs) (versionReport, bool) {
 		programPath, programVersion := extensionProgram(ext, in.env, pathEnv)
 		report.rows = append(report.rows, pieceRow{ext.name + " program", programVersion, programPath})
 		if programVersion == notInstalled {
-			report.problems = append(report.problems, fmt.Sprintf("MISSING: the %s program is not on PATH.", ext.name))
-			report.needsUpdate = true
+			report.missingProgram(ext)
 		}
 	}
 	ok := addPiPackages(&report, in)
@@ -328,6 +345,9 @@ func printVersionReport(w io.Writer, report versionReport) {
 	}
 	for _, row := range report.rows {
 		fmt.Fprintf(w, "  %-*s %-15s %s\n", width, row.label, row.version, row.where)
+	}
+	for _, notice := range report.notices {
+		fmt.Fprintln(w, notice)
 	}
 	if len(report.problems) == 0 {
 		fmt.Fprintln(w, "\nNo problems found.")
