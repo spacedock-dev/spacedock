@@ -1,0 +1,228 @@
+# 0223 — pi-dispatch-contract (0.22.3)
+
+> **Carved 2026-06-19 (captain + Shaping FO session on z-ai/glm-5.2).** First Pi-specific sprint. The Pi runtime support was previously delivered (7 archived PASSED tasks — `pi-runtime-support`, `pi-runtime-frontdoor`, `pi-stage-dispatch-uses-build-artifact`, `pi-stage-dispatch-fresh-context`, `pi-live-ci-runtime-scenarios`, `pi-intercom-runtime-capability-probe` spike, `pi-runtime-readiness-intercom-prereqs`); the archived spike `cq9kb7cdpp9y48tn8gwzmqzq` (PR #301 closed-as-spike) proved the host talkback chain. This sprint **wires** the proven host capability into the Spacedock dispatch contract and hardens the contract to runtime-neutral named capabilities — it does not implement host behavior.
+
+## Theme
+
+Pi dispatch contract correctness — make a Pi FO dispatch behave the way the dispatch core's back-channel model already intends, and harden the core to runtime-neutral named capabilities so each host adapter implements them by name rather than the core speaking in host-specific tools.
+
+## Membership is the query, never a hard-coded list
+
+```bash
+spacedock status --workflow-dir docs/dev --where sprint=0223-pi-dispatch-contract
+spacedock status --workflow-dir docs/dev --where sprint=0223-pi-dispatch-contract --where 'sprint-readiness != defer'
+```
+
+## Members
+
+| # | member | id | status | layer |
+|---|--------|----|--------|-------|
+| 1 | `pi-install-managed-skill-placement` | `eqrcrxcyye56nfwm997bj33d` | implementation | **merged** — ship Spacedock as a pi package; `spacedock install --host pi` actually installs; both parent + child discover skills (supersedes archived `k8t` + `2m1`) |
+| 2 | `pi-dispatch-model-stamping` | `bdtx7bmhekpy1x12ab53d9k3` | ideation | null model → parent live model, not settings default |
+| 3 | `pi-safehouse-flag-parity` | `qn5sg36exf6apjjxymbfthgj` | ideation | pi front-door `--safehouse-*` flags + safehouse wrapping (mirrors claude/codex); unblocks member 1's install verification on sandboxed sessions |
+| 4 | `pi-back-channel-dispatch` | `b23y61pgk93ph44pz506m2wy` | ideation | **capstone** — declare + wire the worker↔FO back-channel over intercom; harden `fo-dispatch-core.md` to runtime-neutral named capabilities |
+
+> **Re-carved 2026-06-19 (captain):** members `pi-ensign-skill-injection` (`k8t`) and `pi-launcher-repo-resolution` (`2m1`) ARCHIVED REJECTED — both picked clone-bound workarounds (repo symlink; cwd-fallback record) for the fact that `spacedock install --host pi` is check-only. Superseded by the merged `pi-install-managed-skill-placement` (`eq`), which ships Spacedock as a pi package (`package.json` `pi.skills` + `.pi/extensions/spacedock.ts`) so `pi install git:github.com/spacedock-dev/spacedock` makes both parent (extension `resources_discover`) and child (pi-subagents `collectSettingsPackageSkillPaths`) discover skills with no clone/cwd/symlink. Spike PASSED. The capstone's staff-review gap-1 (`cwd:<repo>` for skill discovery) is re-checked and reframed as a working-directory concern (the child-cwd seam is gone). Second staff review pending.
+
+Members 1 (install), 2 (model-stamping), and 3 (safehouse-flag-parity) are independent and parallelizable. Member 4 (capstone) depends on 1+2 landed for its `pi-live` drive (needs install-managed skill discovery + parent-model stamping); its core-rewrite Deliverable A can start in parallel. **Member 3 (safehouse-flag-parity) lands before or alongside member 1's AC-1 verification** — member 1's `pi install` writes to `~/.pi/agent` (outside the repo); on a sandboxed session the Commander needs member 3's `--safehouse-add-dirs ~/.pi/agent` to grant that access (Q14).
+
+## Staff preflight review #1 (run `3adf00ee`, 2026-06-19)
+
+Independent reviewer (glm-5.2, not the FO, not the ideation ensigns) refuted the sprint as a whole. Full review at `staff-review.md`. **Verdict: Gaps to close — not yet cold-boot drivable.** Found one blocker (child-cwd seam) + two minor gaps. **All three gaps are now closed by the re-carve:**
+
+1. ~~[Blocker] Child-cwd seam~~ — CLOSED by the re-carve. The gap assumed members 1 (`k8t` symlink) + 2 (`2m1` cwd-fallback) would compose with the capstone via `cwd:<repo>` wiring. The merged `pi-install-managed-skill-placement` removes the seam at its root (package-root scan, not cwd-keyed). The capstone's `cwd:<repo>` is re-checked (run `af9a980a`) and reframed as a working-directory concern.
+2. ~~[Gap] Pi canonical-model-space declaration ownership~~ — CLOSED (capstone references member 3's declaration, doesn't re-declare; folded via run `73dadc9f`).
+3. ~~[Gap] Three missing cold-boot quirks~~ — CLOSED (Q11–Q13 added to this index).
+
+## Staff preflight review #2 (run `efff49c9`, 2026-06-19)
+
+Independent reviewer (glm-5.2) re-refuted the re-carved 3-member sprint. Full review at `staff-review-2.md`. **Verdict at review time: Gaps to close — not yet cold-boot drivable.** Review #1's blocker (child-cwd seam) is GENUINELY CLOSED by the re-carve (verified end-to-end); merge is clean; blast-radius correct; no material redesign. Seven follow-through gaps from the re-carve not being propagated through the docs. **All 7 now CLOSED:**
+
+1. ✅ **[Gap — owner: `eq`] `repoRoot` source post-install undefined** — closed (state commit `e862e42e`): D5 retires the doctor's repo-path `Stat` checks, adds `spacedockPackageOK` (package registered + package-root-scan discovery), removes the cwd fallback entirely; AC-3 revised to a 5-sub-assertion Go test.
+2. ✅ **[Gap — owner: Shaping FO] Q11 contradictory + partly false** — closed (main commit `0cda9851`): `cwd:<repo>` reframed as working-directory concern, false failure claim dropped.
+3. ✅ **[Gap — owner: Shaping FO] Q12 stale** — closed (`0cda9851`): re-numbered to 3-member layout, re-based on `eq`'s install verification.
+4. ✅ **[Gap — owner: Shaping FO] `## Sequencing` stale** — closed (`0cda9851`): rewritten to 3-member layout.
+5. ✅ **[Gap — owner: Shaping FO] DoD "Proven by" stale** — closed (`0cda9851`): names `eq`, "install-registered pi package".
+6. ✅ **[Gap — owner: `b2` capstone] Fold-in AC-2 sub-bullet reconciliation** — closed (state commit `55fc0552`): SUPERSEDED pointer on the stale symlink claim + member-3→2 cosmetic.
+7. ✅ **[Cosmetic — owner: Shaping FO] Q3, Q9, Q13 stale names/numbers** — closed (`0cda9851`): refreshed.
+
+Sprint is now cold-boot drivable per review #2's exit criterion.
+
+## The binding concept
+
+The dispatch core (`skills/first-officer/references/fo-dispatch-core.md`) organizes its entire model around one declared adapter capability — the **Worker back-channel**. Today no host adapter declares it cleanly in runtime-neutral terms; the Pi adapter declares none at all and treats Pi as bare/one-shot, even though the proven pi-intercom substrate implements exactly the back-channel the core intends. The capstone hardens the core to named capabilities (`worker-back-channel`, `async-dispatch`, `inbound-message-service`, `worker-identity-capture`, `completion-signal`) and wires the Pi adapter's bindings. Members 1–3 are the prerequisite dispatch-correctness fixes the capstone's verification depends on (the right model, the loaded ensign contract, the explicitly-resolved repo).
+
+## Sequencing
+
+- **Parallel start:** members 1 (`eq`), 2 (`bdt`), 3 (`qn` safehouse-flag-parity) — independent code surfaces (`eq`: `pi.go` + `package.json` + `.pi/extensions/`; `bdt`: `pi-first-officer-runtime.md` prose; `qn`: `pi.go` + `help.go` safehouse flags/wrapping). No inter-member dependency. Note `eq` and `qn` both touch `internal/cli/pi.go` — coordinate so they don't collide on the same regions (`eq` owns `runInitWithPi`/`piRuntimeConfigFromEnv`/`checkPiRuntime`; `qn` owns `parsePiFrontDoorArgs`/`runPi` launch wrapping + `setPiHelp`).
+- **Member 3 (`qn` safehouse-flag-parity) lands before or alongside member 1 (`eq`) AC-1 verification** — `eq`'s `pi install` writes to `~/.pi/agent` (outside the repo); on a sandboxed session the Commander needs `qn`'s `--safehouse-add-dirs ~/.pi/agent` to grant that access (Q14). If `qn` hasn't landed, the break-glass is `safehouse --add-dirs ~/.pi/agent -- spacedock pi ...` (external wrap).
+- **Member 4 (`b2` capstone) `pi-live` drive requires 1 + 2 landed** — AC-2 needs ensign discoverable via install-managed placement (`eq`) + parent model stamped (`bdt`). The capstone's gap-1 re-check updates the dependency from the archived `k8t`+`2m1` to `eq`.
+- **Capstone Deliverable A (core rewrite) starts in parallel** — prose-structural reorganization of `fo-dispatch-core.md`; does not depend on 1-3. The `claude-live`/`codex-live` regression (AC-6) can run as soon as the core rewrite is draft.
+
+## Definition of Done
+
+A Pi FO dispatches an ensign that **(a)** runs on the parent FO's live model (not `settings.json` defaultModel), **(b)** loads the Spacedock ensign contract (not a bare `worker`), **(c)** resolves the Spacedock repo explicitly via the install-registered pi package (not cwd-luck), and **(d)** talks back to the FO over intercom mid-run — with the dispatch core describing all of this in runtime-neutral named capabilities each host adapter binds to concrete tools. Proven by:
+
+1. `pi-install-managed-skill-placement` (`eq`): `spacedock install --host pi` actually installs (registers in `settings.json` `packages`); `subagents-doctor` lists ensign as `user-package` source; a probe `subagent(... skill:["ensign"])` dispatch from a NON-REPO cwd loads the ensign contract (no `skillsWarning`), child exhibits ensign-contract behavior; the `--skill` flags + cwd fallback are retired; the dev override (`pi install ./local/path` / `--plugin-dir`) discovers from a local checkout.
+2. `pi-dispatch-model-stamping` (`bdt`): a dispatch with no stage-declared model runs on the parent's live model (run-meta `model` == FO session live model); the stamp is captured in worker-identity metadata; an explicit stage-declared model still wins.
+3. `pi-back-channel-dispatch` (`b2`, capstone): a live `pi-live` drive — seeded-ambiguity ensign → `contact_supervisor need_decision` → FO reply within 10 min → ensign resumes → complete; both completion-signal paths (subagent return AND inbound done-message) file-verified; `claude-live`/`codex-live` regression green (the runtime-neutral core rewrite touches every host adapter — the dogfood); structural contractlint for capability-name↔adapter-binding (independent values, not prose-grep).
+
+## Out of scope (deferred to a follow-up sprint — depends on this one landing)
+
+Frictions 7–9 from `pi-back-channel-dispatch`:
+- 7. Concurrency serialization of `ask` (intercom allows one pending ask per session vs `concurrency: 3`).
+- 8. Standing `comm-officer` on Pi via a long-lived intercom session.
+- 9. Reuse-advance on Pi (sending the next-stage assignment to a kept-alive worker).
+
+These depend on the capstone's frictions 1–6 landing first. Seed the follow-up sprint from the capstone's archived body when it lands.
+
+## Commander cold-boot package — pi-specific quirks
+
+The Commander drives this sprint on Pi (boots `spacedock:first-officer`, creates its own team). The cold-boot package is `dispatch-sprint-execution.md` (below). These pi-specific quirks are load-bearing — the Commander WILL hit them; record and plan for each, do not improvise.
+
+### Q1 — Async dispatch is mandatory, not optional
+
+**Symptom:** A foreground `subagent(...)` call blocks the FO; a worker's mid-run `contact_supervisor need_decision` (10-min intercom timeout) arrives while the FO is blocked and times out before the FO can reply. The FO only regains control when the foreground run times out (1800s default), by which time the worker is torn down and the reply cannot deliver ("Session not found").
+
+**Evidence from shaping:** run `b929622e` timed out foreground at 1800s; run `0637e2ed`'s `need_decision` arrived after teardown, reply undeliverable.
+
+**Quirk:** Every dispatch MUST be `subagent(... async: true)`. Poll with `subagent({action:"status", id})`, answer `need_decision` via `intercom({action:"reply", message})` within 10 min, `interrupt` if stalled. Foreground blocking is the wrong shape for a back-channel FO — it is literally friction 2 the capstone ships.
+
+### Q2 — Explicit model on every dispatch (until member 2 lands)
+
+**Symptom:** `spacedock dispatch build` emits `model: null` for stages with no declared model. pi-subagents resolves `null` to `settings.json`'s `defaultModel` (`~openai/gpt-mini-latest` in this env), NOT the parent session's live model. The ensign silently runs on the cheap tier regardless of the FO's model.
+
+**Evidence from shaping:** run `0637e2ed` ran on `~openai/gpt-mini-latest` while the FO was on `z-ai/glm-5.2`.
+
+**Quirk:** Until `pi-dispatch-model-stamping` (member 2, `bdt`) lands, the Commander MUST pass `model: <parent live model>` explicitly on every `subagent(...)` call. Read the parent's live model from the pi status bar (bottom of the TUI). After member 2 lands, the adapter stamps it; this quirk is moot.
+
+### Q3 — Skill injection is broken until member 1 lands
+
+**Symptom:** `skill: ["ensign"]` on a `subagent(...)` call emits `Warning: skills not found: ensign`. pi-subagents uses its OWN discovery (`discoverAvailableSkills(cwd)` → `buildSkillPaths` in `node_modules/pi-subagents/src/agents/skills.ts`): `.pi/skills`, `.agents/skills`, `~/.pi/agent/skills`, package roots, settings. The Spacedock ensign skill at `skills/ensign/SKILL.md` is in NONE of these pre-install — the main pi agent finds it via the launcher's `--skill` flags, but pi-subagents children do NOT inherit those flags. A skill-less worker runs as a bare `worker` (implementation-biased prompt: "make the edits") and silently defaults to implementation behavior even in ideation (gate, read-only).
+
+**Evidence from shaping:** run `0637e2ed`'s meta carries `"skillsWarning": "Skills not found: ensign"`; the worker edited contract docs during ideation (contained — reverted, main clean).
+
+**Quirk:** Until `pi-install-managed-skill-placement` (member 1, `eq`) lands, dispatched workers run as bare `worker`s. The Commander MUST compensate: put explicit stage-output discipline in the dispatch prompt (ideation = design in entity body, NOT product edits; verify stage reports carefully; expect workers to attempt edits in gate stages and review against the ensign contract manually). AFTER member 1 lands, `skill:["ensign"]` loads via the package-root scan and this quirk is moot. **The Commander should verify member 1 has landed (run `subagents-doctor` — ensign must be listed as `user-package` source) before relying on skill injection.**
+
+### Q4 — State branch is `spacedock-state/dev`, NOT `main`
+
+**Symptom:** Pulling `origin main` into the state checkout rebases the unrelated upstream main onto the state branch and conflicts ("README.md had different types on each side" — distinct types). The state checkout tracks `origin/spacedock-state/dev`.
+
+**Evidence from shaping:** the initial boot pull-on-boot hit this conflict by operator error.
+
+**Quirk:** Every state sync is `git -C docs/dev/.spacedock-state pull --rebase origin spacedock-state/dev` (push to the same). Never `main`. On rebase CONFLICT (two writers editing the SAME entity's frontmatter concurrently): HALT, `git rebase --abort`, surface the conflicting path + peer commit, stop — do NOT force-push or auto-resolve.
+
+### Q5 — State commits are path-scoped, then push
+
+**Quirk:** The state checkout is a single non-branched git index shared with peers. A bare `git add -A` / `git commit` sweeps up a peer's staged entity and cross-attributes. Every state commit: `git -C <state> add <entity_path> && git -C <state> commit -m "..." -- <entity_path>` then `git -C <state> push origin spacedock-state/dev`. Retry on `index.lock` contention after ~2s.
+
+### Q6 — Back-channel mid-run service (once the capstone's event-loop step ships)
+
+**Quirk:** When a worker sends `contact_supervisor` with `reason: need_decision` (blocking, 10-min timeout) the Commander replies via `intercom({action:"reply", message:"..."})` promptly. With `reason: progress_update` (non-blocking) the Commander reads and acknowledges, no reply required. With `reason: interview_request` (10-min timeout, multiple structured answers) reply with the provided JSON shape. Until the capstone's `inbound-message-service` event-loop step ships, the Commander services these inline as they arrive (async dispatch makes this possible — Q1).
+
+### Q7 — Completion is the subagent return + file-verify
+
+**Quirk:** When a worker returns, verify the stage report against the entity file: `spacedock status --read <ref> --json` → take the last `## Stage Report` heading's `offset`/`lines` → `Read(offset, limit)` that range. Never advance state based only on a cheerful worker summary. The stage report is the source of truth.
+
+### Q8 — Live lanes required for merge (the path→lane mapping is the gate)
+
+**Quirk:** The capstone's runtime-neutral core rewrite touches every host adapter (`skills/**/references/**`) — the merge gate requires `claude-live` AND `codex-live` AND `pi-live` green (the dogfood). Members 1 (`eq`) + 2 (`bdt`) are pi-specific (`internal/cli/pi.go` + `package.json` + `.pi/extensions/`, resp. `pi-first-officer-runtime.md`) — `pi-live` required. Per the dev-workflow proof policy, "the live lane is unrelated" is a claim the diff must substantiate, not a dispatcher judgment — and a red live lane is diagnosed by reading THIS run's failing test, not by inheriting a prior session's label.
+
+### Q9 — Existing members carry in-flight state — preserve or redispatch, don't re-spike
+
+**Quirk:**
+- `pi-back-channel-dispatch` (member 3, capstone) has a stage report at commit `0a1e2787` with **LIVE SPIKE EVIDENCE** from run `0637e2ed` — the FO↔worker back-channel round-trip was proven live (foreground dispatch auto-detached for intercom, `need_decision` reached the FO, reply sent). PRESERVE this evidence; do not re-spike the host talkback chain (it's already PASSED, archived spike `cq9kb7cdpp9y48tn8gwzmqzq`). The capstone's job is the WIRE-UP and the core hardening, not re-proving the host.
+- `pi-back-channel-dispatch`'s prior run (`0637e2ed`) also made uncommitted contract-doc edits as a DRAFT — main is clean, the draft is abandoned. Redispatch clean.
+- Members 1 (`eq`) + 2 (`bdt`) were ideated clean this session (async, glm-5.2, no foreground timeouts). No in-flight state to preserve; implement from the filed ideation.
+
+### Q10 — Sandbox mode
+
+**Quirk:** Sandbox is enabled (safehouse). `gh`, `git push`, `spacedock install` work via the safehouse allow-list. If a worker hits a sandbox denial, surface it rather than treating it as a hard failure — it is a known environment quirk, not a contract violation.
+
+### Q11 — Capstone live-drive launch cwd (re-carved: working-directory concern, NOT skill discovery)
+
+**Quirk:** The capstone's AC-2 `pi-live` drive MUST launch from a **non-repo cwd** — this exercises install-managed skill discovery (proving no cwd dependency): ensign loads via the package-root scan (`collectSettingsPackageSkillPaths` reading `settings.json` `packages` → `package.json` `pi.skills`), NOT via a cwd-keyed symlink. The drive passes `cwd: <resolved repo root>` on the `subagent(...)` dispatch call so the ensign's **working directory** is the repo (ensigns read entity files, run `go test`, commit to the repo) — this is a working-directory concern, NOT a skill-discovery concern (skill discovery is cwd-independent post-install, proven by `eq`'s spike). The repo path is sourced from `eq`'s install-registered package root. The capstone's gap-1 re-check section carries the authoritative stance; the prior fold-in's "required for ensign discovery" claim is SUPERSEDED.
+
+### Q12 — Preflight: confirm members 1 + 2 landed before the capstone's pi-live drive (staff-review gap 3b)
+
+**Quirk:** Before attempting the capstone's AC-2 live drive, confirm both siblings have landed: (a) member 1 (`eq`) — `subagents-doctor` lists `ensign` as `user-package` source AND `settings.json` `packages` contains the Spacedock entry; (b) member 2 (`bdt`) — a null-model probe dispatch stamps the parent's live model (run-meta `model` == FO session live model, not `settings.json` defaultModel). A Commander who jumps to the capstone without 1+2 will hit the very frictions Q2/Q3 describe as workarounds, but framed as pre-member-1/2 workarounds, not as "the capstone is blocked until its siblings land."
+
+### Q13 — Core/adapter null-model contradiction window (staff-review gap 3c)
+
+**Quirk:** Between member 2 (`bdt`) landing and the capstone (member 4) landing, the core (`fo-dispatch-core.md`) says "when null, OMIT the model argument entirely" while the Pi adapter (`pi-first-officer-runtime.md`) says "stamp the parent's live model when null." This contradiction is **intentional and temporary** — member 2 documents it; the capstone generalizes it into a named `model-resolution` rule. A Commander reading both during member 2's verification will see the disagreement; it is not a bug, it is the planned transition window.
+
+### Q14 — Safehouse directory access for member 1's install verification (pi-safehouse-flag-parity dependency)
+
+**Quirk:** Member 1 (`eq`) AC-1 verification runs `spacedock install --host pi`, which makes `pi install` write to `~/.pi/agent/` (the pi package store + `settings.json packages`) — **outside** the repo. On a sandboxed pi session, the pi front door today does NOT register `--safehouse-add-dirs` (only `--plugin-dir`), so the Commander cannot grant `~/.pi/agent` access through the launcher — the install verification will hit a sandbox write denial. Member 3 (`qn` `pi-safehouse-flag-parity`) fixes this by mirroring the claude/codex `--safehouse-*` flags + safehouse wrapping into `pi.go`. **Land member 3 before or alongside member 1's AC-1 verification.** Until member 3 lands, the break-glass is to wrap externally: `safehouse --add-dirs ~/.pi/agent -- spacedock pi ...` (the Commander invokes safehouse directly rather than through the launcher). After member 3 lands, the Commander grants access through the launcher: `spacedock pi --safehouse-add-dirs ~/.pi/agent ...`.
+
+## Quirk disposition (close-out — fold the cold-boot Q1-Q14 into their durable homes)
+
+The cold-boot package yelled Q1-Q14 at the Commander as pi-specific quirks. With the sprint landing, each quirk retires into a durable home. Recommended disposition for the next sprint's cold-boot package (and the Shaping FO's close-out):
+
+### Folded into the pi front door / pi runtime adapter (DONE — retired)
+
+- **Q2** (explicit model stamp on every dispatch) → `bdt` (`pi-first-officer-runtime.md` `### Model Resolution`). The adapter now instructs the FO; the "Commander MUST compensate" framing is moot. Next session's FO follows the rule as standard practice.
+- **Q3** (skill injection broken) → `eq` (install-managed package placement; `package.json` `pi.skills` + `.pi/extensions/spacedock.ts` + `spacedock install --host pi` runs `pi install`). `ensign` is `user-package`-discoverable post-install; the bare-`worker` `find /` stalls don't recur.
+- **Q14** (external safehouse wrap) → `qn` (`pi.go` `parsePiFrontDoorArgs`/`runPi` wrap + `setPiHelp`). `spacedock pi --safehouse-add-dirs ~/.pi/agent` grants via the launcher. (Follow-up: the inner node-pi shim fails to start inside safehouse — a safehouse×node env-sanitization interaction, not a wrap-arm defect; the grant is proven. File as a safehouse-runtime follow-up for the next sprint.)
+
+### Folded into the pi FO adapter + the host-neutral core by the capstone (DONE — retired)
+
+- **Q6** (back-channel mid-run service) → `b2` `pi-first-officer-runtime.md` `## Capability implementations` (`worker-back-channel` PRESENT via `contact_supervisor`+`intercom`; `inbound-message-service` via `intercom pending`; `async-dispatch` ASYNC). The event-loop step 0.5 ships.
+- **Q13** (core/adapter null-model contradiction) → `b2` `fo-dispatch-core.md` `model-resolution` named rule under `worker-identity-capture` (the core delegates null-model resolution to each adapter; no hard-coded omit-on-null). Closed by the pre-cut audit-fix (SB1).
+
+### Already in the host-neutral FO core — retire the "quirk" framing, fold into named rules
+
+These were never pi-specific; the cold-boot package yelled them at the Commander as emphasis. The capstone's named-capability rewrite + the shipped `spacedock state` verbs now name them; the per-quirk framing should collapse into the core's rules:
+
+- **Q1** (async dispatch mandatory) → the `async-dispatch` named capability (`b2`). "Required when `worker-back-channel` present" is the core rule, not a pi quirk.
+- **Q5** (path-scoped state commits) → shipped as `spacedock state commit <slug>` (the `state-verbs` task, PR #399). The core's "Split-Root State Sync" already names it.
+- **Q7** (completion = subagent return + file-verify) → the shared core's `## Completion and Gates` + the `completion-signal` named capability (`b2`). FO discipline, not pi-specific.
+- **Q9** (preserve in-flight spike evidence) → the shared core's "Probe and Ideation Discipline" (cite, don't re-spike). FO discipline, not pi-specific.
+- **Q10** (sandbox mode) → operational; surface denials as env quirks, not contract violations. Not a pi-runtime thing.
+
+### Drive-procedure / verification concerns — stay in the cold-boot package (not runtime)
+
+- **Q4** (state branch is `spacedock-state/dev`, not `main`) → Commander drive-procedure (the state checkout's branch). Stays in the package; the shipped `spacedock state ready` verb owns the mechanics.
+- **Q11** (capstone live-drive non-repo cwd) → the capstone's AC-2 verification pin (exercises install-managed discovery from a non-repo cwd). A test-drive concern, not a pi-runtime behavior. Stays in the capstone's verification.
+- **Q12** (preflight 1+2 before capstone pi-live) → Commander drive-procedure step (confirm deps landed before the live drive). Stays in the package.
+
+### Proof-policy / merge gate — host-neutral
+
+- **Q8** (live lanes required for merge; path→lane mapping is the gate) → the dev-workflow proof policy (the README's path→lane mapping + the `claude-live`/`codex-live`/`pi-live` lane declarations). Not pi-specific. The pre-cut audit (run `c63d6187`) reinforced this: the offline gate (name-set contractlint) cannot catch binding bugs; the live lanes are the behavioral gate (the #408 lesson — `eq`'s D5b regression passed offline, failed `pi-live`).
+
+### Structural gap surfaced this drive (NOT a quirk — a repo-config follow-up)
+
+- **`main` has no branch protection.** 4 PRs merged this sprint on ensign-validator + CI-green + chat approval, with no GitHub-enforced human code review, and the sprint scaffolding + a debrief fix were pushed straight to `main`. The capstone's claude/codex review (initiated after this surfaced) was the first real human code review. **Repo-admin action:** enable `main` branch protection (require PR reviews + required status checks + restrict direct pushes) before the release cut. The Commander cannot toggle this.
+- **`CI-E2E-PI` env-approval gate added this drive** (pi-live now blocks on env approval, matching claude-live/codex-live). Set via the GitHub environments API; not a repo-file change. Consistent with the other live lanes.
+
+### Recorded for the next sprint (pre-cut audit non-blockers)
+
+- NB1: `TestCapabilityBinding` discriminates name-set drift only (a wrong binding target passes). Add a binding-target assertion OR make AC-6 live lanes a hard pre-cut gate.
+- NB2 (bigger half): the core's `worker-identity-capture` schema names an `intercom address` field two of three adapters don't declare. Rename to adapter-declared "worker address".
+- NB3: Codex `worker-back-channel` worker→FO half is completion-only (narrower than the core's "mid-run escalation" contract). Clarify the core or document Codex's actual shape.
+- NB4: pre-existing `gofmt` drift (`internal/cli/prose_function_routing_test.go`, `internal/status/section_read.go`). `gofmt -w ./cmd ./internal` before the tag.
+- NB5 (cwd-source pin): the FO's `cwd:<repo>` source read isn't pinned to a command (the dev-worktree vs installed-clone case). Pin to a `subagents-doctor` field.
+- Frictions 7-9 (deferred by design): concurrency serialization of `ask`; standing `comm-officer` on Pi; reuse-advance on Pi. Seed the next sprint.
+- Safehouse×node startup interaction (qn follow-up): the inner node-pi shim fails inside safehouse; the grant is proven. Safehouse-runtime follow-up.
+
+## Sprint lifecycle checklist (owner-tagged — copy into this index to track)
+
+**Shape — Shaping FO (this session)**
+- [x] **Scope-lock** with the captain — members in/deferred ✓
+- [x] **Carve** — stamp `sprint` / `sprint-readiness` on all members; write this `index.md` ✓ (re-carved to 3 members after captain review)
+- [x] **Ideate** each gated member — riskiest mechanism first; all three ideations complete with spiked riskiest mechanisms ✓
+- [x] **⚠️ Preflight staff review #1** (run `3adf00ee`) — verdict Gaps to close; one blocker (child-cwd seam) + two minor gaps. Folded into capstone + Q11–Q13 added. ✓
+- [x] **Re-carve** (captain 2026-06-19) — archived `k8t`+`2m1` (clone-bound workarounds), filed merged `eq` (install-managed package placement, spike PASSED); capstone gap-1 re-checked (cwd:<repo> reframed as working-directory concern). ✓
+- [x] **⚠️ Preflight staff review #2** (run `efff49c9`) — verdict Gaps to close; blocker GENUINELY CLOSED by re-carve; seven follow-through gaps (1 spec + 6 doc). ✓
+- [x] **Close staff-review #2 gaps** — all 7 closed: gap 1 (`eq` repoRoot source, state `e862e42e`), gap 6 (`b2` AC-2 sub-bullet, state `55fc0552`), gaps 2–5,7 inline (main `0cda9851`) ✓
+- [x] **Present ideation gates** — all 3 approved by captain 2026-06-19 (pi-install-managed-skill-placement, pi-dispatch-model-stamping, pi-back-channel-dispatch capstone). Captain directs: package Commander cold-boot doc, do NOT drive implementation from this session ✓
+- [x] **Package** — write `dispatch-sprint-execution.md` (cold-boot Commander package with Q1–Q13 baked in) — below ✓
+
+**Drive — Commander (separate cold-booted session on pi)**
+- [ ] Implementation → validation → done per member; detached adversarial audit at validation for every high-stakes surface (the shipped FO/ensign contract + host adapters + the `spacedock pi` front door)
+- [ ] Merge each to `main` (PR-merge); state commits concurrency-safe (Q4, Q5)
+- [ ] ⚠️ Pre-cut antipattern audit — independent reviewer over the assembled sprint before the tag fires
+- [ ] Cut the release — `go test ./...` green from the root, then `docs/releasing.md`
+
+**Close — Shaping FO**
+- [ ] Seed the next sprint — fold the deferred frictions 7–9 + any pre-cut findings into a follow-up
