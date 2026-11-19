@@ -27,6 +27,7 @@ func TestFOWriteCoreMutationGateClassifiesTargets(t *testing.T) {
 			want string
 		}{
 			{".spacedock-state/task/index.md", "allowed-state"},
+			{".spacedock-state/_roadmap/0250-fo-behavioral-discipline/index.md", "allowed-state"},
 			{workflowDir + "/_archive/shipped-task.md", "allowed-state"},
 			{workflowDir + "/README.md", "allowed-process"},
 			{"cmd/spacedock/main.go", "blocked-product"},
@@ -39,7 +40,6 @@ func TestFOWriteCoreMutationGateClassifiesTargets(t *testing.T) {
 			{".github/workflows/runtime-live-e2e.yml", "blocked-product"},
 			{"docs/site/reference/command-reference.md", "blocked-product"},
 			{"docs/specs/state-behavior-extension.md", "blocked-product"},
-			{"docs/roadmap/0250-fo-behavioral-discipline/index.md", "blocked-product"},
 			{"skills/integration/testdata/entity-label-drive/README.md", "blocked-product"},
 			{workflowDir + "/_mods/pr-merge.md", "blocked-product"},
 		}
@@ -55,6 +55,34 @@ func TestFOWriteCoreMutationGateClassifiesTargets(t *testing.T) {
 			if tc.want == "blocked-product" && !foWriteClassMatches(classifier, "blocked-product", tc.path) {
 				t.Errorf("workflow_dir=%q: %q is blocked only by default-deny, not an explicit blocked-product pattern", workflowDir, tc.path)
 			}
+		}
+	}
+}
+
+// TestFOWriteCoreMutationGateAllowsRoadmapState pins the roadmap as state the
+// FO writes directly. The roadmap lives in the split-root state checkout under
+// _roadmap/, so the allowed-state row must name it explicitly (its rule text,
+// not only the broad entity rule, covers roadmap edits) and no blocked-product
+// pattern may still claim a roadmap path.
+func TestFOWriteCoreMutationGateAllowsRoadmapState(t *testing.T) {
+	classifier := parseFOWriteClassifierTable(t, readFOWriteClassifierTable(t), "docs/dev")
+
+	target := ".spacedock-state/_roadmap/README.md"
+	if got := classifyFOWriteTarget(classifier, target); got != "allowed-state" {
+		t.Fatalf("classify %q = %q, want allowed-state", target, got)
+	}
+	named := false
+	for _, pattern := range classifier["allowed-state"] {
+		if strings.Contains(pattern, "_roadmap") && pathPatternMatches(pattern, target) {
+			named = true
+		}
+	}
+	if !named {
+		t.Errorf("allowed-state must carry an explicit _roadmap pattern matching %q; got %v", target, classifier["allowed-state"])
+	}
+	for _, pattern := range classifier["blocked-product"] {
+		if strings.Contains(pattern, "roadmap") {
+			t.Errorf("blocked-product still claims a roadmap path: %q", pattern)
 		}
 	}
 }
