@@ -30,7 +30,7 @@ Cut stable releases from `main` via an annotated `vX.Y.Z` tag — see `docs/rele
 - `internal/cli/`: command routing, usage text, exit-code behavior.
 - `internal/status/`: status implementation.
 - `docs/specs/`: design contracts, including the state behavior extension.
-- `docs/roadmap/`: bootstrap and migration roadmap.
+- `docs/dev/.spacedock-state/_roadmap/`: roadmap and sprint docs, on the state branch (see `docs/roadmap/README.md`).
 - `docs/dev/README.md`: development workflow definition.
 - `docs/dev/.spacedock-state/`: development workflow entities in a separate state checkout.
 - `skills/`: first-officer, ensign, and satellite skills plus integration fixtures.

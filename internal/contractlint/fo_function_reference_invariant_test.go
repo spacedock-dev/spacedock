@@ -11,8 +11,8 @@ import (
 // record/consume sync=/phase= discriminator, --consume, and dispatch build
 // --stamp) needed new load-bearing prose in both files at the same time an
 // unrelated, independently-landed change (988163969, "Withdraw stale open gate
-// attempt") was also growing fo-gate-lifecycle/SKILL.md. Per
-// docs/roadmap/durable-decisions/staff-review-sprint-close.md's evidence
+// attempt") was also growing fo-gate-lifecycle/SKILL.md. Per the state
+// checkout's _roadmap/durable-decisions/staff-review-sprint-close.md evidence
 // requirement for changing this capped set: the content was first restructured
 // to a pointer — the full explanation moved to
 // skills/first-officer/references/fo-dispatch-core.md (uncapped), leaving only
@@ -28,7 +28,7 @@ import (
 // initial-stage exception to the gate lifecycle, and the file was already
 // saturated at 6993 bytes — seven bytes of headroom. Unlike the 2026-08-02
 // raise above, minimize-first could not avoid this one, which is the evidence
-// docs/roadmap/durable-decisions/staff-review-sprint-close.md requires: the
+// _roadmap/durable-decisions/staff-review-sprint-close.md requires: the
 // absolute floor, keeping only the readiness-table and heading-scope edits and
 // dropping the initial-stage paragraph entirely, still measures 7072; a pointer
 // restructure lands at 7219-7340, saving only 193 bytes over the approved

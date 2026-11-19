@@ -43,10 +43,10 @@ This workflow registers lifecycle mods under `_mods/`: a `pr-merge` hook (opens 
 
 This workflow tracks individual tasks. A **sprint** groups several tasks into one value-increment — a convention *stacked on top* of the per-task flow, not a builtin Spacedock construct. See `_proposals/sprint-roadmap-construct.md` for the decision record (ship as a skill + commission template; defer builtin).
 
-**Before shaping or driving a sprint, load the discipline:** [`docs/roadmap/README.md`](../roadmap/README.md) carries the operational sprint construct: the Shaping-FO and Commander roles, and the canonical sprint-folder shape (`index.md` for durable strategy, `staff-review.md` for the readiness gap analysis, `dispatch-sprint-execution.md` for the cold-boot Commander package).
+**Before shaping or driving a sprint, load the discipline:** `_roadmap/README.md` in the state checkout (`docs/dev/.spacedock-state/_roadmap/README.md` after `spacedock state init`) carries the operational sprint construct: the Shaping-FO and Commander roles, and the canonical sprint-folder shape (`index.md` for durable strategy, `staff-review.md` for the readiness gap analysis, `dispatch-sprint-execution.md` for the cold-boot Commander package).
 
 - **Membership is a query, never a hard-coded list.** Entities carry `sprint: <slug>` (plus an optional `sprint-readiness:` filter). List members: `spacedock status --workflow-dir docs/dev --where sprint=<slug>`.
-- **The index is durable strategy, not a tracker.** `docs/roadmap/<topic>/index.md` holds goal, scope, DoD, deliverable, and the movable target-train line only. It does NOT enumerate members or track their state — that is the query above. A Commander's execution bookkeeping (what shipped, what's in flight, per-member status) belongs in the Commander's own chain of handoffs, never in the shared index.
+- **The index is durable strategy, not a tracker.** `_roadmap/<topic>/index.md` holds goal, scope, DoD, deliverable, and the movable target-train line only. It does NOT enumerate members or track their state — that is the query above. A Commander's execution bookkeeping (what shipped, what's in flight, per-member status) belongs in the Commander's own chain of handoffs, never in the shared index.
 - **Ownership is cross-session.** A sprint may be *driven* by one **Commander** session: a single FO boots `spacedock:first-officer`, takes the packaged sprint, and drives its members to the DoD. While a sprint is actively driven, **other FO sessions sharing this state checkout stay out of its members** — they report status and work unrelated entities. Until an entity carries a machine-readable owner, ownership is coordinated out-of-band (the captain / a handoff); the durable per-entity owner signal is the graduation trigger tracked by `79` — `xp` covers only the FO/Commander message channel, not mutation authority.
 
 ## File Naming
@@ -296,7 +296,7 @@ Validation pilots should use these when verifying implementation work:
 | Status validator | `spacedock status --workflow-dir docs/dev --validate` from the repo root, or pass an absolute workflow definition dir | Spacedock entity-contract validation; fails closed if `--workflow-dir` does not resolve to a commissioned workflow |
 | Status table | `spacedock status --workflow-dir docs/dev` | Status enumeration output |
 | State behavior extension | `docs/specs/state-behavior-extension.md` | Split-root state semantics and external tracker bridge principles |
-| Bootstrap roadmap | `docs/roadmap/bootstrap-roadmap.md` | Stage-specific required tests |
+| Bootstrap roadmap | `_roadmap/bootstrap-roadmap.md` in the state checkout | Stage-specific required tests |
 
 Validators should pick the smallest test surface that proves the claim.
 

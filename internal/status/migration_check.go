@@ -8,31 +8,20 @@ import (
 )
 
 // isMigrationCheckPrunedDir reports whether the migration-check walk skips a
-// directory whole, given its path. Two non-entity trees are pruned, both holding
-// frontmatter the migration check was never meant to govern:
+// directory whole, given its path. One non-entity tree is pruned: the
+// .spacedock-state split-root state checkout. It is gitignored on the code
+// branch; on a dev machine it materializes under docs/dev/ and holds the
+// machine-local entity files plus non-entity records — _debriefs session notes
+// and the _roadmap strategy layer (sprint definitions, staff reviews, debriefs).
+// On CI the tree is absent and the prune is moot.
 //
-//   - .spacedock-state — the gitignored split-root state checkout. On a dev
-//     machine it materializes under docs/dev/ and holds ~100 machine-local entity
-//     files (active entities plus _debriefs session records); on CI the tree is
-//     absent and the prune is moot.
-//   - docs/roadmap — the strategy layer (sprint definitions, staff reviews,
-//     session debriefs). It owns outcome/scope/sequencing, NOT entity state
-//     (that lives in docs/dev/.spacedock-state), so it carries no entity
-//     frontmatter; matched as a `roadmap` dir directly under a `docs` dir so the
-//     prune is location-independent (fires under the repo root AND under a temp
-//     fixture root).
-//
-// The debriefs in both trees carry their own frontmatter shape (session-date,
-// sequence, first-commit), whose bare-YAML date scalars decode as time.Time
-// directly but as strings through the reader — expected for non-entity
-// frontmatter and outside this check's scope. Both trees are pruned wholesale:
-// neither holds the entity frontmatter the migration check governs.
+// Those records carry their own frontmatter shape (session-date, sequence,
+// first-commit), whose bare-YAML date scalars decode as time.Time directly but
+// as strings through the reader — expected for non-entity frontmatter and
+// outside this check's scope. The tree is pruned wholesale: the migration check
+// governs fixture frontmatter on the code branch, not the state checkout.
 func isMigrationCheckPrunedDir(path string) bool {
-	name := filepath.Base(path)
-	if name == ".spacedock-state" {
-		return true
-	}
-	return name == "roadmap" && filepath.Base(filepath.Dir(path)) == "docs"
+	return filepath.Base(path) == ".spacedock-state"
 }
 
 // migrationCheckWalkDir is the directory walk-step for the migration-check
