@@ -17,7 +17,7 @@ whenever you show or ask for the choice:
 
 ```text
 Terminal (TUI): the file stays on this machine
-Web: uploads to review.spacedock.md; anyone with the link can open it
+Web: uploads to Spacedock Review; you get a private link to share
 ```
 
 The commands record Terminal (TUI) as `local` and Web as `remote`.
@@ -109,7 +109,7 @@ Used whenever a choice is needed.
    "Yes, upload it" and "No":
 
    ```text
-   Web uploads the file to review.spacedock.md. Anyone with the link can open it, and it expires automatically after seven days. Agree?
+   Web review uploads what you send to Spacedock Review and gives you a private link to share with the people you want comments from. It works like a shared doc link: whoever has it can read and comment without signing in. Updates you publish appear at the same link, which expires seven days after the last update. Continue?
    ```
 
    Yes: `spacedock review-mode set remote`. No: record nothing, say so, and end
