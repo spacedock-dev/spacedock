@@ -9,6 +9,7 @@ verdict:
 worktree: .worktrees/spacedock-ensign-agy-runtime-support
 issue:
 id: 27ax7y7ecbrqyztffmhka9zd
+archived: 2026-11-21T18:01:42Z
 ---
 This task implements first-class support for the `agy` (Antigravity) runtime host in Spacedock.
 
@@ -30,3 +31,7 @@ Currently, Spacedock supports Claude Code, Codex, and Pi. To use Spacedock withi
 ## Test Plan
 - Unit tests in `internal/dispatch` verifying `agy` host prompt generation.
 - CLI tests verifying `spacedock agy`, `install --host agy`, and `doctor --host agy` commands.
+
+## Superseded (2026-11-21)
+
+Superseded by the Paseo-level runtime backend ([`_roadmap/paseo-backend/index.md`](../_roadmap/paseo-backend/index.md)). Running Antigravity (`agy`) through Paseo provides `agy` as a First Officer via the `paseo` CLI binding with zero `agy`-specific Go code (live-verified 2026-11-21: `agy` FO -> `paseo` CLI -> `safehouse-codex` ensign with automatic `ParentAgentId` linkage and durable Git commits), and covers `antigravity` ensigns via a host-neutral `--host paseo` dispatch mode once Paseo's per-session launch-wrapper hook unblocks `paseo-safehouse` for plugin-supplied providers. Direct `spacedock agy` frontdoor, `--host agy`, and native `send_message` adapters are no longer needed.
