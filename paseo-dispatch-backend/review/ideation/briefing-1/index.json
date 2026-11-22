@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:936b86qpa8xy4fb6v0n5cafs:ideation:attempt-1:revision-1",
+  "question": "Approve paseo-dispatch-backend ideation design (post-staff-review M3-M8 folded) to advance to implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:936b86qpa8xy4fb6v0n5cafs:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/944f6dfdc5d51f18b074ef9e7d388917a93614cc/paseo-dispatch-backend/index.md",
+      "rev": "sha256:7a1245319f2460128d60464227dc155b4db1e248eae19ca160aa0a8abc5736ec",
+      "mediaType": "text/markdown",
+      "summary": "Host-neutral --host paseo build envelope, paseo-ensign-runtime.md, 5-verb CLI-first paseo-fo-dispatch.md (find-or-create workspace, stdout-only JSON, cascade-archive guard, frozen worker/epoch labels), shared paseo_live_helpers_test.go + TestLivePaseoDispatchSmoke (livePluginDir installed skill discovery), and optional CI lane reading codex.exec from live_models.txt (+850 net LOC, 17 files)."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:936b86qpa8xy4fb6v0n5cafs:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/944f6dfdc5d51f18b074ef9e7d388917a93614cc/_roadmap/paseo-backend/staff-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:05cb78809e350f9cc3d34b3f30d2d4a3cc763078a69602f689d115d6026253a7"
+    }
+  ]
+}
