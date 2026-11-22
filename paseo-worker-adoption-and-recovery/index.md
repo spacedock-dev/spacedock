@@ -12,6 +12,7 @@ worktree:
 issue:
 pr:
 mod-block:
+sprint-readiness: ready
 ---
 
 Persist the Paseo worker handle in the task so a restarted or compacted first officer adopts a live worker instead of double-dispatching, and handle wait timeouts, lost create receipts, and dead workers without wedging unrelated tasks.
