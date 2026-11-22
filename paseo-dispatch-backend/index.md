@@ -24,6 +24,17 @@ gates:
                 id: briefing:936b86qpa8xy4fb6v0n5cafs:backlog:attempt-1:revision-1
                 digest: sha256:e05a1a0037fb0cc9666082e61950d5175302ac815fcfe5c22f1aca2ca1904608
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:936b86qpa8xy4fb6v0n5cafs:backlog:1
+                briefing: briefing:936b86qpa8xy4fb6v0n5cafs:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-11-22T17:09:05.573077Z"
+                decision: approve
+                reason: Captain approved backlog->ideation dispatch on 6769 with agy neon high
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Let any Paseo-hosted first officer (Claude, Codex, Pi, or Antigravity) dispatch fresh ensigns through Paseo using one host-neutral `--host paseo` contract and 5 `paseo` CLI verbs, backed by a real isolated-daemon live E2E smoke test and an optional (non-required) CI lane on `codex/gpt-6-luna`.
