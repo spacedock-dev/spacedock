@@ -43,6 +43,17 @@ gates:
                 id: briefing:936b86qpa8xy4fb6v0n5cafs:ideation:attempt-1:revision-1
                 digest: sha256:f4c799f545c0127d1b2a7df410ba0ff2ed90545dd826873a7baaad2d2d83f4eb
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:936b86qpa8xy4fb6v0n5cafs:ideation:1
+                briefing: briefing:936b86qpa8xy4fb6v0n5cafs:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-11-22T18:01:58.330521Z"
+                decision: approve
+                reason: Captain approved ideation gate after preflight staff-review revisions
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Let any Paseo-hosted first officer (Claude, Codex, Pi, or Antigravity) dispatch fresh ensigns through Paseo using one host-neutral `--host paseo` contract and 5 `paseo` CLI verbs, backed by a real isolated-daemon live E2E smoke test and an optional (non-required) CI lane using the repo's `codex.exec` model from `internal/release/live_models.txt`.
