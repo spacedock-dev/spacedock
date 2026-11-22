@@ -8,7 +8,7 @@ completed:
 verdict:
 score: 0.90
 sprint: paseo-backend
-worktree:
+worktree: .worktrees/spacedock-ensign-paseo-dispatch-backend
 issue:
 pr:
 mod-block:
