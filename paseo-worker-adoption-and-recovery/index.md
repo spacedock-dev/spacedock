@@ -3,7 +3,7 @@ id: x9mfvnkqtbwgm4tba7dy41tw
 title: Paseo worker record, FO restart adoption, and dispatch recovery
 status: ideation
 source: captain (2026-11-21)
-started:
+started: 2026-11-22T17:09:25Z
 completed:
 verdict:
 score: 0.70
