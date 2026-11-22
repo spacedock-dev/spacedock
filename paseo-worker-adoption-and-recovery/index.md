@@ -56,7 +56,7 @@ Store one authoritative FO-owned H2 section `## Paseo Worker` in the canonical t
 - Committed path-scoped in the state checkout (`git -C {state_checkout} add -- {entity_path} && git -C {state_checkout} commit -m "dispatch: record paseo worker for {slug} ({stage})" -- {entity_path}`), retrying once after 2s on `index.lock` contention, then synced per the split-root contract.
 - **Gate briefing freeze safety:** For gated stages, the FO MUST update `## Paseo Worker` to `state: archived` and commit it BEFORE running `spacedock gate prepare`, so the frozen briefing digest is never invalidated after prepare.
 
-**Exact fenced YAML schema (20 required canonical scalar keys in fixed order + 1 optional `hold_reason`):**
+**Exact fenced YAML schema (22 required canonical scalar keys in fixed order + 1 optional `hold_reason`, aligned with `936`'s `«worker-identity»`):**
 
 ```markdown
 ## Paseo Worker
@@ -77,19 +77,21 @@ pre_dispatch_state_rev: 764719a10a5c397629231fa6db16565d8c617aac
 requested_provider: codex/gpt-6-luna
 requested_mode: auto
 requested_model: gpt-6-luna
+requested_thinking: ""
 returned_provider: codex
 returned_mode: full-access
 returned_model: gpt-6-luna
+returned_thinking: ""
 state: running
 recorded_at: 2026-11-22T17:10:00Z
 ```
 ```
 
-**Field contract:**
+**Field contract (aligned with Paseo 0.17.1 `inspect` PascalCase / `ls` camelCase JSON from `936`):**
 - `host`: literal `"paseo"`.
-- `server_id`: daemon server ID from `paseo inspect <agent_id> --json` / `paseo status --json` / `paseo.parent-server-id` label; `"local"` when a local isolated daemon omits a server ID.
-- `workspace_id`: Paseo workspace ID from `paseo workspace create` (e.g., `wks_...`).
-- `agent_id`: Paseo agent ID from `paseo run --no-wait` or recovered via `paseo ls`.
+- `server_id`: daemon server ID from `paseo status --json` / `paseo.parent-server-id` label; `"local"` when a local isolated daemon omits a server ID.
+- `workspace_id`: Paseo `workspaceId` from `paseo workspace create` (e.g., `wks_...`).
+- `agent_id`: Paseo `agentId` (`inspect.Id` / `ls[].id`) from `paseo run --no-wait` or recovered via `paseo ls`.
 - `stage`: entity `status:` at dispatch time.
 - `cycle`: positive integer — `1` initially; `1 + count(prior feedback cycles for this stage in ### Feedback Cycles)` on feedback rework.
 - `attempt`: `1` (initial dispatch for `(stage, cycle)`) or `2` (single allowed `-retry` replacement).
@@ -100,14 +102,14 @@ recorded_at: 2026-11-22T17:10:00Z
   - `cycle >= 2, attempt == 2`: `{worker_base}-cycle{cycle}-retry`.
 - `epoch_label`: exact `spacedock.epoch` label passed to `paseo run` — deterministically `{worker_base}-c{cycle}-a{attempt}` (lowercase `[a-z0-9-]`, unique per `(entity, stage, cycle, attempt)`, recomputable cold from durable entity state with zero session memory).
 - `worktree`: relative worktree path from entity `frontmatter.worktree` (`""` for worktree-free stages).
-- `cwd`: resolved physical working directory (`filepath.EvalSymlinks` / `pwd -P`) adopted by `paseo workspace create`.
+- `cwd`: resolved physical working directory (`filepath.EvalSymlinks` / `pwd -P`) adopted by `paseo workspace create` (matches `inspect.Cwd` / `ls[].cwd`).
 - `pre_dispatch_state_rev`: `git -C {state_checkout} rev-parse HEAD` captured immediately AFTER `dispatch build --stamp` and BEFORE `paseo run --no-wait` (prevents pre-existing or prior-cycle stage reports from falsely satisfying verification).
-- `requested_provider`, `requested_mode`, `requested_model`: exact provider, mode (`""` if daemon default), and model requested on `paseo run`.
-- `returned_provider`, `returned_mode`, `returned_model`: effective values returned by `paseo run` / `paseo inspect` (explicitly capturing discrepancies such as requested `auto` returning `full-access`).
+- `requested_provider`, `requested_mode`, `requested_model`, `requested_thinking`: exact `--provider`, `--mode` (`""` if omitted), model portion of `--provider`, and `--thinking` (`""` if omitted) passed to `paseo run`.
+- `returned_provider`, `returned_mode`, `returned_model`, `returned_thinking`: effective values returned by `paseo inspect` (`Provider`, `Mode`, `Model`, `Thinking`; explicitly capturing discrepancies such as requested `auto` returning `full-access`).
 - `state`: closed 5-value enum:
   - `running` — worker is live (dispatched or adopted) and awaiting completion.
   - `verified` — durable Git commits and exact-stage report passed the completion gate; archival pending.
-  - `archived` — worker archived (`paseo archive <agent_id>`) after verification; terminal clean state for this attempt.
+  - `archived` — worker archived (`paseo archive <agent_id> --json`; `inspect.Archived == true`) after verification; terminal clean state for this attempt.
   - `superseded` — worker failed/ended without valid completion and was archived before launching a replacement.
   - `held` — entity exhausted its single retry or hit an unresolvable ambiguity/permission block; only this entity is held.
 - `recorded_at`: UTC RFC3339 timestamp of the last record write.
@@ -138,7 +140,7 @@ On boot, compaction resume, or `«dispatch.next-action»()` for an entity in act
 4. **Step 3 — Lost-create-receipt reconciliation (no matching `## Paseo Worker` for `(S, cycle, attempt)`, empty `agent_id`, or `paseo run --no-wait` failed/dropped without returning a receipt):**
    - Query labels in exact priority order BEFORE ever calling `paseo run --no-wait`:
      1. `paseo ls --all --global --label "spacedock.epoch={expected_epoch}" --json`.
-     2. If empty, fallback: `paseo ls --all --global --label "spacedock.worker={expected_worker}" --json`, filtered to rows with `realpath(row.cwd) == expected_cwd` and (when `started` is set) `row.createdAt >= started`, preferring non-archived rows.
+     2. If empty, fallback: `paseo ls --all --global --label "spacedock.worker={expected_worker}" --json`, filtered to rows with `realpath(row.cwd) == expected_cwd` and (when `started` is set) `row.created >= started`, preferring non-archived rows (`status != "archived"`).
    - Branch on candidate count:
      - **Exactly 1 match `W`:** call `paseo inspect <W.id> --json`; backfill & commit `## Paseo Worker` (using the `dispatch: {slug} entering {S}` state commit SHA as `pre_dispatch_state_rev` when missing); adopt `W` and enter the Recovery Matrix with **0 retries spent** and **0 duplicate spawn**.
      - **> 1 active (non-archived/non-closed) matches:** ambiguous roster — set `state: held`, `hold_reason: "ambiguous-active-workers: <id1>,<id2>"`, commit path-scoped, surface to captain, do NOT spawn a 3rd worker, do NOT kill unowned agents, continue unrelated entities.
@@ -156,12 +158,12 @@ On boot, compaction resume, or `«dispatch.next-action»()` for an entity in act
 
 | Row | Trigger / Observed Daemon State | `HasValidNewReport` | `retries_done` | Exact FO Decision & Action | Retries Spent | Archival | Unrelated Entities |
 |---|---|---|---|---|---|---|---|
-| 1 | `paseo wait` exits `0` with `status=timeout`; `paseo inspect` shows `status=running` & `pendingPermissions=[]` | Any | Any | `ContinueWait`: keep `state: running`; re-issue `paseo wait <agent_id> --timeout <T> --json` (never nudge, kill, or retry). | 0 | None | Unaffected |
-| 2 | `paseo inspect` shows `status=running` with non-empty `pendingPermissions` (or permission `requiresAttention`) | Any | Any | `HoldEntity` (permission-blocked): set `state: held`, `hold_reason: "pending-permission: <agent_id>"`; commit path-scoped; surface to captain. | 0 | None (live worker preserved) | Unaffected |
-| 3 | Restarted FO finds `state=running` (recorded or adopted from Step 3) and `paseo inspect` shows `status=running` | Any | Any | `AdoptRunning`: persist/confirm `## Paseo Worker` (`state: running`) and enter `paseo wait <agent_id>` loop. Zero duplicate spawn. | 0 | None | Unaffected |
-| 4 | Worker ended (`idle` / `closed` / `archived` / `error` / not-found) or finish event observed | `true` | Any | `VerifyAndArchive`: set `state: verified` -> run idempotent `paseo archive <agent_id>` -> set `state: archived` & commit path-scoped -> advance / `gate prepare` / `merge guard`. | 0 | Archive verified worker | Unaffected |
-| 5 | Worker ended (`idle` / `closed` / `archived` / `error` / not-found) | `false` (no new report or uncommitted/incomplete report) | `0` | `ArchiveAndRetry`: archive superseded worker (`paseo archive <agent_id>` if present & not archived); set `state: superseded`; append Retry 1 line (`ended-no-report` or `incomplete-report`) to `### Dispatch Retries`; commit path-scoped; spawn ONE fresh `-retry` worker (`attempt: 2`, `epoch_label: ...-a2`, reusing existing worktree WITHOUT `--stamp`, appending WIP check note), record new `## Paseo Worker` (`state: running`). | +1 (1/1) | Archive superseded worker BEFORE retry spawn | Unaffected |
-| 6 | Worker ended (`idle` / `closed` / `archived` / `error` / not-found) | `false` | `>= 1` | `HoldEntity` (retry-exhausted): archive failed attempt-2 worker (`paseo archive <agent_id>` if present & not archived); set `state: held`, `hold_reason: "retry-exhausted: {stage} cycle {cycle} ({cause})"`; commit path-scoped; surface to captain; stop attempting this entity. | 0 (cap) | Archive failed attempt-2 worker | **Unaffected** |
+| 1 | `paseo wait` exits `0` with `status=timeout`; `paseo inspect` shows `Status=running` & `PendingPermissions=[]` | Any | Any | `ContinueWait`: keep `state: running`; re-issue `paseo wait <agent_id> --timeout 300 --json` (never nudge, kill, or retry). | 0 | None | Unaffected |
+| 2 | `paseo wait` exits `0` with `status=permission`, OR `paseo inspect` shows non-empty `PendingPermissions` | Any | Any | `HoldEntity` (permission-blocked): set `state: held`, `hold_reason: "pending-permission: <agent_id>"`; commit path-scoped; surface to captain. | 0 | None (live worker preserved) | Unaffected |
+| 3 | Restarted FO finds `state=running` (recorded or adopted from Step 3) and `paseo inspect` shows `Status=running` | Any | Any | `AdoptRunning`: persist/confirm `## Paseo Worker` (`state: running`) and enter `paseo wait <agent_id> --timeout 300 --json` loop. Zero duplicate spawn. | 0 | None | Unaffected |
+| 4 | Worker ended (`Status` is `idle` / `closed` / `archived` / `error`, or `AGENT_NOT_FOUND`) or `wait` returned `idle` | `true` | Any | `VerifyAndArchive`: set `state: verified` -> run idempotent `paseo archive <agent_id> --json` (treat `AGENT_ALREADY_ARCHIVED` as success) -> set `state: archived` & commit path-scoped -> advance / `gate prepare` / `merge guard`. | 0 | Archive verified worker | Unaffected |
+| 5 | Worker ended (`Status` is `idle` / `closed` / `archived` / `error`, or `AGENT_NOT_FOUND`) or `wait` returned `error` | `false` (no new report or uncommitted/incomplete report) | `0` | `ArchiveAndRetry`: archive superseded worker (`paseo archive <agent_id> --json`, or `--force` only if still running on explicit supersede; ignore `AGENT_ALREADY_ARCHIVED`/`AGENT_NOT_FOUND`); set `state: superseded`; append Retry 1 line (`ended-no-report` or `incomplete-report`) to `### Dispatch Retries`; commit path-scoped; spawn ONE fresh `-retry` worker (`attempt: 2`, `epoch_label: ...-a2`, reusing existing worktree WITHOUT `--stamp`, appending WIP check note), record new `## Paseo Worker` (`state: running`). | +1 (1/1) | Archive superseded worker BEFORE retry spawn | Unaffected |
+| 6 | Worker ended (`Status` is `idle` / `closed` / `archived` / `error`, or `AGENT_NOT_FOUND`) or `wait` returned `error` | `false` | `>= 1` | `HoldEntity` (retry-exhausted): archive failed attempt-2 worker (`paseo archive <agent_id> --json` if not archived); set `state: held`, `hold_reason: "retry-exhausted: {stage} cycle {cycle} ({cause})"`; commit path-scoped; surface to captain; stop attempting this entity. | 0 (cap) | Archive failed attempt-2 worker | **Unaffected** |
 | 7 | `paseo run --no-wait` fails/drops without receipt; Step 3 finds **1** matching worker | Re-evaluated via rows 3–6 | Any | `AdoptFromLabels`: backfill `## Paseo Worker` from `paseo inspect`, commit path-scoped, then route through row 3 (if `running`) or rows 4–6 (if ended). | 0 | Per adopted row | Unaffected |
 | 8 | `paseo run --no-wait` fails/drops; Step 3 finds **0** matching workers (`spawn-error`) | N/A | `0` | `ArchiveAndRetry` (`spawn-error`): append Retry 1 line (`spawn-error`) to `### Dispatch Retries`; commit path-scoped; spawn ONE fresh `-retry` worker (`attempt: 2`, `epoch_label: ...-a2`). | +1 (1/1) | None (nothing created) | Unaffected |
 | 9 | `paseo run --no-wait` fails/drops; Step 3 finds **0** matching workers (`spawn-error`) | N/A | `>= 1` | `HoldEntity` (`spawn-error` exhausted): set `state: held`, `hold_reason: "retry-exhausted: {stage} cycle {cycle} (spawn-error)"`; commit path-scoped; surface to captain; stop attempting this entity. | 0 (cap) | None | **Unaffected** |
@@ -170,18 +172,18 @@ On boot, compaction resume, or `«dispatch.next-action»()` for an entity in act
 
 ### 4. `TestLivePaseoAdoptionSmoke` specification (`internal/ensigncycle/paseo_adoption_live_test.go`, `//go:build live`)
 
-Reuses `936`'s isolated `paseo` daemon helper (`SPACEDOCK_PASEO_BIN` defaulting to `paseo` on `PATH`, `filepath.EvalSymlinks(t.TempDir())` home, free port, `relay`/`dictation`/`voiceMode` off, env scrubbed, auth seeded from `CODEX_AUTH_JSON` or local auth, skipped locally when `paseo` or auth is absent unless `SPACEDOCK_PASEO_LIVE_REQUIRED=1`, stopped in `t.Cleanup`; provider `SPACEDOCK_PASEO_LIVE_PROVIDER` defaulting to `codex/gpt-6-luna`, overridable to e.g. `antigravity/gemini-4-neon`).
+Reuses `936`'s isolated `paseo` daemon helper (`paseo_live_smoke_test.go`: `SPACEDOCK_PASEO_BIN` defaulting to `paseo` on `PATH`, `filepath.EvalSymlinks(t.TempDir())` home, free port avoiding 6767/6768, 5 `paseo daemon config set` isolation keys, env scrubbed + `BatchMode=yes`, auth seeded from `CODEX_AUTH_JSON` / `OPENAI_API_KEY` / `~/.codex/auth.json`, skipped locally when `paseo` or auth is absent unless `SPACEDOCK_PASEO_LIVE_REQUIRED=1`, stopped in `t.Cleanup`; provider overrides `SPACEDOCK_PASEO_LIVE_PROVIDER` defaulting to `codex/gpt-6-luna`, `SPACEDOCK_PASEO_LIVE_THINKING`, and `SPACEDOCK_PASEO_LIVE_FO_PROVIDER`).
 
 **Deterministic mid-stage stop choreography (zero sleep races):**
 1. **Fixture:** Split-root temp workflow (`README.md` with `commissioned-by: spacedock@test`, `state: .spacedock-state`, stages `backlog -> implementation (worktree: true) -> done (terminal: true)`, no `_mods/`). The `implementation` stage definition instructs the worker to: (a) write and commit `receipt.txt` on the task branch, (b) poll up to 180s (1s interval) until `<fixtureRoot>/.adoption-release` exists, then (c) append `## Stage Report: implementation` and commit it path-scoped in `.spacedock-state`.
-2. **Phase 1 (FO-1 dispatch & mid-stage stop):** Launch FO-1 on the isolated daemon with the entity ready in `implementation`. Poll `paseo ls --all --global --label "spacedock.worker=<worker_base>" --json` and the entity file until: (a) exactly 1 worker `W1` exists with `status == "running"`, and (b) `## Paseo Worker` is committed in `.spacedock-state` with `agent_id == W1` and `state: running`. Immediately stop/archive FO-1 while `W1` remains `running` (blocked on `.adoption-release`). Verify FO-1 is closed and `paseo inspect <W1> --json` still reports `status == "running"`.
-3. **Phase 2 (Fresh FO-2 boot & adoption):** Launch a brand-new FO-2 (fresh session, zero shared state with FO-1) on the same workflow and isolated daemon. Once FO-2 is active (and has begun adopting `W1` while `W1` is `running`), create `<fixtureRoot>/.adoption-release`. Wait for FO-2 to finish its run.
+2. **Phase 1 (FO-1 dispatch & mid-stage stop):** Launch FO-1 on the isolated daemon with the entity ready in `implementation`. Poll `paseo ls --all --global --home "$paseoHome" --label "spacedock.worker=<worker_base>" --json` and the entity file until: (a) exactly 1 worker `W1` exists with `status == "running"`, and (b) `## Paseo Worker` is committed in `.spacedock-state` with `agent_id == W1` and `state: running`. Immediately stop FO-1 (`paseo archive "$fo1AgentId" --force --home "$paseoHome" --json`) while `W1` remains `running` (blocked on `.adoption-release`). Verify `paseo inspect "$fo1AgentId" --home "$paseoHome" --json` shows `Archived == true` and `paseo inspect "$W1" --home "$paseoHome" --json` still reports `Status == "running"`.
+3. **Phase 2 (Fresh FO-2 boot & adoption):** Launch a brand-new FO-2 (fresh session, zero shared state with FO-1) on the same workflow and isolated daemon. Once FO-2 is active (and has begun adopting `W1` while `W1` is `running`), create `<fixtureRoot>/.adoption-release`. Wait for FO-2 via `paseo wait "$fo2AgentId" --home "$paseoHome" --timeout 60 --json` until `status == "idle"`.
 4. **Phase 3 (Durable assertions):**
-   - `paseo ls --all --global --label "spacedock.worker=<worker_base>" --json` (and all non-FO daemon agents for this workflow) contains **exactly 1 worker** (`W1`, zero `-retry` or duplicate workers spawned).
-   - `paseo inspect <W1> --json` / `paseo ls --all` confirms `W1` is archived/closed.
-   - Locate the task entity (in `.spacedock-state/_archive/` or `.spacedock-state/`): `dispatch.ParsePaseoWorkerRecord` succeeds with `agent_id == W1`, `stage == "implementation"`, `cycle == 1`, `attempt == 1`, `worker_label == worker_base`, `epoch_label == worker_base+"-c1-a1"`, non-empty `server_id`, `workspace_id`, `worktree`, `cwd`, `pre_dispatch_state_rev`, requested & returned provider/mode/model, and `state == "archived"`.
+   - `paseo ls --all --global --home "$paseoHome" --label "spacedock.worker=<worker_base>" --json` (and all non-FO daemon agents for this workflow) contains **exactly 1 worker** (`W1`, zero `-retry` or duplicate workers spawned).
+   - `paseo inspect "$W1" --home "$paseoHome" --json` confirms `Archived == true` (`ArchivedAt != null`), while FO-2 remains `Archived == false`.
+   - Locate the task entity (in `.spacedock-state/_archive/` or `.spacedock-state/`): `dispatch.ParsePaseoWorkerRecord` succeeds with `agent_id == W1`, `stage == "implementation"`, `cycle == 1`, `attempt == 1`, `worker_label == worker_base`, `epoch_label == worker_base+"-c1-a1"`, non-empty `server_id`, `workspace_id`, `worktree`, `cwd`, `pre_dispatch_state_rev`, requested & returned provider/mode/model/thinking, and `state == "archived"`.
    - `dispatch.ParseDispatchRetries` returns `0` (neither FO-1 stop nor wait timeout spent a retry).
-   - `## Stage Report: implementation` is committed path-scoped strictly after `pre_dispatch_state_rev`; `receipt.txt` is committed on the task branch; frontmatter `status` durably advanced to `done` (`verdict: PASSED`); checkouts are clean; `t.Cleanup` stops the daemon cleanly.
+   - `## Stage Report: implementation` is committed path-scoped strictly after `pre_dispatch_state_rev`; `receipt.txt` is committed on the task branch; frontmatter `status` durably advanced to `done` (`verdict: PASSED`); checkouts are clean; `t.Cleanup` stops the daemon cleanly (`localDaemon == "stopped"`).
 
 ### 5. Mechanism-to-value justification
 
@@ -206,17 +208,17 @@ Reuses `936`'s isolated `paseo` daemon helper (`SPACEDOCK_PASEO_BIN` defaulting 
 #### B. `skills/first-officer/references/paseo-fo-dispatch.md` (new sections appended after `936`'s 5-verb binding)
 
 Add three delimited sections carrying machine-readable markers for `internal/contractlint` dual extraction:
-1. `## Paseo Worker Record` bounded by `<!-- PASEO-WORKER-SCHEMA:START -->` / `<!-- PASEO-WORKER-SCHEMA:END -->` listing the exact 20 required scalar keys, optional `hold_reason`, closed 5-value `state` enum (`running | verified | archived | superseded | held`), deterministic label rules (`spacedock.worker`, `spacedock.epoch`), path-scoped commit rule, and pre-`gate prepare` archival order.
+1. `## Paseo Worker Record` bounded by `<!-- PASEO-WORKER-SCHEMA:START -->` / `<!-- PASEO-WORKER-SCHEMA:END -->` listing the exact 22 required scalar keys, optional `hold_reason`, closed 5-value `state` enum (`running | verified | archived | superseded | held`), deterministic label rules (`spacedock.worker`, `spacedock.epoch`), path-scoped commit rule, and pre-`gate prepare` archival order.
 2. `## Restart Adoption and Lost-Create-Receipt Reconciliation` carrying exact Steps 0–3 above (`spacedock dispatch name`, `paseo inspect`, `paseo ls --all --global --label spacedock.epoch=...`, fallback `spacedock.worker=...` + physical `cwd`).
 3. `## Recovery Matrix and Retry Ledger` bounded by `<!-- PASEO-RECOVERY-MATRIX:START -->` / `<!-- PASEO-RECOVERY-MATRIX:END -->` carrying the exact 11-row table, `HasValidNewReport` predicate, `### Dispatch Retries` line format, per-entity isolation rule, and `$PASEO_AGENT_ID` self-preservation guard.
 
 #### C. User-visible documentation (`docs/runtime-live-ci.md`; `docs/site/**` unchanged)
 
-No `docs/site/**` page documents the opt-in Paseo dispatch backend yet, so `docs/site/**` needs no change. Update `docs/runtime-live-ci.md` under the Paseo live section added by `936` (STE compliant):
+No `docs/site/**` page documents the opt-in Paseo dispatch backend yet, so `docs/site/**` needs no change. Update `### Paseo live smoke` in `docs/runtime-live-ci.md` (added by `936`, STE compliant):
 
 - *Before (from `936`):*
   ```markdown
-  Run `TestLivePaseoDispatchSmoke` locally against an isolated Paseo daemon:
+  Run the isolated-daemon Paseo smoke locally with `codex/gpt-6-luna` (default) or override the binary, provider, and thinking level:
 
   ```bash
   go test -tags live -count=1 -timeout 15m -run '^TestLivePaseoDispatchSmoke$' ./internal/ensigncycle -v
@@ -224,7 +226,7 @@ No `docs/site/**` page documents the opt-in Paseo dispatch backend yet, so `docs
   ```
 - *After:*
   ```markdown
-  Run the Paseo live smoke tests locally against an isolated Paseo daemon:
+  Run the isolated-daemon Paseo smoke tests locally with `codex/gpt-6-luna` (default) or override the binary, provider, and thinking level:
 
   ```bash
   go test -tags live -count=1 -timeout 15m -run '^TestLivePaseo(Dispatch|Adoption)Smoke$' ./internal/ensigncycle -v
@@ -267,20 +269,20 @@ Breakdown: **+503 insertions / -10 deletions (net +493 LOC)** across 7 files. To
 
 **Declared observable semantic changes:**
 - *Command grammar:* None (`spacedock` CLI flags and subcommands unchanged).
-- *Stored formats:* Adds optional FO-owned H2 entity-body section `## Paseo Worker` (20 canonical YAML scalar keys + optional `hold_reason`, closed 5-value `state` enum) and extends `### Dispatch Retries` lines with explicit `(cycle N)` and Paseo causes (`spawn-error | ended-no-report | incomplete-report`). YAML frontmatter is unchanged.
+- *Stored formats:* Adds optional FO-owned H2 entity-body section `## Paseo Worker` (22 canonical YAML scalar keys + optional `hold_reason`, closed 5-value `state` enum) and extends `### Dispatch Retries` lines with explicit `(cycle N)` and Paseo causes (`spawn-error | ended-no-report | incomplete-report`). YAML frontmatter is unchanged.
 - *Authority:* `fo-write-core.md` explicitly permits FO writes to `## Paseo Worker` and `### Dispatch Retries` in entity bodies; ensigns remain barred from editing them.
 - *Runtime behavior:* Paseo-hosted FOs persist worker records at dispatch, adopt live or lost-receipt workers across restarts via `## Paseo Worker` + `paseo ls/inspect` labels, treat `paseo wait` timeouts as live progress (0 retries), enforce single-retry-then-hold isolated per entity, ignore duplicate/stale completion events, and archive verified/superseded workers without archiving `$PASEO_AGENT_ID` while children run.
 
 ## Acceptance criteria
 
 **AC-1 (VALUE) - A fresh restarted Paseo FO adopts an in-flight worker mid-stage with zero duplicate dispatch, advances durable workflow state, and archives the worker.**
-Verified by: `go test -tags live -count=1 -timeout 15m -run '^TestLivePaseoAdoptionSmoke$' ./internal/ensigncycle -v` passes against an isolated `paseo` daemon (`codex/gpt-6-luna` default; `SPACEDOCK_PASEO_BIN` and `SPACEDOCK_PASEO_LIVE_PROVIDER` overridable), stopping FO-1 while the worker is blocked on `.adoption-release`, booting fresh FO-2, releasing the worker, and asserting: `paseo ls --all --global --json` contains exactly 1 worker for the task, `## Paseo Worker` parses with `state: archived` and matching `agent_id` plus requested/returned provider/mode/model, `### Dispatch Retries` has 0 entries, the task-branch commit and path-scoped split-root stage report commit after `pre_dispatch_state_rev` exist, frontmatter `status` advanced durably to `done`, and the worker is archived. Spawning a second worker, dropping `## Paseo Worker` persistence, spending a retry on FO restart/timeout, failing to advance, or leaving the worker unarchived fails the test.
+Verified by: `go test -tags live -count=1 -timeout 15m -run '^TestLivePaseoAdoptionSmoke$' ./internal/ensigncycle -v` passes against an isolated `paseo` daemon (`codex/gpt-6-luna` default; `SPACEDOCK_PASEO_BIN`, `SPACEDOCK_PASEO_LIVE_PROVIDER`, `SPACEDOCK_PASEO_LIVE_THINKING`, and `SPACEDOCK_PASEO_LIVE_FO_PROVIDER` overridable), stopping FO-1 while the worker is blocked on `.adoption-release`, booting fresh FO-2, releasing the worker, and asserting: `paseo ls --all --global --json` contains exactly 1 worker for the task, `## Paseo Worker` parses with `state: archived` and matching `agent_id` plus requested/returned provider/mode/model/thinking, `### Dispatch Retries` has 0 entries, the task-branch commit and path-scoped split-root stage report commit after `pre_dispatch_state_rev` exist, frontmatter `status` advanced durably to `done`, and `paseo inspect` confirms `Archived == true` on the worker (`Archived == false` on FO-2). Spawning a second worker, dropping `## Paseo Worker` persistence, spending a retry on FO restart/timeout, failing to advance, or leaving the worker unarchived fails the test.
 
 **AC-2 - Worker-record parsing, deterministic label derivation, lost-create-receipt reconciliation, and the 11-row recovery matrix enforce zero-retry timeouts, single-retry-then-hold, duplicate-event idempotency, and per-entity isolation.**
-Verified by: `go test -race -count=1 ./internal/dispatch -run 'TestPaseoWorker|TestReconcilePaseoWorker'` passes across table cases covering every matrix row: `status=timeout` while `running` returns `ContinueWait` with 0 retries; lost create receipt with 1 matching `spacedock.epoch` / `spacedock.worker` candidate adopts with 0 retries and 0 duplicate spawn; ended worker with valid post-`pre_dispatch_state_rev` report verifies and archives; ended worker with missing/incomplete report archives the superseded worker and retries once (`-retry`, `a2`), then holds only the failing entity on attempt 2 while an independent sibling entity returns `SpawnFresh`; duplicate/stale finish events on `archived`/`superseded` records return `IgnoreDuplicate`; `>1` active workers or `pendingPermissions` returns `HoldEntity` with 0 retries and no spawn; malformed `## Paseo Worker` YAML or missing required keys fails closed. Spending a retry on timeout, allowing a 3rd attempt, holding a sibling entity, or accepting a pre-dispatch report fails the test.
+Verified by: `go test -race -count=1 ./internal/dispatch -run 'TestPaseoWorker|TestReconcilePaseoWorker'` passes across table cases covering every matrix row: `status=timeout` while `running` returns `ContinueWait` with 0 retries; lost create receipt with 1 matching `spacedock.epoch` / `spacedock.worker` candidate adopts with 0 retries and 0 duplicate spawn; ended worker with valid post-`pre_dispatch_state_rev` report verifies and archives; ended worker with missing/incomplete report archives the superseded worker and retries once (`-retry`, `a2`), then holds only the failing entity on attempt 2 while an independent sibling entity returns `SpawnFresh`; duplicate/stale finish events on `archived`/`superseded` records return `IgnoreDuplicate`; `>1` active workers or `PendingPermissions` returns `HoldEntity` with 0 retries and no spawn; malformed `## Paseo Worker` YAML or missing required keys fails closed. Spending a retry on timeout, allowing a 3rd attempt, holding a sibling entity, or accepting a pre-dispatch report fails the test.
 
 **AC-3 - `paseo-fo-dispatch.md`, `fo-write-core.md`, and `internal/dispatch/paseo_worker.go` remain structurally bound with zero schema, state-enum, label-key, or write-gate drift.**
-Verified by: `go test -race -count=1 ./internal/contractlint` passes, including `TestPaseoAdoptionContractBinding` (dual-extracting the 20 schema keys, 5-value `state` enum, `spacedock.worker`/`spacedock.epoch` label keys, and recovery action set from `paseo-fo-dispatch.md` and asserting set equality against `internal/dispatch/paseo_worker.go`) and `TestFOWriteCoreMutationGateClassifiesTargets`. Renaming, adding, or dropping any schema field, state token, label key, or recovery action on either side without updating the other fails the test.
+Verified by: `go test -race -count=1 ./internal/contractlint` passes, including `TestPaseoAdoptionContractBinding` (dual-extracting the 22 schema keys, 5-value `state` enum, `spacedock.worker`/`spacedock.epoch` label keys, and recovery action set from `paseo-fo-dispatch.md` and asserting set equality against `internal/dispatch/paseo_worker.go`) and `TestFOWriteCoreMutationGateClassifiesTargets`. Renaming, adding, or dropping any schema field, state token, label key, or recovery action on either side without updating the other fails the test.
 
 **AC-4 - Spacedock validation and section/AC scanning remain clean on entities carrying `## Paseo Worker` and `### Dispatch Retries` alongside `## Stage Report: <stage>`.**
 Verified by: `go test -race -count=1 ./internal/dispatch -run '^TestPaseoWorkerStatusCompatibility$'` drives `status.NativeRunner` (`--validate`, `--read --stage implementation --checklist --json`, and `--read --stage implementation --ac-scan --json`) over split-root entity fixtures placing `## Paseo Worker` both before and after an earlier stage report, asserting exit `0`, zero warnings, intact AC enumeration, and zero checklist/summary contamination. Demoting `## Paseo Worker` to an H3 after a stage report or emitting invalid frontmatter fails the test.
@@ -308,7 +310,7 @@ No existing primary proof owner covers FO restart adoption or Paseo recovery (`T
 ## Stage Report: ideation
 
 - DONE: Define exact worker-record schema stored in the task and deterministic FO restart adoption + lost-create-receipt reconciliation rules using paseo ls/inspect labels (spacedock.worker, spacedock.epoch)
-  Specified H2 `## Paseo Worker` fenced YAML schema (20 required keys + optional `hold_reason`, closed 5-value `state` enum), deterministic `spacedock.worker`/`spacedock.epoch` (`{worker_base}-c{cycle}-a{attempt}`) derivation aligned with `936`, pre-`gate prepare` archival ordering, and Steps 0–3 adoption + lost-create-receipt reconciliation in `docs/dev/.spacedock-state/paseo-worker-adoption-and-recovery/index.md`.
+  Specified H2 `## Paseo Worker` fenced YAML schema (22 required keys including `requested_thinking`/`returned_thinking` + optional `hold_reason`, closed 5-value `state` enum, Paseo 0.17.1 `inspect`/`ls` field alignment with `936` commit `9a33ac400`), deterministic `spacedock.worker`/`spacedock.epoch` (`{worker_base}-c{cycle}-a{attempt}`) derivation, pre-`gate prepare` archival ordering, and Steps 0–3 adoption + lost-create-receipt reconciliation in `docs/dev/.spacedock-state/paseo-worker-adoption-and-recovery/index.md`.
 - DONE: Define exact timeout vs dead-worker vs duplicate-event recovery matrix (single-retry-then-hold, per-entity isolation, verified/superseded archival) with zero day-1 ambiguities
   Defined the complete 11-row recovery matrix, `HasValidNewReport` 4-part Git verification predicate, `### Dispatch Retries` cycle-scoped ledger format, `fo-write-core.md` before/after authorization wording, `$PASEO_AGENT_ID` self-preservation guard, and per-entity hold isolation.
 - DONE: Specify TestLivePaseoAdoptionSmoke (stop FO mid-stage, boot fresh FO, assert single worker + durable advance + archive) and update Expected surface, scanner-exact Acceptance criteria with falsifying Verified by clauses, and Test plan
