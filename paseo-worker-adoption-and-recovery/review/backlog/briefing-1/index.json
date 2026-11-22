@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:x9mfvnkqtbwgm4tba7dy41tw:backlog:attempt-1:revision-1",
+  "question": "Approve paseo-worker-adoption-and-recovery out of backlog to ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:x9mfvnkqtbwgm4tba7dy41tw:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/5a096149321079206ba20ec7c7f571319ce0b709/paseo-worker-adoption-and-recovery/index.md",
+      "rev": "sha256:880763b68b1454bc10f4838b8d7e22bd79640f82cee76bfd61ee6dc66935079a",
+      "mediaType": "text/markdown",
+      "summary": "Paseo worker record in task, FO restart adoption without double-dispatch, timeout/failure recovery rules, and TestLivePaseoAdoptionSmoke."
+    }
+  ]
+}
