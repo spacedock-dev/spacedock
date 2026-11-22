@@ -1,7 +1,7 @@
 ---
 id: 936b86qpa8xy4fb6v0n5cafs
 title: Opt-in Paseo dispatch backend (--host paseo, CLI-first FO binding, and live smoke)
-status: ideation
+status: implementation
 source: captain (2026-11-21)
 started: 2026-11-22T17:09:22Z
 completed:
@@ -53,7 +53,7 @@ gates:
                 reason: Captain approved ideation gate after preflight staff-review revisions
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Let any Paseo-hosted first officer (Claude, Codex, Pi, or Antigravity) dispatch fresh ensigns through Paseo using one host-neutral `--host paseo` contract and 5 `paseo` CLI verbs, backed by a real isolated-daemon live E2E smoke test and an optional (non-required) CI lane using the repo's `codex.exec` model from `internal/release/live_models.txt`.
