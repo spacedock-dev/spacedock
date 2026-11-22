@@ -43,6 +43,17 @@ gates:
                 id: briefing:x9mfvnkqtbwgm4tba7dy41tw:ideation:attempt-1:revision-1
                 digest: sha256:c53021b2ee35fe202f460f3e48e941a2bfc4632d9c886892c2fbf2282fd68d3f
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:x9mfvnkqtbwgm4tba7dy41tw:ideation:1
+                briefing: briefing:x9mfvnkqtbwgm4tba7dy41tw:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-11-22T18:02:04.639076Z"
+                decision: approve
+                reason: Captain approved ideation gate after preflight staff-review revisions
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Persist the Paseo worker handle in the task so a restarted or compacted first officer adopts a live worker instead of double-dispatching, and handle wait timeouts, lost create receipts, dead workers, and duplicate completion events with deterministic single-retry-then-hold recovery isolated per entity.
