@@ -24,6 +24,17 @@ gates:
                 id: briefing:x9mfvnkqtbwgm4tba7dy41tw:backlog:attempt-1:revision-1
                 digest: sha256:d0790bd77f86aa073ddedea14685c10fa1a0e149a0c77a38c8314a151ab900c3
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:x9mfvnkqtbwgm4tba7dy41tw:backlog:1
+                briefing: briefing:x9mfvnkqtbwgm4tba7dy41tw:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-11-22T17:09:15.302548Z"
+                decision: approve
+                reason: Captain approved backlog->ideation dispatch on 6769 with agy neon high
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Persist the Paseo worker handle in the task so a restarted or compacted first officer adopts a live worker instead of double-dispatching, and handle wait timeouts, lost create receipts, and dead workers without wedging unrelated tasks.
