@@ -1,7 +1,7 @@
 ---
 id: x9mfvnkqtbwgm4tba7dy41tw
 title: Paseo worker record, FO restart adoption, and dispatch recovery
-status: ideation
+status: implementation
 source: captain (2026-11-21)
 started: 2026-11-22T17:09:25Z
 completed:
@@ -53,7 +53,7 @@ gates:
                 reason: Captain approved ideation gate after preflight staff-review revisions
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Persist the Paseo worker handle in the task so a restarted or compacted first officer adopts a live worker instead of double-dispatching, and handle wait timeouts, lost create receipts, dead workers, and duplicate completion events with deterministic single-retry-then-hold recovery isolated per entity.
