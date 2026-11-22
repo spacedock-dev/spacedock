@@ -12,6 +12,7 @@ worktree:
 issue:
 pr:
 mod-block:
+sprint-readiness: ready
 ---
 
 Let any Paseo-hosted first officer (Claude, Codex, Pi, or Antigravity) dispatch fresh ensigns through Paseo using one host-neutral `--host paseo` contract and 5 `paseo` CLI verbs, backed by a real isolated-daemon live E2E smoke test and an optional (non-required) CI lane on `codex/gpt-6-luna`.
