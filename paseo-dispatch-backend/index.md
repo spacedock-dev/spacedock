@@ -1,7 +1,7 @@
 ---
 id: 936b86qpa8xy4fb6v0n5cafs
 title: Opt-in Paseo dispatch backend (--host paseo, CLI-first FO binding, and live smoke)
-status: backlog
+status: ideation
 source: captain (2026-11-21)
 started:
 completed:
@@ -34,7 +34,7 @@ gates:
                 reason: Captain approved backlog->ideation dispatch on 6769 with agy neon high
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Let any Paseo-hosted first officer (Claude, Codex, Pi, or Antigravity) dispatch fresh ensigns through Paseo using one host-neutral `--host paseo` contract and 5 `paseo` CLI verbs, backed by a real isolated-daemon live E2E smoke test and an optional (non-required) CI lane on `codex/gpt-6-luna`.
