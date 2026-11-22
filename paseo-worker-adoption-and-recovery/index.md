@@ -1,7 +1,7 @@
 ---
 id: x9mfvnkqtbwgm4tba7dy41tw
 title: Paseo worker record, FO restart adoption, and dispatch recovery
-status: backlog
+status: ideation
 source: captain (2026-11-21)
 started:
 completed:
@@ -34,7 +34,7 @@ gates:
                 reason: Captain approved backlog->ideation dispatch on 6769 with agy neon high
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Persist the Paseo worker handle in the task so a restarted or compacted first officer adopts a live worker instead of double-dispatching, and handle wait timeouts, lost create receipts, and dead workers without wedging unrelated tasks.
