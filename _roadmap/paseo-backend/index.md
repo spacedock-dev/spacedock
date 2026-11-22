@@ -31,9 +31,26 @@ Doing this at the Paseo layer supersedes direct per-host integrations such as `2
    - Add `skills/first-officer/references/paseo-fo-dispatch.md` (5 CLI verbs) + `PASEO_AGENT_ID` selection in `skills/first-officer/SKILL.md`.
    - Add `TestLivePaseoDispatchSmoke` in `internal/ensigncycle/` (isolated daemon, `SPACEDOCK_PASEO_BIN`, `SPACEDOCK_PASEO_LIVE_PROVIDER` defaulting to `codex/gpt-6-luna`, durable Git + archive assertions) and wire an optional (non-required) CI workflow lane using `codex/gpt-6-luna` on the Codex subscription.
 2. **`paseo-worker-adoption-and-recovery` (resilience follow-up).**
-   - Persist worker record (server ID, agent ID, stage, worktree, requested/returned provider, mode, model) in the task so a restarted FO adopts live workers instead of double-dispatching.
-   - Add timeout, lost-create-receipt, dead-worker, and one-retry-then-hold recovery rules to `paseo-fo-dispatch.md`.
-   - Prove with `TestLivePaseoAdoptionSmoke` (kill FO mid-stage, boot fresh FO, assert single worker and clean completion).
+   - Persist a lean 10-field FO-owned H2 `## Paseo Worker` YAML record (`agent_id`, `workspace_id`, `server_id`, `stage`, `epoch`, `cwd`, `pre_dispatch_state_rev`, `requested`/`returned` `{provider, mode, thinking}`, 4-state enum `running | archived | superseded | held`, optional `hold_reason`) in the task so a restarted FO adopts live workers instead of double-dispatching.
+   - Add `paseo inspect`-verified lost-create-receipt reconciliation, timeout/dead-worker/duplicate-event recovery (single-retry-then-hold), and cascade-archive guards to `paseo-fo-dispatch.md`.
+   - Prove with `TestLivePaseoAdoptionSmoke` (stop FO-1 via `paseo stop` mid-stage, boot fresh FO-2, assert single worker and clean completion).
+
+## Sprint lifecycle checklist
+
+**Shape — Shaping FO**
+- [x] **Scope-lock** — 2-task local lane (`936`, `x9m`) bound to target train `0.29.x`; remote workers and child-to-parent questions deferred; optional CI lane on `codex.exec` from `internal/release/live_models.txt`.
+- [x] **Carve** — `936` and `x9m` filed with `sprint: paseo-backend`, `sprint-readiness: ready`, backlog gates approved and consumed.
+- [x] **Ideate** — `936` (`9a33ac400`) and `x9m` (`7fa04fd68`) ideated on `127.0.0.1:6769` (`antigravity/gemini-4-neon` `high`).
+- [x] **Preflight staff review** — independent reviewer (`640e95c4`) wrote [staff-review.md](staff-review.md) (`8447132f3`); all 8 Material findings (`M1`–`M8`) folded in `495c35a93` (`x9m`) and `944f6dfdc` (`936`).
+- [x] **Present & approve ideation gates** — both gates approved by captain and consumed to `implementation`.
+- [x] **Package** — cold-boot Commander package written at [dispatch-sprint-execution.md](dispatch-sprint-execution.md).
+
+**Drive — Commander (cold-booted on `127.0.0.1:6769`, Safehouse + `paseo-safehouse.paseo-access=daemon`)**
+- [ ] Wave 1: `936` (`paseo-dispatch-backend`) implementation → validation + detached adversarial audit → required live CI → PR-merge → done
+- [ ] Wave 2: `x9m` (`paseo-worker-adoption-and-recovery`) implementation → validation + detached adversarial audit → required live CI → PR-merge → done
+- [ ] Pre-cut antipattern audit (independent reviewer over assembled sprint on `main`)
+- [ ] Commander friction ledger committed (`commander-frictions.md`)
+- [ ] Cut release (captain authorizes)
 
 ## Definition of done
 
