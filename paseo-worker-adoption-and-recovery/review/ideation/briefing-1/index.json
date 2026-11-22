@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:x9mfvnkqtbwgm4tba7dy41tw:ideation:attempt-1:revision-1",
+  "question": "Approve paseo-worker-adoption-and-recovery ideation design (post-staff-review M1-M5/M7/M8 folded) to advance to implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:x9mfvnkqtbwgm4tba7dy41tw:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/5a64021637e85c348cbdedd05b9bee928162e8f8/paseo-worker-adoption-and-recovery/index.md",
+      "rev": "sha256:6cb7752b272dbed284be3718c72c4f883a39b675bd2caff7864ff5f75bbc1217",
+      "mediaType": "text/markdown",
+      "summary": "Lean 10-field H2 ## Paseo Worker YAML record (4-state enum, zero uncalled Go simulator), inspect-filtered lost-create-receipt reconciliation, 11-row single-retry-then-hold recovery matrix, fo-write-core.md authorization, status compatibility fixture test, and TestLivePaseoAdoptionSmoke using paseo stop + 936 helper seam (+278 net LOC, 5 files)."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:x9mfvnkqtbwgm4tba7dy41tw:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/5a64021637e85c348cbdedd05b9bee928162e8f8/_roadmap/paseo-backend/staff-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:05cb78809e350f9cc3d34b3f30d2d4a3cc763078a69602f689d115d6026253a7"
+    }
+  ]
+}
