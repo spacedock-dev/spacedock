@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:936b86qpa8xy4fb6v0n5cafs:backlog:attempt-1:revision-1",
+  "question": "Approve paseo-dispatch-backend out of backlog to ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:936b86qpa8xy4fb6v0n5cafs:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/6d739819adfc4556144cce63f6d1aef08c8bf891/paseo-dispatch-backend/index.md",
+      "rev": "sha256:867d22a155fcafb88e298675a52adbba091c81b89ae997c626b7d206124de766",
+      "mediaType": "text/markdown",
+      "summary": "Local CLI-first Paseo FO dispatch binding, --host paseo worker contract, TestLivePaseoDispatchSmoke, and optional codex/gpt-6-luna CI lane."
+    }
+  ]
+}
