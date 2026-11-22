@@ -54,6 +54,9 @@ func RunWithLauncher(probe claudeteam.TeamStateProbe, workflowLauncher string, a
 			fmt.Fprintln(stderr, "error: dispatch build --stamp is incompatible with --advance (a reuse advance presupposes an already-stamped live worker; the post-gate reuse path needs no stamps)")
 			return 2
 		}
+		if code := validateWorkerSettingFlags(opts, stderr); code != 0 {
+			return code
+		}
 		return runBuild(probe, workflowLauncher, opts, stdin, stdout, stderr)
 	case "show-stage-def":
 		if wantsHelp(args[1:]) {
@@ -124,6 +127,10 @@ type buildOptions struct {
 	FeedbackReflow      bool
 	Advance             bool
 	Stamp               bool
+	Model               string
+	ReasoningEffort     string
+	ModelSet            bool
+	ReasoningEffortSet  bool
 }
 
 func parseBuildOptions(args []string, stderr io.Writer) (buildOptions, int) {
@@ -136,6 +143,12 @@ func parseBuildOptions(args []string, stderr io.Writer) (buildOptions, int) {
 		"--checklist-file":        &opts.ChecklistFile,
 		"--scope-notes-file":      &opts.ScopeNotesFile,
 		"--feedback-context-file": &opts.FeedbackContextFile,
+		"--model":                 &opts.Model,
+		"--reasoning-effort":      &opts.ReasoningEffort,
+	}
+	presence := map[string]*bool{
+		"--model":            &opts.ModelSet,
+		"--reasoning-effort": &opts.ReasoningEffortSet,
 	}
 	for i := 0; i < len(args); i++ {
 		a := args[i]
@@ -151,6 +164,9 @@ func parseBuildOptions(args []string, stderr io.Writer) (buildOptions, int) {
 			name := a[:eq]
 			if dst, ok := valueFlags[name]; ok {
 				*dst = a[eq+1:]
+				if set, ok := presence[name]; ok {
+					*set = true
+				}
 			}
 			continue
 		}
@@ -160,6 +176,9 @@ func parseBuildOptions(args []string, stderr io.Writer) (buildOptions, int) {
 				return opts, 2
 			}
 			*dst = args[i+1]
+			if set, ok := presence[a]; ok {
+				*set = true
+			}
 			i++
 			continue
 		}
@@ -175,6 +194,37 @@ func parseBuildOptions(args []string, stderr io.Writer) (buildOptions, int) {
 		}
 	}
 	return opts, 0
+}
+
+func validateWorkerSettingFlags(opts buildOptions, stderr io.Writer) int {
+	var supplied []string
+	if opts.ModelSet {
+		if opts.Model == "" {
+			return buildError(stderr, 2, "dispatch build --model requires a non-empty value")
+		}
+		supplied = append(supplied, "--model")
+	}
+	if opts.ReasoningEffortSet {
+		if opts.ReasoningEffort == "" {
+			return buildError(stderr, 2, "dispatch build --reasoning-effort requires a non-empty value")
+		}
+		supplied = append(supplied, "--reasoning-effort")
+	}
+	if len(supplied) == 0 {
+		return 0
+	}
+	flags := strings.Join(supplied, " and ")
+	if opts.Advance {
+		return buildError(stderr, 2, "dispatch build %s is incompatible with --advance (a reuse advance cannot change a live worker's model or reasoning effort; dispatch fresh instead)", flags)
+	}
+	host, err := resolveBuildHost(opts.Host, os.Getenv)
+	if err != nil {
+		return buildError(stderr, 1, "%s", err)
+	}
+	if host != "codex" {
+		return buildError(stderr, 2, "dispatch build %s is supported only on host codex; got host %s", flags, host)
+	}
+	return 0
 }
 
 // wantsHelp reports whether args request subcommand help. Stop at -- so future
@@ -275,6 +325,7 @@ func printBuildUsage(w io.Writer) {
   spacedock dispatch build --workflow-dir DIR --entity-path FILE --stage STAGE
     --checklist-file FILE|- [--scope-notes-file FILE] [--feedback-context-file FILE]
     [--host claude|codex|pi] [--bare-mode] [--feedback-reflow] [--stamp | --advance]
+    [--model NAME] [--reasoning-effort LEVEL]
 
 Build an ensign dispatch artifact and write the JSON envelope to stdout.
 Assignment identifiers and invocation controls are CLI flags.
@@ -297,6 +348,8 @@ Flags:
   --checklist-file FILE|-       FILE contains one checklist item per non-empty line; use - to read the same format from stdin until EOF. Blank lines are ignored; CRLF and LF are accepted.
   --scope-notes-file FILE       Optional scope-notes file.
   --feedback-context-file FILE  Optional feedback-context file; required with --feedback-reflow.
+  --model NAME                  Codex only: explicit worker model, passed through opaquely as envelope model. Refused on other hosts and with --advance.
+  --reasoning-effort LEVEL      Codex only: explicit worker reasoning effort, emitted as envelope reasoning_effort. Refused on other hosts and with --advance.
   --bare-mode                   Emit the bare sequential shape (no name, no run_in_background); unsupported on host=codex.
   --feedback-reflow             Route a rejection back to its feedback-to target stage; requires --feedback-context-file.
   --advance                     Emit a reuse-advance pointer message for a live worker instead of a spawn envelope. Incompatible with --bare-mode.
