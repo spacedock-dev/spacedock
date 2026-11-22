@@ -2,78 +2,58 @@
 
 **Goal.** Let any Paseo-hosted first officer (Claude, Codex, Pi, or Antigravity) dispatch fresh ensigns through Paseo and verify the work from Git, instead of through the host's native subagents.
 
-**Deliverable.** An opt-in Paseo dispatch binding, `skills/first-officer/references/paseo-fo-dispatch.md` (CLI-first with MCP optional, plus `PASEO_AGENT_ID` selection in `skills/first-officer/SKILL.md`), with a live acceptance test. The existing `spacedock dispatch build --host codex --stamp` supplies Codex assignments unchanged; a host-neutral `--host paseo` mode plus `paseo-ensign-runtime.md` extends the same path to non-Codex Paseo workers (`antigravity`, `opencode`, `copilot`, etc.). [Staff report](staff-report.md)
+**Deliverable.** One host-neutral Paseo dispatch path (`spacedock dispatch build --host paseo`, `skills/ensign/references/paseo-ensign-runtime.md`, and CLI-first `skills/first-officer/references/paseo-fo-dispatch.md` wired from `PASEO_AGENT_ID`), proven by a real isolated-daemon live smoke (`TestLivePaseoDispatchSmoke`), followed by restart adoption and recovery (`TestLivePaseoAdoptionSmoke`). [Staff report](staff-report.md)
 
 ## Why this sprint exists
 
-A Codex first officer drove a Paseo-launched worker by hand through a full stage, and a Claude-marked build produced the same Codex assignment bytes. [Git proof](run-log.md#completion-and-durable-proof) · [Cross-host envelope comparison](run-log.md#cross-host-envelope) A live `antigravity` (`agy`) first officer running under Paseo also drove a fresh `safehouse-codex` ensign end-to-end via the `paseo` CLI alone (auto-linking `ParentAgentId` via `PASEO_AGENT_ID`, committing both the code receipt and split-root stage report in 49 s, verified via `paseo wait` and archived). The Paseo project has operated this way across a Mac and an exe.dev VM. That work depended on manual steps Spacedock should own: prompts patched to replace the native completion message, the first officer relaying worker reports into tasks, and inlined assignments for remote workers. Doing this at the Paseo layer supersedes per-host direct runtime integrations such as `27a` (`agy-runtime-support`).
+Two live probes proved both halves of running Antigravity (`agy`) and Codex through Paseo with zero `agy`-specific Go code:
+1. A live `antigravity` FO drove a fresh `safehouse-codex` ensign end-to-end via the `paseo` CLI alone (auto-linking `ParentAgentId` via `PASEO_AGENT_ID`, committing both the code receipt and split-root stage report in 49 s, verified via `paseo wait` and archived).
+2. A live sandboxed `antigravity` (`gemini-4-neon`) ensign ran inside Safehouse via Paseo's `launch-wrap-hook` (`9f9f39ce1`) + `paseo-safehouse` (`0ff8d55`, `route: wrap`), read a host-neutral prompt, committed the code receipt (`c24eda1`), and committed its path-scoped split-root stage report (`9b1476c`).
 
-## First version
+Doing this at the Paseo layer supersedes direct per-host integrations such as `27a` (`agy-runtime-support`, archived) and replaces manual prompt-patching and hand-relayed reports. [Git proof](run-log.md#completion-and-durable-proof) · [Cross-host envelope comparison](run-log.md#cross-host-envelope)
 
-Fresh Codex workers run on the first officer's Paseo daemon via `paseo` CLI (with Paseo MCP optional when available), and non-Codex Paseo workers (`antigravity`, `opencode`, `copilot`, etc.) follow via a host-neutral `--host paseo` build mode. Remote workers follow after the local lane.
+## Design choices
 
-- **FO transport is CLI-first.** Bind `references/paseo-fo-dispatch.md` to the `paseo` CLI (`paseo workspace create`, `paseo run --no-wait`, `paseo wait`, `paseo inspect`, `paseo send`, `paseo archive`) with MCP optional, and select it from `skills/first-officer/SKILL.md` when `PASEO_AGENT_ID` is set (or Paseo is explicitly selected). This unlocks any Paseo provider (including `antigravity` / `agy`, which exposes no Paseo MCP tools) as FO with zero host-specific Go code. `paseo run --no-wait` automatically sets `ParentAgentId` from `PASEO_AGENT_ID`.
-- **Completion comes from state.** The worker commits its own stage report to the state branch. A finish notification or `paseo wait` only wakes the first officer. Polling is a first-class path, because a first officer started outside Paseo, for example `spacedock claude` in a terminal, has no Paseo agent identity to receive notifications. No step depends on the worker messaging its parent.
-- **A worker record in the task.** The first officer records host, server ID, agent ID, stage, worktree, and the requested and returned mode and model. A new first officer adopts a running worker from this record instead of dispatching a second one.
-- **Workspace and launch.**
-  - Adopt the stamped worktree with `create_workspace`, passing the first officer's own Paseo project ID. Without it, Paseo creates a new project.
-  - Launch with an explicit provider, model and mode, and check all three in the returned snapshot. On a Safehouse machine the provider is a `safehouse-*` one: plain `codex` cannot read `~/.codex` from inside Safehouse.
-  - Keep Spacedock labels in a `spacedock.*` namespace, apart from Paseo's own `paseo.*` labels.
-- **Ownership.** Spacedock owns the worktree, the assignment and its write scope. Paseo owns the workspace and the worker handle.
-- **Lifecycle.**
-  - Workers are the first officer's Paseo children: it shows as working while they run, and archiving it archives them too. The binding never archives the first officer while a worker is live.
-  - Archive each worker after its report is verified.
+- **One `--host paseo` for all Paseo workers.** Under Paseo, every worker (Codex, Antigravity, Claude, Pi) shares the exact same contract: load the `ensign` skill, commit deliverables to the code worktree and `## Stage Report` path-scoped to the state checkout, and finish the turn with `Done: ...`. No worker-runtime branching in `paseo-fo-dispatch.md`.
+- **CLI-first FO transport (5 verbs).** Bind `references/paseo-fo-dispatch.md` to `paseo workspace create`, `paseo run --no-wait`, `paseo wait`, `paseo inspect`/`paseo ls`, and `paseo archive` (MCP optional), selected in `skills/first-officer/SKILL.md` when `PASEO_AGENT_ID` is set or Paseo is explicitly chosen.
+- **Completion comes from Git state.** `paseo wait` / finish events only wake the FO; polling with `notifyOnFinish=false` is first-class.
+- **Real-daemon live tests, zero fake ACP mocks.** To track fast-moving Paseo honestly without maintaining mocks or pin machinery, `internal/ensigncycle/` runs `TestLivePaseoDispatchSmoke` (and later `TestLivePaseoAdoptionSmoke`) against a real isolated `paseo` daemon (`SPACEDOCK_PASEO_BIN`, default `paseo` on `PATH`, canonical `t.TempDir()`, free port, stopped in `t.Cleanup`).
+- **Optional CI lane (like `pi-live`, not required).** Runs `TestLivePaseoDispatchSmoke` with `codex/gpt-6-luna` on the existing Codex subscription (`CODEX_AUTH_JSON`). Locally overridable via `SPACEDOCK_PASEO_LIVE_PROVIDER` (e.g. `antigravity/gemini-4-neon`) and `SPACEDOCK_PASEO_BIN`.
+- **Ownership & lifecycle.** Spacedock owns the worktree, assignment, and write scope; Paseo owns the workspace and worker handle (`spacedock.*` labels). Archive verified workers; never archive the FO while a child worker is live.
 
 ## Sequence
 
-1. **Live acceptance first, riskiest path.**
-   - A real Claude first officer launches a clean Codex worker: a fresh environment where the `spacedock:ensign` skill must be found through the installed plugin.
-   - The worker commits its stage report on the state branch itself, which proves its sandbox can reach the state checkout outside the worktree.
-   - The first officer advances from that committed report with `notifyOnFinish=false`.
-2. **The binding.** Add a skill smoke test for selecting Paseo, then `references/paseo-fo-dispatch.md`. Route the acceptance fixture through it.
-3. **Worker record and adoption.** Kill the first officer mid-stage. A new first officer adopts the running worker from the record, with no second dispatch.
-4. **Completion, recovery and closure.** Fixtures for:
-   - duplicate notifications;
-   - a lost create receipt;
-   - a worker that ended without a report;
-   - a wait timeout during real progress;
-   - a second failure that holds only its own task.
-
-   Each fixture also checks that verified workers are archived.
-5. **Host-neutral Paseo workers (`--host paseo`).** Add `--host paseo` to `spacedock dispatch build` plus `skills/ensign/references/paseo-ensign-runtime.md` (host-neutral `ensign` skill load, split-root state commit, concise final turn message) so `antigravity` and other Paseo providers can run as ensigns without per-host Go branches. Prove with a live `antigravity` ensign once Paseo's per-session `agent.open.before` `wrap` hook unblocks `paseo-safehouse` on newly stamped worktrees.
-6. **Remote workers (`serverId`).** Needed early in practice: the Mac's free disk could not hold an `npm install`. This step covers:
-   - the assignment sent inline, because the dispatch file sits in the first officer's `/tmp`;
-   - a state remote the worker can reach;
-   - push credentials that expire (exe.dev grants 48 hours);
-   - paths and free disk that differ per host.
-7. **Child-to-parent questions** once Paseo has a parent-only daemon permission. A child with `paseo-safehouse.paseo-access=daemon` already delivered a message, but that label grants too much. [Child return channel](run-log.md#child-return-channel)
+1. **`paseo-dispatch-backend` (local lane + E2E test).**
+   - Add `--host paseo` to `spacedock dispatch build` + `skills/ensign/references/paseo-ensign-runtime.md`.
+   - Add `skills/first-officer/references/paseo-fo-dispatch.md` (5 CLI verbs) + `PASEO_AGENT_ID` selection in `skills/first-officer/SKILL.md`.
+   - Add `TestLivePaseoDispatchSmoke` in `internal/ensigncycle/` (isolated daemon, `SPACEDOCK_PASEO_BIN`, `SPACEDOCK_PASEO_LIVE_PROVIDER` defaulting to `codex/gpt-6-luna`, durable Git + archive assertions) and wire an optional (non-required) CI workflow lane using `codex/gpt-6-luna` on the Codex subscription.
+2. **`paseo-worker-adoption-and-recovery` (resilience follow-up).**
+   - Persist worker record (server ID, agent ID, stage, worktree, requested/returned provider, mode, model) in the task so a restarted FO adopts live workers instead of double-dispatching.
+   - Add timeout, lost-create-receipt, dead-worker, and one-retry-then-hold recovery rules to `paseo-fo-dispatch.md`.
+   - Prove with `TestLivePaseoAdoptionSmoke` (kill FO mid-stage, boot fresh FO, assert single worker and clean completion).
 
 ## Definition of done
 
-Steps 1 to 4 deliver the local lane. Through the installed binding, a real Claude (or Antigravity) first officer:
-- launches a clean Codex worker;
-- advances from the worker's own committed report with notifications off;
-- adopts a running worker after a restart without dispatching again;
-- archives the verified worker.
-
-Step 5 extends the same local lane to non-Codex Paseo workers (`antigravity`, etc.) via `--host paseo` once the upstream `agent.open.before` launch-wrapper hook lands.
-
-The acceptance record includes the requested and returned Paseo modes.
+Through the installed binding and `TestLivePaseoDispatchSmoke`, a real Paseo FO:
+- builds a host-neutral `--host paseo` assignment and adopts the stamped worktree;
+- dispatches a fresh Paseo worker (`codex/gpt-6-luna` in CI, overridable to `antigravity/gemini-4-neon` locally);
+- verifies the worker's own code and split-root state commits with notifications off;
+- archives the verified worker;
+- (after task 2) adopts a running worker across an FO restart without spawning a second one.
 
 ## Related work outside this sprint
 
-- **`dispatch build` guard:** refuse a stamped `worktree:` that is not an existing path. A stamp that held a description, not a path, was carried into the next dispatch.
-- **First-officer boot guard:** refuse a status change or dispatch from a session that never booted as first officer.
-- **Paseo-side findings (resolved):** `create_agent` requested with `modeId=auto` returned `full-access` because `paseo-safehouse` (`server/service.ts`) intentionally forces `modeId: "full-access"` / `sandbox_mode: "danger-full-access"` for wrapped Codex sessions — Codex cannot nest macOS Seatbelt inside Safehouse. [First launch](run-log.md#workspace-and-spawn)
-- **Upstream Paseo launch-wrapper hook & `paseo-safehouse`:** Launching `antigravity` into a freshly stamped worktree currently fails in `paseo-safehouse`'s `agent.create.before` because automatic Safehouse defaults on for new worktree cwds and `antigravity` is a plugin-supplied provider not in `paseo-safehouse`'s `factories` list. Upstream prototype for `agent.open.before` `wrap` (coordinated with `paseo-safehouse` manager `7d469e54` and `paseo` manager `4fc75d8c`) removes per-provider `safehouse-*` entries and enables Safehouse for Antigravity and all SDK ACP providers.
+- **Upstream Paseo launch-wrapper hook & `paseo-safehouse`:** `task/launch-wrap-hook` (`9f9f39ce1` in `paseo`) + `plugin-provider-sandbox` (`0ff8d55` in `paseo-safehouse`, plus follow-up `symlinked-daemon-home`) enable Safehouse-wrapped `antigravity` workers without `safehouse-*` entries. Until merged to production, `antigravity` workers require the test daemon build; `codex/gpt-6-luna` runs on production Paseo today.
+- **Paseo-side findings (resolved):** `modeId=auto` returned `full-access` because `paseo-safehouse` (`server/service.ts`) intentionally forces `full-access` / `danger-full-access` for wrapped Codex sessions (Codex cannot nest macOS Seatbelt inside Safehouse).
 - **Antigravity skill freshness:** `~/.gemini/config/plugins/spacedock/` can drift behind the `spacedock` binary; keep `agy` skills aligned via `~/.agents/skills` / `spacedock install` / `paseo-spacedock`.
-- **Paseo daemon permissions:** a parent-only permission for child-to-parent messages, owned by the Paseo daemon access-control work.
+- **`dispatch build` / FO boot guards:** general Spacedock hardening outside this sprint.
+- **Remote workers (`serverId`) & child-to-parent questions:** deferred until the local lane and its live E2E test are proven in daily use (and until Paseo ships a parent-only daemon ACL).
 
 ## Out of scope
 
+- Remote workers (`serverId`) and expiring remote push credentials (deferred).
+- Child-to-parent mid-run questions (blocked on Paseo parent-only daemon ACL).
 - Worker reuse across stages.
+- Fake ACP stub servers or Paseo version-pinning machinery.
 - Several first officers on one workflow, or leases.
-- Moving a worker to a new parent across hosts.
-- Automatic failover.
-- Implementing the Paseo daemon access control.
-- Direct per-host Antigravity CLI support (`27a` / `agy-runtime-support`, superseded by this sprint).
+- Direct per-host Antigravity CLI support (`27a` / `agy-runtime-support`, superseded and archived).
