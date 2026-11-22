@@ -6,11 +6,12 @@ Running log of real frictions encountered while cold-booting and operating sprin
 
 | # | Phase | Friction | Severity | Status |
 |---|---|---|---|---|
-| F1 | Cold boot (Step 1) | `PATH` resolves `paseo` to unbuilt worktree `node_modules/.bin/paseo` (`ERR_MODULE_NOT_FOUND: packages/cli/dist/index.js`) | High | Deferred (dev daemon env) |
-| F2 | Cold boot (Step 1) | `/Users/clkao/.local/bin/paseo` → `/Applications/Paseo.app/Contents/Resources/bin/paseo` fails with `Operation not permitted` under Safehouse — **no executable `paseo` CLI exists in this Commander sandbox** | **Blocker** | Open (escalated to Captain) |
-| F3 | Cold boot (Step 1) | `PASEO_AGENT_ID` is absent from Commander's shell environment (`PASEO_HOME` and `APP_SANDBOX_CONTAINER_ID` are set, but not `PASEO_AGENT_ID`) | High | Open (needs Paseo/agy env propagation) |
-| F4 | Cold boot (Step 2) | `/opt/homebrew/bin/spacedock --version` (`0.29.0-pre0`) omits `contract 3` on Antigravity because `runtimehost.Detect` returns empty (`internal/cli/cli.go:916`), tripping `first-officer-shared-core.md` binary gate | High | Deferred (follow-up candidate) |
-| F5 | Cold boot (Step 2) | Global `~/.gemini/config/plugins/spacedock/` (Jun 5) drifts from repo `skills/first-officer/` (`SKILL.md` and `first-officer-shared-core.md` differ) | Medium | Deferred (tracked outside sprint) |
+| F1 | Cold boot (Step 1) | `PATH` resolves `paseo` to unbuilt worktree `node_modules/.bin/paseo` (`ERR_MODULE_NOT_FOUND: packages/cli/dist/index.js`) | High | Resolved (`npm run build:server` in Paseo integration worktree) |
+| F2 | Cold boot (Step 1) | `/Users/clkao/.local/bin/paseo` → `/Applications/Paseo.app/Contents/Resources/bin/paseo` fails with `Operation not permitted` under Safehouse (`paseo-safehouse`'s `paseoAppBundle()` skipped `/Applications/Paseo.app` by design because `PATH` resolved `paseo` to the dev worktree first) | **Blocker** | Resolved via F1 (`paseo 0.17.1` reachable on `127.0.0.1:6769`) |
+| F3 | Cold boot (Step 1) | `PASEO_AGENT_ID` is stripped by `paseo-safehouse` from Commander's shell environment (`PASEO_HOME` and `APP_SANDBOX_CONTAINER_ID` are set, not `PASEO_AGENT_ID`) | High | Filed upstream (`paseo-safehouse` task `tv` / `agent-identity-env`); worked around in-session by explicitly exporting `PASEO_AGENT_ID=3b905937-e237-4060-af8c-87b279dd96d9` |
+| F4 | Cold boot (Step 2) | `/opt/homebrew/bin/spacedock --version` (`0.29.0-pre0`) omits `contract 3` on Antigravity because `runtimehost.Detect` returns empty (`internal/cli/cli.go:916`), tripping `first-officer-shared-core.md` binary gate | High | Deferred (post-sprint follow-up; keep `936` faithful to locked ideation gate) |
+| F5 | Cold boot (Step 2) | Global `~/.gemini/config/plugins/spacedock/` (Jun 5) drifts from repo `skills/first-officer/` (`SKILL.md` and `first-officer-shared-core.md` differ) | Medium | Deferred (tracked outside sprint; using repo-local skills) |
+| F6 | Wave 1 dispatch (`936`) | Before `--host paseo` ships in `936`, Commander must borrow `spacedock dispatch build --host codex --stamp` and wrap it with a host-neutral prompt pointer for the Paseo worker | Medium | Fixed in-sprint by `936` (Wave 2 `x9m` will use `--host paseo --stamp` directly) |
 
 ---
 
@@ -36,15 +37,20 @@ Running log of real frictions encountered while cold-booting and operating sprin
   ```
   Checked every directory on `$PATH` plus `~/.local/share/fnm/...`, `~/.bun/bin`, `/opt/homebrew/bin`, `/usr/local/bin` — no other `paseo` binary exists on this host.
 - **Impact:** Boot Step 1 (`paseo --version && paseo status --json`, confirming `connectedDaemon == "reachable"`) cannot pass. Commander cannot dispatch Wave 1 (`936`) via Paseo on this daemon without either (a) building `packages/cli` (and its workspace deps) in the Paseo integration worktree (which is already on `PATH` and readable inside Safehouse), (b) adjusting `paseo-safehouse`'s `paseo-access=daemon` profile to allow `/Applications/Paseo.app`, or (c) installing a standalone `@getpaseo/cli` binary in a Safehouse-readable path (e.g. `~/.local/bin` or fnm global bin).
-- **Disposition:** Hard blocker — escalated immediately to Captain per Boot Step 1 fail-fast and Escalation rules.
+- **Disposition:** Resolved. Building `@getpaseo/cli` and workspace deps via `npm run build:server` in `/Users/clkao/git/spacedock-research/paseo/.worktrees/integration` unblocked plain `paseo --version` (`0.17.1`) and `paseo status --json` (`connectedDaemon: "reachable"` on `127.0.0.1:6769`).
+- **Root cause note (F2):** `paseo-safehouse`'s `paseoAppBundle()` skipped `/Applications/Paseo.app` by design because `PATH` resolved `paseo` to the dev worktree first (already readable under `add-dirs-ro=~/git/spacedock-research`).
 
-### F3 — `PASEO_AGENT_ID` missing from Commander shell environment
+### F3 — `PASEO_AGENT_ID` stripped by `paseo-safehouse`
 - **Observed:** `env` inside Commander's shell contains `PASEO_HOME=/Users/clkao/git/spacedock-research/paseo/.worktrees/integration/.dev/paseo-home` and `APP_SANDBOX_CONTAINER_ID=agent-safehouse`, but `PASEO_AGENT_ID` is completely absent.
 - **Impact:**
-  1. `skills/first-officer/SKILL.md`'s planned `PASEO_AGENT_ID` auto-selection rule will not trigger automatically on Antigravity (requires explicit captain selection unless fixed).
-  2. `spacedock dispatch build --host paseo`'s `PASEO_AGENT_ID`-based `/tmp/spacedock-dispatch/` filename disambiguation will fall back to plain `{derivedName}.md`.
-  3. `paseo run` child spawns will not auto-populate `ParentAgentId` via Paseo CLI's `resolveCallerAgentId`, which would also affect `TestLivePaseoDispatchSmoke`'s `ParentAgentId == foRun.AgentID` assertion if tested with an `antigravity` FO.
-- **Disposition:** Needs investigation in Paseo's Antigravity provider / `antigravity-cli` tool-shell env forwarding.
+  1. `skills/first-officer/SKILL.md`'s planned `PASEO_AGENT_ID` auto-selection rule will not trigger automatically on Safehouse-wrapped Antigravity without the upstream fix.
+  2. `spacedock dispatch build --host paseo`'s `PASEO_AGENT_ID`-based `/tmp/spacedock-dispatch/` filename disambiguation falls back to plain `{derivedName}.md` unless `PASEO_AGENT_ID` is exported.
+  3. `paseo run` child spawns will not auto-populate `ParentAgentId` via Paseo CLI's `resolveCallerAgentId` unless `PASEO_AGENT_ID` is present.
+- **Disposition:** Confirmed real `paseo-safehouse` bug; filed upstream as task `tv` (`agent-identity-env`). Worked around in this Commander session by explicitly exporting `PASEO_AGENT_ID=3b905937-e237-4060-af8c-87b279dd96d9` on `paseo run` and `spacedock dispatch build --host paseo` commands.
+
+### F6 — Wave 1 bootstrap borrows `--host codex` before `--host paseo` ships
+- **Observed:** Dispatching Wave 1 (`936`) before `--host paseo` exists requires `spacedock dispatch build --host codex --stamp` and overriding its Codex-specific `$spacedock:ensign` prompt with a host-neutral prompt pointer when spawning the Paseo worker.
+- **Disposition:** Fixed in-sprint by `936` itself; once `936` merges to `main` and `./spacedock` is rebuilt, Wave 2 (`x9m`) switches directly to `--host paseo --stamp` with verbatim prompt forwarding.
 
 ### F4 — `spacedock --version` omits `contract 3` on Antigravity
 - **Observed:** `/opt/homebrew/bin/spacedock --version` outputs:
