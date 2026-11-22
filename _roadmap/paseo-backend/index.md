@@ -1,5 +1,8 @@
 # Sprint paseo-backend
 
+**Target release train:** `0.29.x` (movable line — rebindable without changing member frontmatter).
+**Members:** `spacedock status --workflow-dir docs/dev --where sprint=paseo-backend` (drivable: `--where 'sprint-readiness != defer'`).
+
 **Goal.** Let any Paseo-hosted first officer (Claude, Codex, Pi, or Antigravity) dispatch fresh ensigns through Paseo and verify the work from Git, instead of through the host's native subagents.
 
 **Deliverable.** One host-neutral Paseo dispatch path (`spacedock dispatch build --host paseo`, `skills/ensign/references/paseo-ensign-runtime.md`, and CLI-first `skills/first-officer/references/paseo-fo-dispatch.md` wired from `PASEO_AGENT_ID`), proven by a real isolated-daemon live smoke (`TestLivePaseoDispatchSmoke`), followed by restart adoption and recovery (`TestLivePaseoAdoptionSmoke`). [Staff report](staff-report.md)
