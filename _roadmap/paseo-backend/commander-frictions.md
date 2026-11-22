@@ -12,6 +12,8 @@ Running log of real frictions encountered while cold-booting and operating sprin
 | F4 | Cold boot (Step 2) | `/opt/homebrew/bin/spacedock --version` (`0.29.0-pre0`) omits `contract 3` on Antigravity because `runtimehost.Detect` returns empty (`internal/cli/cli.go:916`), tripping `first-officer-shared-core.md` binary gate | High | Deferred (post-sprint follow-up; keep `936` faithful to locked ideation gate) |
 | F5 | Cold boot (Step 2) | Global `~/.gemini/config/plugins/spacedock/` (Jun 5) drifts from repo `skills/first-officer/` (`SKILL.md` and `first-officer-shared-core.md` differ) | Medium | Deferred (tracked outside sprint; using repo-local skills) |
 | F6 | Wave 1 dispatch (`936`) | Before `--host paseo` ships in `936`, Commander must borrow `spacedock dispatch build --host codex --stamp` and wrap it with a host-neutral prompt pointer for the Paseo worker | Medium | Fixed in-sprint by `936` (Wave 2 `x9m` will use `--host paseo --stamp` directly) |
+| F7 | Wave 1 Day-1 check (`936`) | `paseo-safehouse` confines a worktree-workspace ensign (`.worktrees/spacedock-ensign-paseo-dispatch-backend`) strictly to its worktree `cwd` + `/tmp`, denying BOTH parent `.git` (`git status` exits 128) AND sibling `docs/dev/.spacedock-state` + `docs/dev` (`Operation not permitted`) | **Blocker** | Open (escalated to Captain) |
+| F8 | Wave 1 Day-1 check (`936`) | Ordinary Safehouse ensigns also hit `Operation not permitted` on `~/.codex/auth.json`, have no `paseo` on `PATH`, and lack `PASEO_AGENT_ID` (same bug as F3 / `tv`) | High | Confirmed boundary (`skills/ensign/SKILL.md` fallback clause is load-bearing; live smoke must run from Commander/CI) |
 
 ---
 
@@ -51,6 +53,30 @@ Running log of real frictions encountered while cold-booting and operating sprin
 ### F6 — Wave 1 bootstrap borrows `--host codex` before `--host paseo` ships
 - **Observed:** Dispatching Wave 1 (`936`) before `--host paseo` exists requires `spacedock dispatch build --host codex --stamp` and overriding its Codex-specific `$spacedock:ensign` prompt with a host-neutral prompt pointer when spawning the Paseo worker.
 - **Disposition:** Fixed in-sprint by `936` itself; once `936` merges to `main` and `./spacedock` is rebuilt, Wave 2 (`x9m`) switches directly to `--host paseo --stamp` with verbatim prompt forwarding.
+
+### F7 — `paseo-safehouse` blocks parent `.git` and sibling `.spacedock-state` for non-`/tmp` Git worktrees (Day-1 Priority Check BLOCKER)
+- **Observed:** Spawned `936` implementation worker `e60088b8-1680-45d8-9bf7-bf76c24fefb9` (`antigravity/gemini-4-neon`, `thinking: high`, `ParentAgentId: 3b905937-e237-4060-af8c-87b279dd96d9`) in adopted worktree workspace `wks_f2cea2ad7052f9f1` (`isolation: "worktree"`, `cwd: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-paseo-dispatch-backend`).
+- **Exact Seatbelt (`EPERM`) failures reported by the worker:**
+  1. **Parent `.git` metadata denied — all `git` commands in the worktree fail:**
+     - Worktree `.git` points to `gitdir: /Users/clkao/git/spacedock-research/spacedock-v1/.git/worktrees/spacedock-ensign-paseo-dispatch-backend`.
+     - `ls -la /Users/clkao/git/spacedock-research/spacedock-v1/.git/` → `Operation not permitted`
+     - `git status -sb` → exit `128`: `fatal: not a git repository: /Users/clkao/git/spacedock-research/spacedock-v1/.git/worktrees/spacedock-ensign-paseo-dispatch-backend`
+  2. **Sibling `.spacedock-state` checkout denied (both read and write):**
+     - `stat /Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/.spacedock-state/paseo-dispatch-backend/index.md` → `Operation not permitted`
+     - `touch /Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/.spacedock-state/.probe` → `Operation not permitted`
+  3. **Parent `docs/dev` workflow dir and parent `skills/` denied:**
+     - `spacedock dispatch show-stage-def --workflow-dir /Users/clkao/git/spacedock-research/spacedock-v1/docs/dev --stage implementation` → `error: workflow directory not found: /Users/clkao/git/spacedock-research/spacedock-v1/docs/dev`
+     - `stat /Users/clkao/git/spacedock-research/spacedock-v1/skills/ensign/SKILL.md` → `operation not permitted` (worker had to fall back to identical worktree copies).
+- **Why earlier probes missed this:** All 2026-11-18 and 2026-11-21 live probes used temp fixtures inside `/private/tmp/...`, where Safehouse allows broad `/private/tmp` access. On a real non-`/tmp` repo, confining a worktree workspace strictly to `cwd` breaks Git worktrees completely (`git rev-parse --git-common-dir` is outside `cwd`) and blocks split-root `.spacedock-state` read/write.
+- **Note on M4 confirmed live:** `paseo run --workspace wks_f2cea2ad7052f9f1 --json` did indeed print `Using workspace wks_f2cea2ad7052f9f1` to stderr on exit `0`; separate stdout/stderr capture parsed JSON cleanly.
+- **Disposition:** Hard blocker on Wave 1 (`936`) implementation; archived clean idle worker `e60088b8-1680-45d8-9bf7-bf76c24fefb9` (0 edits in worktree) and escalated immediately to Captain.
+
+### F8 — Ordinary Safehouse ensign environment boundaries confirmed
+- **Observed inside `e60088b8-1680-45d8-9bf7-bf76c24fefb9`:**
+  - `ls -la ~/.codex/auth.json` → `Operation not permitted`
+  - `which paseo` → not found
+  - `PASEO_AGENT_ID` → not set (same `paseo-safehouse` stripping bug as F3 / `tv`; confirms `936`'s `skills/ensign/SKILL.md` fallback `or the dispatch prompt names references/paseo-ensign-runtime.md` is load-bearing whenever `PASEO_AGENT_ID` is stripped).
+- **Disposition:** Expected security boundary for ordinary ensigns (`paseo` / `~/.codex/auth.json` remain locked down); `TestLivePaseoDispatchSmoke` / `TestLivePaseoAdoptionSmoke` should run from Commander or CI rather than inside an ordinary ensign.
 
 ### F4 — `spacedock --version` omits `contract 3` on Antigravity
 - **Observed:** `/opt/homebrew/bin/spacedock --version` outputs:
