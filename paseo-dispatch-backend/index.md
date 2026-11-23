@@ -62,6 +62,17 @@ gates:
                 id: briefing:936b86qpa8xy4fb6v0n5cafs:validation:attempt-1:revision-1
                 digest: sha256:cc32093e13fc9972f9a0a59903752e93e919f2b9b34e494bd499a472c88f3fcb
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:936b86qpa8xy4fb6v0n5cafs:validation:1
+                briefing: briefing:936b86qpa8xy4fb6v0n5cafs:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-11-23T08:27:01.740563Z"
+                decision: approve
+                reason: Captain approved validation gate toward PR (including push and PR creation)
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Let any Paseo-hosted first officer (Claude, Codex, Pi, or Antigravity) dispatch fresh ensigns through Paseo using one host-neutral `--host paseo` contract and 5 `paseo` CLI verbs, backed by a real isolated-daemon live E2E smoke test and an optional (non-required) CI lane using the repo's `codex.exec` model from `internal/release/live_models.txt`.
