@@ -3,7 +3,7 @@ id: xdhbscjmpv0prk3k5yz1ngpw
 title: Paseo-wide FO runtime support and generic unsupported-harness fallback hints
 status: ideation
 source: captain (2026-11-23)
-started:
+started: 2026-11-23T23:47:27Z
 completed:
 verdict:
 score:
