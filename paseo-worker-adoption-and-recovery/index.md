@@ -73,6 +73,11 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:x9mfvnkqtbwgm4tba7dy41tw-validation-2
+              briefing:
+                id: briefing:x9mfvnkqtbwgm4tba7dy41tw:validation:attempt-2:revision-1
+                digest: sha256:be3f491dbc2a29dced471e630e48a5ec0513098a6b16f28a677c484b7ab85951
+                room-ref: '@review/validation/briefing-2'
 ---
 
 Persist the Paseo worker handle in the task so a restarted or compacted first officer adopts a live worker instead of double-dispatching, and handle wait timeouts, lost create receipts, dead workers, and duplicate completion events with deterministic single-retry-then-hold recovery isolated per entity.

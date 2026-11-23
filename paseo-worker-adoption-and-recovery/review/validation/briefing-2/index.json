@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:x9mfvnkqtbwgm4tba7dy41tw:validation:attempt-2:revision-1",
+  "question": "Approve task Paseo worker record, FO restart adoption, and dispatch recovery (validation) to push updated commits to stacked PR #895 and proceed toward merge and stack-tip live CI?",
+  "artifacts": [
+    {
+      "id": "artifact:x9mfvnkqtbwgm4tba7dy41tw:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/2be90e32e9ac4d72c0d8aebd674ef6501867bde7/paseo-worker-adoption-and-recovery/index.md",
+      "rev": "sha256:a46cc2f7fb2db1178212909ea589a35770e493e79c695fe2ce012064e5d93877",
+      "mediaType": "text/markdown",
+      "summary": "Closed both sprint pre-merge audit ship-blockers, passed strict live TestLivePaseoAdoptionSmoke end-to-end with zero duplicate spawns and zero retries, and passed Cycle 5 small-change fast-path validation (AC-1 through AC-3 verified, zero Material findings or Deferred risks)."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:x9mfvnkqtbwgm4tba7dy41tw:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://main/439abf789d6cdddd846bed8753a42ea67e18a68f/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:47fdb50f43c626904ee13d88168d3f3e0cbca3a7f44f34a5d553df0ef6ecbb2d"
+    }
+  ]
+}
