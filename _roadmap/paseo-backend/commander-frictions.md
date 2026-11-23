@@ -14,6 +14,7 @@ Running log of real frictions encountered while cold-booting and operating sprin
 | F6 | Wave 1 dispatch (`936`) | Before `--host paseo` ships in `936`, Commander must borrow `spacedock dispatch build --host codex --stamp` and wrap it with a host-neutral prompt pointer for the Paseo worker | Medium | Fixed in-sprint by `936` (Wave 2 `x9m` will use `--host paseo --stamp` directly) |
 | F7 | Wave 1 Day-1 check (`936`) | `paseo-safehouse` confines a worktree-workspace ensign (`.worktrees/spacedock-ensign-paseo-dispatch-backend`) strictly to its worktree `cwd` + `/tmp`, denying BOTH parent `.git` (`git status` exits 128) AND sibling `docs/dev/.spacedock-state` + `docs/dev` (`Operation not permitted`) | **Blocker** | Reported upstream (`paseo-safehouse` manager `7d469e54`); worked around via gitignored mode-600 worktree `.safehouse` (reused for future worktrees) |
 | F8 | Wave 1 Day-1 check (`936`) | Ordinary Safehouse ensigns also hit `Operation not permitted` on `~/.codex/auth.json`, have no `paseo` on `PATH`, and lack `PASEO_AGENT_ID` (same bug as F3 / `tv`) | High | Confirmed boundary (`skills/ensign/SKILL.md` fallback clause is load-bearing; live smoke must run from Commander/CI) |
+| F9 | Wave 1 implementation (`936`) | `antigravity` worker yielded its turn while waiting on backgrounded `go test` tasks, causing `paseo wait` to return `status: "idle"` before any code commit or stage report existed | High | Caught by Git-state completion gate; recovered via `paseo send --no-wait` (completed cleanly with `686ea0da5` and `b1f2df67e`) |
 
 ---
 
@@ -77,6 +78,11 @@ Running log of real frictions encountered while cold-booting and operating sprin
   - `which paseo` → not found
   - `PASEO_AGENT_ID` → not set (same `paseo-safehouse` stripping bug as F3 / `tv`; confirms `936`'s `skills/ensign/SKILL.md` fallback `or the dispatch prompt names references/paseo-ensign-runtime.md` is load-bearing whenever `PASEO_AGENT_ID` is stripped).
 - **Disposition:** Expected security boundary for ordinary ensigns (`paseo` / `~/.codex/auth.json` remain locked down); `TestLivePaseoDispatchSmoke` / `TestLivePaseoAdoptionSmoke` should run from Commander or CI rather than inside an ordinary ensign.
+
+### F9 — Antigravity worker premature `idle` on backgrounded shell task
+- **Observed:** During `936` implementation (`27c9d9a7-09c6-4605-a96d-bd2fe5f00814`, `antigravity/gemini-4-neon`), after writing all 17 files and passing fast checks, the worker backgrounded `go test ./...` / `go test ./... -race` and ended its turn waiting for those background tasks. Paseo's Antigravity adapter transitioned the agent to `Status: "idle"`, so `paseo wait` returned `status: "idle"` while all files were uncommitted and `## Stage Report: implementation` did not exist.
+- **Impact:** Proves why `paseo-backend`'s core design rule ("`paseo wait` `idle` is only a wake signal; Git commits + stage report are the completion gate") is essential! Without the Git gate, a naive FO would have advanced on premature `idle`.
+- **Disposition:** Recovered cleanly in-session via `paseo send --no-wait` instructing the live idle worker to finish its test check without yielding mid-test and commit; worker finished cleanly (`686ea0da5` on `paseo-dispatch-backend`, `b1f2df67e` in `.spacedock-state`) and was archived. Worth noting for `paseo` Antigravity ACP adapter / `x9m` recovery docs.
 
 ### F4 — `spacedock --version` omits `contract 3` on Antigravity
 - **Observed:** `/opt/homebrew/bin/spacedock --version` outputs:
