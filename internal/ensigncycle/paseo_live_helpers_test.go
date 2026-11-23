@@ -96,19 +96,24 @@ func startIsolatedPaseoDaemon(t *testing.T, opts ...paseoDaemonOption) *paseoDae
 	for _, kv := range paseoDaemonConfigEntries(listenAddr) {
 		d.runJSON(t, nil, "daemon", "config", "set", kv[0], kv[1], "--json")
 	}
-	d.runJSON(t, nil, "daemon", "start", "--timeout", "30", "--json")
 	t.Cleanup(func() {
-		_, _ = runPaseoJSON(d.Bin, d.Home, d.Env, nil, "daemon", "stop", "--force", "--timeout", "5", "--json")
+		_, stopErr := runPaseoJSON(d.Bin, d.Home, d.Env, nil, "daemon", "stop", "--force", "--timeout", "5", "--json")
 		var st struct{ LocalDaemon string }
-		if _, err := runPaseoJSON(d.Bin, d.Home, d.Env, &st, "status", "--json"); err == nil && st.LocalDaemon != "stopped" {
-			t.Errorf("isolated paseo daemon localDaemon = %q after stop, want stopped", st.LocalDaemon)
+		if _, err := runPaseoJSON(d.Bin, d.Home, d.Env, &st, "status", "--json"); err != nil {
+			t.Errorf("isolated paseo daemon status after stop failed (stopErr=%v): %v", stopErr, err)
+		} else if st.LocalDaemon != "stopped" {
+			t.Errorf("isolated paseo daemon localDaemon = %q after stop (stopErr=%v), want stopped", st.LocalDaemon, stopErr)
 		}
 		if t.Failed() {
-			if data, err := os.ReadFile(filepath.Join(d.Home, "paseo.log")); err == nil {
-				_ = os.WriteFile(filepath.Join(d.ArtifactDir, "paseo.log"), data, 0o644)
+			for _, name := range []string{"daemon.log", "paseo.log"} {
+				if data, err := os.ReadFile(filepath.Join(d.Home, name)); err == nil {
+					_ = os.WriteFile(filepath.Join(d.ArtifactDir, name), data, 0o644)
+					break
+				}
 			}
 		}
 	})
+	d.runJSON(t, nil, "daemon", "start", "--timeout", "30", "--json")
 	deadline := time.Now().Add(30 * time.Second)
 	for {
 		var st struct {
@@ -146,25 +151,21 @@ func (d *paseoDaemon) stageNonCodexSkillsIfNeeded(t *testing.T, repoRoot string)
 
 func setupPaseoSplitRootFixture(t *testing.T, root string) paseoSplitRootFixture {
 	t.Helper()
-	repoRoot := filepath.Join(root, "repo")
+	repoRoot, slug := filepath.Join(root, "repo"), "paseo-smoke"
 	workflowDir := filepath.Join(repoRoot, "docs", "smoke")
 	stateRoot := filepath.Join(workflowDir, ".spacedock-state")
-	slug := "paseo-smoke"
 	entityPath := filepath.Join(stateRoot, slug, "index.md")
 	mustMkdirAll(t, workflowDir)
 	testgit.InitRepo(t, repoRoot, "-q")
-
 	mustWriteFile(t, filepath.Join(workflowDir, "README.md"), "---\ncommissioned-by: spacedock@1\nentity-type: task\nid-style: slug\nstate: .spacedock-state\nstages:\n  defaults:\n    worktree: false\n    concurrency: 1\n  states:\n    - name: implementation\n      initial: true\n      worktree: true\n    - name: done\n      terminal: true\n---\n# Paseo Smoke Workflow\n\n### implementation\n\nWrite receipt.txt on the worktree branch and append the stage report in .spacedock-state.\n\n- **Outputs:** Committed code file and path-scoped stage report commit.\n\n### done\n\nTerminal stage.\n")
 	mustWriteFile(t, filepath.Join(repoRoot, ".gitignore"), "docs/smoke/.spacedock-state/\n.worktrees/\n.agents/\n")
 	git(t, repoRoot, "add", ".gitignore", "docs/smoke/README.md")
 	git(t, repoRoot, "commit", "-q", "-m", "init smoke workflow")
-
 	git(t, repoRoot, "worktree", "add", "--orphan", "-b", "spacedock-state/smoke", stateRoot)
 	mustMkdirAll(t, filepath.Dir(entityPath))
 	mustWriteFile(t, entityPath, "---\nid: paseo-smoke\ntitle: Paseo Smoke Task\nstatus: implementation\nstarted:\ncompleted:\nverdict:\nworktree:\n---\n\n## Problem\n\nVerify end-to-end Paseo dispatch from FO to fresh ensign.\n")
 	git(t, stateRoot, "add", filepath.Join(slug, "index.md"))
 	git(t, stateRoot, "commit", "-q", "-m", "seed paseo-smoke entity")
-
 	return paseoSplitRootFixture{RepoRoot: repoRoot, WorkflowDir: workflowDir, StateRoot: stateRoot, EntityPath: entityPath, Slug: slug}
 }
 

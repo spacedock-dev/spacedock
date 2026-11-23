@@ -21,16 +21,13 @@ func defaultPaseoLiveProvider() string {
 
 func paseoDaemonConfigEntries(listenAddr string) [][2]string {
 	return [][2]string{
-		{"daemon.listen", listenAddr},
-		{"daemon.relay.enabled", "false"},
-		{"features.webUi.enabled", "false"},
-		{"features.dictation.enabled", "false"},
-		{"features.voiceMode.enabled", "false"},
+		{"daemon.listen", listenAddr}, {"daemon.relay.enabled", "false"},
+		{"features.webUi.enabled", "false"}, {"features.dictation.enabled", "false"}, {"features.voiceMode.enabled", "false"},
 	}
 }
 
 func paseoLiveEnv(paseoHome, spacedockBin, codexHome, openAIKey string) []string {
-	env := cleanEnviron("PORT", "CLAUDECODE", "CODEX_THREAD_ID", "PI_CODING_AGENT", "PI_CODING_AGENT_DIR", "CODEX_HOME", "CODEX_AUTH_JSON", "OPENAI_API_KEY", "GIT_SSH_COMMAND")
+	env := cleanEnviron("PORT", "CLAUDECODE", "CODEX_THREAD_ID", "PI_CODING_AGENT", "PI_CODING_AGENT_DIR", "CODEX_HOME", "CODEX_AUTH_JSON", "OPENAI_API_KEY", "GIT_SSH_COMMAND", "SPACEDOCK_REPO_ROOT")
 	env = append(dropEnvPrefix(env, "PASEO_"), "PASEO_HOME="+paseoHome, "GIT_SSH_COMMAND=ssh -o BatchMode=yes")
 	if codexHome != "" {
 		env = append(env, "CODEX_HOME="+codexHome)
@@ -45,6 +42,9 @@ func paseoRunArgs(workspaceID, provider, thinking, title string, labels, envVars
 	args := []string{"run", "--no-wait", "--workspace", workspaceID, "--provider", provider}
 	if strings.TrimSpace(thinking) != "" {
 		args = append(args, "--thinking", thinking)
+	}
+	if strings.HasPrefix(provider, "codex/") {
+		args = append(args, "--mode", "full-access")
 	}
 	args = append(args, "--title", title)
 	for _, label := range labels {
@@ -114,12 +114,12 @@ func TestPaseoLiveConfigEnvAndRunArgs(t *testing.T) {
 
 	for k, v := range map[string]string{
 		"PASEO_AGENT_ID": "a", "PASEO_HOME": "/old", "PASEO_HOST": "127.0.0.1:6767", "PORT": "6767",
-		"CLAUDECODE": "1", "CODEX_THREAD_ID": "t1", "PI_CODING_AGENT": "1", "PI_CODING_AGENT_DIR": "/pi", "GITHUB_WORKSPACE": "/repo",
+		"CLAUDECODE": "1", "CODEX_THREAD_ID": "t1", "PI_CODING_AGENT": "1", "PI_CODING_AGENT_DIR": "/pi", "GITHUB_WORKSPACE": "/repo", "SPACEDOCK_REPO_ROOT": "/outer",
 	} {
 		t.Setenv(k, v)
 	}
 	env := paseoLiveEnv("/iso/paseo", "/bin/dir/spacedock", "/iso/codex", "")
-	for _, scrubbed := range []string{"PASEO_AGENT_ID", "PASEO_HOST", "PORT", "CLAUDECODE", "CODEX_THREAD_ID", "PI_CODING_AGENT", "PI_CODING_AGENT_DIR", "GITHUB_WORKSPACE"} {
+	for _, scrubbed := range []string{"PASEO_AGENT_ID", "PASEO_HOST", "PORT", "CLAUDECODE", "CODEX_THREAD_ID", "PI_CODING_AGENT", "PI_CODING_AGENT_DIR", "GITHUB_WORKSPACE", "SPACEDOCK_REPO_ROOT"} {
 		if v, ok := envValue(env, scrubbed); ok {
 			t.Errorf("paseoLiveEnv leaked %s=%q", scrubbed, v)
 		}
@@ -131,14 +131,15 @@ func TestPaseoLiveConfigEnvAndRunArgs(t *testing.T) {
 		t.Errorf("PATH = %q, want /bin/dir prefix", pathVal)
 	}
 
-	withThink := strings.Join(paseoRunArgs("wks_1", "antigravity/gemini-4-neon", "high", "T", []string{"role=ensign"}, []string{"SPACEDOCK_BIN=/x/s"}, "p"), "\x00")
-	if !strings.Contains(withThink, "--provider\x00antigravity/gemini-4-neon\x00--thinking\x00high") || !strings.Contains(withThink, "--json\x00p") {
-		t.Fatalf("unexpected run args: %q", withThink)
+	gotAG := strings.Join(paseoRunArgs("wks_1", "antigravity/gemini-4-neon", "high", "T", []string{"role=ensign"}, []string{"SPACEDOCK_BIN=/x/s"}, "p"), "\x00")
+	wantAG := "run\x00--no-wait\x00--workspace\x00wks_1\x00--provider\x00antigravity/gemini-4-neon\x00--thinking\x00high\x00--title\x00T\x00--label\x00role=ensign\x00--env\x00SPACEDOCK_BIN=/x/s\x00--json\x00p"
+	if gotAG != wantAG {
+		t.Fatalf("antigravity run args = %q, want %q", gotAG, wantAG)
 	}
-	for _, a := range paseoRunArgs("wks_1", "codex/m", "", "T", nil, nil, "p") {
-		if a == "--thinking" {
-			t.Fatal("empty thinking must omit --thinking")
-		}
+	gotCodex := strings.Join(paseoRunArgs("wks_1", "codex/m", "", "T", nil, nil, "p"), "\x00")
+	wantCodex := "run\x00--no-wait\x00--workspace\x00wks_1\x00--provider\x00codex/m\x00--mode\x00full-access\x00--title\x00T\x00--json\x00p"
+	if gotCodex != wantCodex {
+		t.Fatalf("codex run args = %q, want %q", gotCodex, wantCodex)
 	}
 }
 
@@ -159,15 +160,13 @@ func TestPaseoRunJSONAndPreconditions(t *testing.T) {
 	}
 	skipAuth, fatalAuth, okAuth := decideCodexLiveAuthForCI("", "", false, ""), decideCodexLiveAuthForCI("", "", false, "1"), decideCodexLiveAuthForCI("", "sk-test", false, "1")
 	for _, tc := range []struct {
-		bin      bool
-		provider string
-		auth     codexLiveAuthDecision
-		req      string
-		want     string
+		bin                 bool
+		provider, req, want string
+		auth                codexLiveAuthDecision
 	}{
-		{false, "codex/m", okAuth, "", "skip"}, {false, "codex/m", okAuth, "1", "fatal"},
-		{true, "codex/m", skipAuth, "", "skip"}, {true, "codex/m", fatalAuth, "1", "fatal"},
-		{true, "antigravity/gemini-4-neon", skipAuth, "", "run"},
+		{false, "codex/m", "", "skip", okAuth}, {false, "codex/m", "1", "fatal", okAuth},
+		{true, "codex/m", "", "skip", skipAuth}, {true, "codex/m", "1", "fatal", fatalAuth},
+		{true, "antigravity/gemini-4-neon", "", "run", skipAuth},
 	} {
 		if got, _ := decidePaseoLivePreconditions(tc.bin, tc.provider, tc.auth, tc.req); got != tc.want {
 			t.Errorf("precondition(%v,%s,%s) = %q, want %q", tc.bin, tc.provider, tc.req, got, tc.want)

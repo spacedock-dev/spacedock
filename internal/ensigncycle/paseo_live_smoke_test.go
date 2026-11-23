@@ -30,18 +30,21 @@ func TestLivePaseoDispatchSmoke(t *testing.T) {
 		t.Fatal("FO workspace create returned empty workspaceId")
 	}
 
-	thinkingNote := ""
+	var extraFlags string
 	if d.Thinking != "" {
-		thinkingNote = fmt.Sprintf(" with --thinking %s", d.Thinking)
+		extraFlags += " --thinking " + d.Thinking
+	}
+	if strings.HasPrefix(d.WorkerProvider, "codex/") {
+		extraFlags += " --mode full-access"
 	}
 	foPrompt := fmt.Sprintf("Load the installed Spacedock first-officer skill by name (do not hardcode checkout paths) and run single-entity implementation dispatch for entity %q in workflow %s (entity file: %s).\n\n"+
 		"1. Follow your loaded first-officer contract and Paseo dispatch binding: run `${SPACEDOCK_BIN:-spacedock} dispatch build --host paseo --stamp` for stage `implementation` with a checklist asking the ensign to:\n"+
 		"   - Write `receipt.txt` containing `%s` in the assigned code worktree and commit it cleanly on the worktree branch.\n"+
 		"   - Append `## Stage Report: implementation` (with `- DONE:` items and `### Summary`) to %s without modifying YAML frontmatter, and commit ONLY that file path-scoped in %s.\n"+
-		"2. Adopt the stamped code worktree via Paseo find-or-create workspace and spawn ONE fresh Paseo worker using `--provider %s`%s. Forward the emitted `prompt` from `dispatch build --host paseo` verbatim (do NOT add raw checkout skill paths).\n"+
+		"2. Adopt the stamped code worktree via Paseo find-or-create workspace and spawn ONE fresh Paseo worker using `--provider %s%s`. Forward the emitted `prompt` from `dispatch build --host paseo` verbatim (do NOT add raw checkout skill paths).\n"+
 		"3. Wait until the worker becomes idle, verify the durable commits in both the code worktree and state checkout, then archive ONLY the worker (never archive yourself).\n"+
 		"4. Once verified and archived, send one concise final summary and stop.",
-		fx.Slug, fx.WorkflowDir, fx.EntityPath, paseoLiveSmokeMarker, fx.EntityPath, fx.StateRoot, d.WorkerProvider, thinkingNote)
+		fx.Slug, fx.WorkflowDir, fx.EntityPath, paseoLiveSmokeMarker, fx.EntityPath, fx.StateRoot, d.WorkerProvider, extraFlags)
 
 	var foRun struct {
 		AgentID string `json:"agentId"`
@@ -97,12 +100,13 @@ func TestLivePaseoDispatchSmoke(t *testing.T) {
 	}
 	var wi struct {
 		ParentAgentID string  `json:"ParentAgentId"`
+		Cwd           string  `json:"Cwd"`
 		Archived      bool    `json:"Archived"`
 		ArchivedAt    *string `json:"ArchivedAt"`
 	}
 	d.runJSON(t, &wi, "inspect", workers[0].ID, "--json")
-	if wi.ParentAgentID != foRun.AgentID || !wi.Archived || wi.ArchivedAt == nil || *wi.ArchivedAt == "" {
-		t.Fatalf("worker inspect mismatch: %+v (want parent %s, archived)", wi, foRun.AgentID)
+	if wi.ParentAgentID != foRun.AgentID || wi.Cwd != codeWorktree || !wi.Archived || wi.ArchivedAt == nil || *wi.ArchivedAt == "" {
+		t.Fatalf("worker inspect mismatch: %+v (want parent %s, cwd %s, archived)", wi, foRun.AgentID, codeWorktree)
 	}
 	var fi struct {
 		Archived bool `json:"Archived"`
@@ -128,6 +132,7 @@ func waitForPaseoAgentIdle(t *testing.T, d *paseoDaemon, agentID string, timeout
 		}
 		d.runJSON(t, &res, "wait", agentID, "--timeout", fmt.Sprintf("%d", waitSecs), "--json")
 		if res.Status == "idle" {
+			t.Logf("Paseo agent %s idle: %s", agentID, res.Message)
 			return
 		}
 		if res.Status != "timeout" {

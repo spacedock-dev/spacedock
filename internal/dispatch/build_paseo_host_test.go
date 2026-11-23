@@ -32,10 +32,8 @@ func TestBuildPaseoHostPromptShapeAndSplitRoot(t *testing.T) {
 	gitInit(t, root)
 	gitInit(t, stateDir)
 
-	res := runNative("- first item\n- second item",
-		"build", "--workflow-dir", root, "--entity-path", entityPath,
-		"--stage", "implementation", "--checklist-file", "-", "--host", "paseo",
-	)
+	res := runNative("- first item\n- second item", "build", "--workflow-dir", root, "--entity-path", entityPath,
+		"--stage", "implementation", "--checklist-file", "-", "--host", "paseo")
 	if res.exit != 0 {
 		t.Fatalf("build exit=%d stderr=%q", res.exit, res.stderr)
 	}
@@ -78,10 +76,8 @@ func TestBuildPaseoHostPromptShapeAndSplitRoot(t *testing.T) {
 	}
 	for _, want := range []string{
 		"load the Spacedock `ensign` skill (`SKILL.md`, `references/ensign-shared-core.md`, and `references/paseo-ensign-runtime.md`)",
-		"This assignment is delivered through Paseo.",
-		"Read the entity file at " + entityPath,
-		"This workflow is split-root",
-		"### Completion Signal",
+		"This assignment is delivered through Paseo.", "Read the entity file at " + entityPath,
+		"This workflow is split-root", "### Completion Signal",
 		"Done: Thing completed implementation. Report written to " + entityPath + ".",
 		"verifies completion from committed Git state and the entity stage report after your turn becomes idle",
 	} {
@@ -149,6 +145,11 @@ func TestBuildPaseoHostModelDisambiguationAndResolve(t *testing.T) {
 
 	hRoot, hEntity := buildHostFixture(t)
 	args := []string{"build", "--workflow-dir", hRoot, "--entity-path", hEntity, "--stage", "backlog", "--checklist-file", "-", "--host", "paseo"}
+	t.Cleanup(func() {
+		for _, f := range []string{"agent-alpha-01-thing-backlog.md", "agent-beta-02-thing-backlog.md"} {
+			_ = os.Remove(filepath.Join(dispatchFileDir, f))
+		}
+	})
 	t.Setenv("PASEO_AGENT_ID", "Agent_Alpha/01")
 	a := runNative("- a", args...)
 	t.Setenv("PASEO_AGENT_ID", "Agent_Beta/02")
