@@ -194,7 +194,7 @@ func rawJSON(v any) json.RawMessage {
 
 func resolveBuildHost(flagHost string, getenv func(string) string) (string, error) {
 	if flagHost != "" && !validBuildHost(flagHost) {
-		return "", fmt.Errorf("unsupported host %q (want claude, codex, or pi)", flagHost)
+		return "", fmt.Errorf("unsupported host %q (want claude, codex, pi, or paseo)", flagHost)
 	}
 	if flagHost != "" {
 		return flagHost, nil
@@ -207,7 +207,7 @@ func resolveBuildHost(flagHost string, getenv func(string) string) (string, erro
 	// detection is shared and the policy stays here.
 	host, markers, ambiguous := runtimehost.Detect(getenv)
 	if ambiguous {
-		return "", fmt.Errorf("ambiguous runtime host sources: multiple runtime markers are set (%s); pass --host claude, codex, or pi", strings.Join(markers, ", "))
+		return "", fmt.Errorf("ambiguous runtime host sources: multiple runtime markers are set (%s); pass --host claude, codex, pi, or paseo", strings.Join(markers, ", "))
 	}
 	if host != "" {
 		return host, nil
@@ -216,7 +216,7 @@ func resolveBuildHost(flagHost string, getenv func(string) string) (string, erro
 }
 
 func validBuildHost(host string) bool {
-	return host == "claude" || host == "codex" || host == "pi"
+	return host == "claude" || host == "codex" || host == "pi" || host == "paseo"
 }
 
 func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, opts buildOptions, fields map[string]json.RawMessage, stdout, stderr io.Writer) int {
@@ -241,6 +241,10 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 	// requires the helper-emitted name as task_name.
 	if host == "codex" && bareMode {
 		return buildError(stderr, 2, "bare_mode is unsupported on host codex; Codex worker.spawn requires a named spawn_agent task")
+	}
+	// Paseo worker.spawn requires a named worker label for roster attribution.
+	if host == "paseo" && bareMode {
+		return buildError(stderr, 2, "bare_mode is unsupported on host paseo; Paseo worker.spawn requires a named worker label")
 	}
 
 	// Rule 13: --advance excludes bare mode. A reuse advance presupposes an
@@ -593,12 +597,12 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 	}
 	parts = append(parts, strings.Join(fetchLines, "\n"))
 
-	// 10. Completion signal (Claude merged mode or Codex named dispatch). The
+	// 10. Completion signal (Claude merged mode, Codex named dispatch, or Paseo). The
 	// worker→lead completion target is pinned to the single name "main", the
 	// address the current Claude Code harness resolves for the lead (AC-6),
 	// matching the ensign runtime's completion contract. Bare mode (no
 	// name) still omits it; its dispatch blocks and returns inline.
-	if !bareMode && (mergedMode || host == "codex") {
+	if !bareMode && (mergedMode || host == "codex" || host == "paseo") {
 		entityFileRef := entityPath
 		if worktreePath != "" && !splitRoot {
 			entityFileRef = worktreeEntityPath
@@ -615,14 +619,19 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 	// and an ensign can Read a STALE prior dispatch's entity pointer. On the
 	// merged floor there is no team registry name, so the per-session auto-team
 	// id ($CLAUDE_CODE_SESSION_ID) is the disambiguator instead — two concurrent
-	// merged FOs run distinct sessions, so it separates their dispatch files.
-	// Dispatches with neither (bare, or a merged dispatch with no session id in
+	// merged FOs run distinct sessions, so it separates their dispatch files. On
+	// host=paseo, $PASEO_AGENT_ID serves the same role for concurrent Paseo FOs.
+	// Dispatches with neither (bare, or a dispatch with no session/agent id in
 	// env) keep the plain derived name. derivedName stays the readable
 	// team-member name; only the on-disk path is keyed.
 	dispatchFileName := derivedName
 	if mergedMode {
 		if sessionToken := pathSafeSessionToken(os.Getenv("CLAUDE_CODE_SESSION_ID")); sessionToken != "" {
 			dispatchFileName = sessionToken + "-" + derivedName
+		}
+	} else if host == "paseo" {
+		if paseoToken := pathSafeSessionToken(os.Getenv("PASEO_AGENT_ID")); paseoToken != "" {
+			dispatchFileName = paseoToken + "-" + derivedName
 		}
 	}
 	if advance {
@@ -779,6 +788,13 @@ func pathSafeSessionToken(sessionID string) string {
 }
 
 func firstActionBlock(host string) string {
+	if host == "paseo" {
+		return "## First action\n" +
+			"\n" +
+			"Before anything else, load the Spacedock `ensign` skill (`SKILL.md`, `references/ensign-shared-core.md`, and `references/paseo-ensign-runtime.md`) using your host's skill loader or by reading those files directly, then read this dispatch file and treat its content as your stage-specific assignment.\n" +
+			"\n" +
+			"This assignment is delivered through Paseo. Work in the assigned code directory (and commit entity/report updates path-scoped in the split-root state checkout when present). Do not invoke host-specific subagent or mailbox tools.\n"
+	}
 	if host == "codex" {
 		return "## First action\n" +
 			"\n" +
@@ -819,6 +835,15 @@ func firstActionBlock(host string) string {
 }
 
 func completionSignalBlock(host, entityTitle, stage, entityFileRef string) string {
+	if host == "paseo" {
+		return fmt.Sprintf(
+			"\n\n### Completion Signal\n\n"+
+				"When you finish (after all commits and stage report writes are done), end your turn with one concise final message:\n\n"+
+				"    Done: %s completed %s. Report written to %s.\n\n"+
+				"The first officer verifies completion from committed Git state and the entity stage report after your turn becomes idle. "+
+				"Do not call host-specific mailbox tools.",
+			entityTitle, stage, entityFileRef)
+	}
 	if host == "codex" {
 		return fmt.Sprintf(
 			"\n\n### Completion Signal\n\n"+
@@ -853,6 +878,9 @@ func completionSignalBlock(host, entityTitle, stage, entityFileRef string) strin
 }
 
 func dispatchPointerPrompt(host, dispatchFilePath string) string {
+	if host == "paseo" {
+		return fmt.Sprintf("Load the Spacedock ensign skill (with references/ensign-shared-core.md and references/paseo-ensign-runtime.md); then Read %s and treat its content as your assignment.", dispatchFilePath)
+	}
 	if host == "codex" {
 		return fmt.Sprintf("$spacedock:ensign; then Read %s and treat its content as your assignment.", dispatchFilePath)
 	}

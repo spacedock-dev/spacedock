@@ -189,3 +189,18 @@ func TestPiRuntimeAdaptersResolveOnDisk(t *testing.T) {
 		}
 	}
 }
+
+var paseoRuntimeAdapters = []struct{ skill, ref string }{
+	{skill: "first-officer", ref: "references/paseo-fo-dispatch.md"},
+	{skill: "ensign", ref: "references/paseo-ensign-runtime.md"},
+}
+
+func TestPaseoRuntimeAdaptersResolveOnDisk(t *testing.T) {
+	root := skillsRoot(t)
+	for _, tc := range paseoRuntimeAdapters {
+		path := filepath.Join(root, tc.skill, tc.ref)
+		if _, err := os.Stat(path); err != nil {
+			t.Errorf("%s: Paseo runtime adapter %s is not loadable on disk: %v", tc.skill, tc.ref, err)
+		}
+	}
+}

@@ -19,6 +19,7 @@ var bootResidentBodies = []string{
 var deferredModuleBodies = []string{
 	filepath.Join("skills", "first-officer", "references", "claude-fo-dispatch.md"),
 	filepath.Join("skills", "first-officer", "references", "fo-dispatch-core.md"),
+	filepath.Join("skills", "first-officer", "references", "paseo-fo-dispatch.md"),
 }
 
 // movedSections pins sections relocated out of a boot-resident body into a
