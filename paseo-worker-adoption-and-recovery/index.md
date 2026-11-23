@@ -1,7 +1,7 @@
 ---
 id: x9mfvnkqtbwgm4tba7dy41tw
 title: Paseo worker record, FO restart adoption, and dispatch recovery
-status: validation
+status: implementation
 source: captain (2026-11-21)
 started: 2026-11-22T17:09:25Z
 completed:
@@ -315,6 +315,8 @@ No existing primary proof owner covers FO restart adoption or `## Paseo Worker` 
 4. **High-stakes validation & required CI lanes:** Because `x9m` modifies `skills/first-officer/references/fo-write-core.md` and `paseo-fo-dispatch.md`, validation includes a read-only detached adversarial audit on a throwaway checkout (`spike-paseo-worker-adoption-and-recovery`), `gofmt -w ./cmd ./internal`, `spacedock status --workflow-dir docs/dev --validate`, and required green `claude-live`, `codex-live`, and `pi-live` CI lanes before merge.
 
 ### Feedback Cycles
+
+- Cycle 1: REJECTED — detached adversarial audit (`0693a5c1`, `spike-paseo-worker-adoption-and-recovery`); surface 5/+358 vs estimate 5/+278 (+28.8%); AC unchanged
 
 ## Stage Report: ideation
 
