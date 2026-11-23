@@ -5,6 +5,7 @@ package cli
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -172,12 +173,7 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 		inputs.selfVersion = programReportedVersion(d.selfPath, d.env, "spacedock ")
 	}
 	after := collectVersions(inputs)
-	piHeld := addPiPackages(&after, inputs)
-	piMissing := false
-	if pi.err == nil {
-		rows, _ := piInventory(inputs)
-		piMissing = piHeld && rows[0].version == notInstalled
-	}
+	_, piMissing := addPiPackages(&after, inputs)
 	endFinal()
 	for _, h := range hosts {
 		h.after = after.hostPlugins[h.name]
@@ -313,10 +309,14 @@ func runInstallScript(d updateDeps, stdout, stderr io.Writer, progress *updatePr
 	cmd.Env = env
 	var out bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, stderr
+	if d.verbose {
+		cmd.WaitDelay = time.Second
+	}
 	endScript := progress.step("Running the install script")
 	err := cmd.Run()
 	endScript()
-	if err != nil {
+	// ErrWaitDelay means the script succeeded while a descendant held a pipe open.
+	if err != nil && !errors.Is(err, exec.ErrWaitDelay) {
 		io.Copy(stdout, &out)
 		return fmt.Errorf("the install script failed: %w", err)
 	}

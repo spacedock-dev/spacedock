@@ -255,12 +255,13 @@ func piInventory(in versionInputs) (rows []pieceRow, skipped string) {
 	return nil, "pi holds nothing from the Spacedock marketplace, so its packages were skipped."
 }
 
-func addPiPackages(report *versionReport, in versionInputs) bool {
+func addPiPackages(report *versionReport, in versionInputs) (held, coreMissing bool) {
 	rows, skipped := piInventory(in)
 	if skipped != "" {
-		return false
+		return false, false
 	}
-	if rows[0].version == notInstalled {
+	coreMissing = rows[0].version == notInstalled
+	if coreMissing {
 		report.problems = append(report.problems, "MISSING: the Spacedock package is not installed on Pi. Run `spacedock install --host pi`.")
 	}
 	for _, row := range rows[1:] {
@@ -285,7 +286,7 @@ func addPiPackages(report *versionReport, in versionInputs) bool {
 			}
 		}
 	}
-	return true
+	return true, coreMissing
 }
 
 func piVersionReport(in versionInputs) (versionReport, bool) {
@@ -303,7 +304,7 @@ func piVersionReport(in versionInputs) (versionReport, bool) {
 			report.needsUpdate = true
 		}
 	}
-	ok := addPiPackages(&report, in)
+	ok, _ := addPiPackages(&report, in)
 	return report, ok
 }
 

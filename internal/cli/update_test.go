@@ -14,6 +14,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 )
 
 type switchHost struct {
@@ -127,7 +128,7 @@ func TestProbeSelfAndPiInventoryEntry(t *testing.T) {
 	if string(got) != want {
 		t.Errorf("version subprocess saw %q, want %q", got, want)
 	}
-	const wantPi = "Checking which Pi packages are installed...\nChecking installed versions after the update...\nChecking installed versions after the update..."
+	const wantPi = "Checking which Pi packages are installed...\nChecking installed versions after the update..."
 	if strings.Join(piObserved, "\n") != wantPi {
 		t.Errorf("Pi discovery saw %q, want %q", piObserved, wantPi)
 	}
@@ -173,6 +174,49 @@ func TestUpdateVerboseScriptFailureKeepsMergedLinesAndTotal(t *testing.T) {
 		if !regexp.MustCompile("^" + pattern + "$").MatchString(lines[i]) {
 			t.Errorf("line %d = %q, want %q", i+1, lines[i], pattern)
 		}
+	}
+}
+
+func TestUpdateVerboseContinuesAfterInstallerExitsWithInheritedStderr(t *testing.T) {
+	s := stageInstall(t)
+	dir := t.TempDir()
+	script := filepath.Join(dir, "install.sh")
+	release := filepath.Join(dir, "release")
+	stopped := filepath.Join(dir, "stopped")
+	stalled := filepath.Join(dir, "stalled")
+	mustWrite(t, script, `printf 'installer stderr\n' >&2
+(
+    i=0
+    while [ ! -f "$FIXTURE_RELEASE" ] && [ "$i" -lt 100 ]; do
+        sleep 0.05
+        i=$((i + 1))
+    done
+    [ -f "$FIXTURE_RELEASE" ] || : > "$FIXTURE_STALLED"
+    : > "$FIXTURE_STOPPED"
+) >/dev/null &
+exit 0
+`)
+	d := updateDepsFor(s, s.host, script)
+	d.verbose = true
+	d.env = append(d.env, "FIXTURE_RELEASE="+release, "FIXTURE_STOPPED="+stopped, "FIXTURE_STALLED="+stalled)
+
+	var stdout, stderr bytes.Buffer
+	code := runUpdate(d, &stdout, &stderr)
+	mustWrite(t, release, "")
+	for deadline := time.Now().Add(2 * time.Second); ; {
+		if _, err := os.Stat(stopped); err == nil {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("fixture helper did not stop")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if _, err := os.Stat(stalled); !os.IsNotExist(err) {
+		t.Fatalf("update waited for the background holder of stderr to exit: %v", err)
+	}
+	if code != 0 || !strings.Contains(stderr.String(), "installer stderr\n") || !strings.Contains(stdout.String(), "Programs\n") {
+		t.Errorf("update exited %d or lost the installer diagnostic or report:\n%s\n%s", code, &stderr, &stdout)
 	}
 }
 

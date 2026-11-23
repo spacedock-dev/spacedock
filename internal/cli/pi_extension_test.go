@@ -189,39 +189,64 @@ func TestUpdateRefreshesThePiPackagesWithTheNewProgramAndShowsTheirRefs(t *testi
 	}
 }
 
-func TestUpdateVerboseIncludesBothFinalPiInventoryReads(t *testing.T) {
-	f := newPiUpdateFixture(t, piPackageStatus{registered: true, source: piSpacedockPackageSource + "@stable"})
-	f.deps.verbose = true
+func TestUpdateVerboseUsesFinalPiInventoryForReportAndExit(t *testing.T) {
+	for _, tc := range []struct {
+		name        string
+		coreRemoved bool
+	}{
+		{name: "core stays installed"},
+		{name: "core removed during update", coreRemoved: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := newPiUpdateFixture(t, piPackageStatus{registered: true, source: piSpacedockPackageSource + "@stable"})
+			f.deps.verbose = true
+			if tc.coreRemoved {
+				refresh := f.deps.runSelf
+				f.deps.runSelf = func(args ...string) (string, error) {
+					out, err := refresh(args...)
+					writeFile(t, f.settings, `{"packages":["`+piTestAlpha+`@`+f.piRef+`"]}`)
+					return out, err
+				}
+			}
 
-	var terminal bytes.Buffer
-	type inventoryPhase struct {
-		finalStarted bool
-		finalEnded   bool
-	}
-	var probes []inventoryPhase
-	lookPath := f.deps.lookPath
-	f.deps.lookPath = func(name string) (string, error) {
-		if name == "pi" {
-			output := terminal.String()
-			probes = append(probes, inventoryPhase{
-				finalStarted: strings.Contains(output, "Checking installed versions after the update..."),
-				finalEnded:   strings.Contains(output, "Elapsed: Checking installed versions after the update:"),
-			})
-		}
-		return lookPath(name)
-	}
+			var stdout, stderr bytes.Buffer
+			type inventoryPhase struct {
+				finalStarted bool
+				finalEnded   bool
+			}
+			var probes []inventoryPhase
+			lookPath := f.deps.lookPath
+			f.deps.lookPath = func(name string) (string, error) {
+				if name == "pi" {
+					output := stderr.String()
+					probes = append(probes, inventoryPhase{
+						finalStarted: strings.Contains(output, "Checking installed versions after the update..."),
+						finalEnded:   strings.Contains(output, "Elapsed: Checking installed versions after the update:"),
+					})
+					if len(probes) > 2 {
+						writeFile(t, f.settings, `{"packages":[]}`)
+					}
+				}
+				return lookPath(name)
+			}
 
-	if code := runUpdate(f.deps, &terminal, &terminal); code != 0 {
-		t.Fatalf("update exited %d, want 0:\n%s", code, &terminal)
-	}
-	want := []inventoryPhase{{}, {finalStarted: true}, {finalStarted: true}}
-	if !slices.Equal(probes, want) {
-		t.Errorf("Pi inventory phases = %+v, want planning followed by both reads before final inventory elapsed:\n%s", probes, &terminal)
-	}
-	out := terminal.String()
-	elapsed := strings.Index(out, "Elapsed: Checking installed versions after the update:")
-	if report := strings.Index(out, "Programs\n"); elapsed < 0 || report < elapsed {
-		t.Errorf("final inventory elapsed line must precede the report:\n%s", out)
+			wantCode := 0
+			if tc.coreRemoved {
+				wantCode = 1
+			}
+			if code := runUpdate(f.deps, &stdout, &stderr); code != wantCode {
+				t.Errorf("update exited %d, want %d:\n%s", code, wantCode, &stderr)
+			}
+			want := []inventoryPhase{{}, {finalStarted: true}}
+			if !slices.Equal(probes, want) {
+				t.Errorf("Pi inventory phases = %+v, want planning and one read before final inventory elapsed", probes)
+			}
+			reportMissing := strings.Contains(stdout.String(), "MISSING: the Spacedock package is not installed on Pi.")
+			diagnosticMissing := strings.Contains(stderr.String(), "spacedock update: the Spacedock package is not installed on Pi.")
+			if reportMissing != tc.coreRemoved || diagnosticMissing != tc.coreRemoved {
+				t.Errorf("report and exit diagnostic disagree with the final Pi read:\n%s\n%s", &stdout, &stderr)
+			}
+		})
 	}
 }
 
