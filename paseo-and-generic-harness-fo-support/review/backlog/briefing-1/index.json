@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:xdhbscjmpv0prk3k5yz1ngpw:backlog:attempt-1:revision-1",
+  "question": "Approve xdh (paseo-and-generic-harness-fo-support) from backlog to ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:xdhbscjmpv0prk3k5yz1ngpw:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/e7821d0aa01cb433fc61b6ff3693315a064210b6/paseo-and-generic-harness-fo-support/index.md",
+      "rev": "sha256:c7f2d6be66a77d2df3666900cbf5731fa2cc12fa68c66e5f2c66c9f216582b5c",
+      "mediaType": "text/markdown",
+      "summary": "Captain approved backlog-\u003eideation for Paseo-wide FO runtime support, operating-contract load sweep, and unsupported-harness fallback hints."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:xdhbscjmpv0prk3k5yz1ngpw:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/439abf789d6cdddd846bed8753a42ea67e18a68f/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:47fdb50f43c626904ee13d88168d3f3e0cbca3a7f44f34a5d553df0ef6ecbb2d"
+    }
+  ]
+}
