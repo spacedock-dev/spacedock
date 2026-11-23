@@ -78,6 +78,17 @@ gates:
                 id: briefing:x9mfvnkqtbwgm4tba7dy41tw:validation:attempt-2:revision-1
                 digest: sha256:be3f491dbc2a29dced471e630e48a5ec0513098a6b16f28a677c484b7ab85951
                 room-ref: '@review/validation/briefing-2'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:x9mfvnkqtbwgm4tba7dy41tw:validation:2
+                briefing: briefing:x9mfvnkqtbwgm4tba7dy41tw:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-11-23T21:49:54.892849Z"
+                decision: approve
+                reason: 'Captain approved validation gate attempt-2 toward pushing ca39881e2 to stacked PR #895 and running stack-tip live CI'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Persist the Paseo worker handle in the task so a restarted or compacted first officer adopts a live worker instead of double-dispatching, and handle wait timeouts, lost create receipts, dead workers, and duplicate completion events with deterministic single-retry-then-hold recovery isolated per entity.
