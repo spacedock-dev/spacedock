@@ -45,9 +45,9 @@ the ideation ensigns (they would grade their own work).
 - [ ] **Package** — write `dispatch-sprint-execution.md` (boot recipe, per-member build notes, in-drive gates, release-cut recipe)
 
 **Drive — Commander (a separate, cold-booted session)**
-- [ ] **Implementation → validation → done** per member; **detached adversarial audit at validation** for every high-stakes surface (front-door, status guards, shipped scaffolding, CI / release machinery)
-- [ ] **Merge** each to `main` (PR-merge); keep state commits concurrency-safe
-- [ ] **⚠️ Pre-cut antipattern audit** — with all members merged to `main` and the tag **not yet fired**, dispatch an *independent* reviewer (staff-eng persona; not the Commander, not the implementers) over the assembled sprint to catch cross-cutting antipatterns + integration holes **before they ship**. Ship-blockers are fixed before the cut; non-blockers are recorded for the next sprint. The whole value is being *before* the tag — run it after, and the antipattern has already shipped.
+- [ ] **Implementation → validation → PR (stacked when dependent)** per member; **detached adversarial audit at validation** for every high-stakes surface (front-door, status guards, shipped scaffolding, CI / release machinery)
+- [ ] **⚠️ Pre-merge sprint-wide antipattern audit** — once all sprint members are validated and assembled on the PR stack (and **before merging anything to `main`**; or before the tag if members were merged unstacked), dispatch an *independent* reviewer (staff-eng persona; not the Commander, not the implementers) over the assembled sprint diff (`origin/main..<stack-tip>`) to catch cross-cutting antipatterns + integration holes **before they land**. Ship-blockers are routed back to the responsible member's branch/PR (restacking as needed) before any PR merges; non-blockers are recorded for the next sprint. Running this pre-merge over the stack avoids landing dirty commits onto `main` or burning extra post-merge CI cycles.
+- [ ] **Merge** the stack to `main` (PR-merge, base-first, retargeting stacked PRs onto `main`); keep state commits concurrency-safe
 - [ ] **Cut the release** — `go test ./...` green from the root, then follow [`docs/releasing.md`](../releasing.md) (the authoritative cut procedure: manifest bumps, the `vN.N.N` tag, what the tag push fires, `next` publishing) *(captain authorizes)*
 
 **Close — Shaping FO**

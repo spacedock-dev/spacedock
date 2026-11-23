@@ -46,10 +46,11 @@ Doing this at the Paseo layer supersedes direct per-host integrations such as `2
 - [x] **Package** — cold-boot Commander package written at [dispatch-sprint-execution.md](dispatch-sprint-execution.md).
 
 **Drive — Commander (cold-booted on `127.0.0.1:6769`, Safehouse + `paseo-safehouse.paseo-access=daemon`)**
-- [ ] Wave 1: `936` (`paseo-dispatch-backend`) implementation → validation + detached adversarial audit → required live CI → PR-merge → done
-- [ ] Wave 2: `x9m` (`paseo-worker-adoption-and-recovery`) implementation → validation + detached adversarial audit → required live CI → PR-merge → done
-- [ ] Pre-cut antipattern audit (independent reviewer over assembled sprint on `main`)
-- [ ] Commander friction ledger committed (`commander-frictions.md`)
+- [x] Wave 1: `936` (`paseo-dispatch-backend`) implementation → validation + detached adversarial audit → PR #893 opened
+- [x] Wave 2: `x9m` (`paseo-worker-adoption-and-recovery`, stacked atop `936`) implementation → validation + detached adversarial audit → stacked PR #895 opened
+- [ ] Pre-merge sprint-wide antipattern audit (independent reviewer over assembled stack `origin/main..01d66ed16` before merging PR #893 / PR #895; route any ship-blockers back to the responsible ensign/PR)
+- [ ] Merge stack to `main` (PR #893 → retarget & merge PR #895 after green required live CI)
+- [ ] Commander friction ledger finalized (`commander-frictions.md`)
 - [ ] Cut release (captain authorizes)
 
 ## Definition of done
