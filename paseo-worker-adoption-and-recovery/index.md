@@ -62,6 +62,17 @@ gates:
                 id: briefing:x9mfvnkqtbwgm4tba7dy41tw:validation:attempt-1:revision-1
                 digest: sha256:2aac481be9bd4541632cb902668e1a0d75e652640767e15c697a6a71039540e3
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:x9mfvnkqtbwgm4tba7dy41tw:validation:1
+                briefing: briefing:x9mfvnkqtbwgm4tba7dy41tw:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-11-23T17:09:50.275647Z"
+                decision: approve
+                reason: Captain approved validation gate toward stacked PR targeting paseo-dispatch-backend (including push and PR creation)
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Persist the Paseo worker handle in the task so a restarted or compacted first officer adopts a live worker instead of double-dispatching, and handle wait timeouts, lost create receipts, dead workers, and duplicate completion events with deterministic single-retry-then-hold recovery isolated per entity.
