@@ -1,7 +1,7 @@
 ---
 id: x9mfvnkqtbwgm4tba7dy41tw
 title: Paseo worker record, FO restart adoption, and dispatch recovery
-status: validation
+status: implementation
 source: captain (2026-11-21)
 started: 2026-11-22T17:09:25Z
 completed:
@@ -10,8 +10,8 @@ score: 0.70
 sprint: paseo-backend
 worktree: .worktrees/spacedock-ensign-paseo-worker-adoption-and-recovery
 issue:
-pr: "#895"
-mod-block: merge:pr-merge
+pr:
+mod-block:
 sprint-readiness: ready
 gates:
     version: 1
@@ -72,7 +72,7 @@ gates:
                 reason: Captain approved validation gate toward stacked PR targeting paseo-dispatch-backend (including push and PR creation)
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 ---
 
 Persist the Paseo worker handle in the task so a restarted or compacted first officer adopts a live worker instead of double-dispatching, and handle wait timeouts, lost create receipts, dead workers, and duplicate completion events with deterministic single-retry-then-hold recovery isolated per entity.
@@ -336,6 +336,7 @@ No existing primary proof owner covers FO restart adoption or `## Paseo Worker` 
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — detached adversarial audit (`0693a5c1`, `spike-paseo-worker-adoption-and-recovery`); surface 5/+358 vs estimate 5/+278 (+28.8%); AC unchanged
+- Cycle 2: REJECTED — sprint pre-merge staff audit (`dd553ee3`, `_roadmap/paseo-backend/pre-merge-audit.md` `9e71ce2c3`); surface 5/+363 vs estimate 5/+278 (+30.6%); AC unchanged
 
 ## Stage Report: ideation
 
