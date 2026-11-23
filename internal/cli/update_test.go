@@ -176,6 +176,40 @@ func TestUpdateVerboseScriptFailureKeepsMergedLinesAndTotal(t *testing.T) {
 	}
 }
 
+func TestUpdateVerboseCompletesFinalInventoryBeforeReport(t *testing.T) {
+	dir := t.TempDir()
+	launcher := filepath.Join(dir, "spacedock")
+	writeProgram(t, launcher, "spacedock 1.0.0")
+	withExecutablePath(t, launcher, nil)
+	script := filepath.Join(dir, "install.sh")
+	mustWrite(t, script, "exit 0\n")
+	t.Setenv("HOME", dir)
+	t.Setenv("PATH", dir+":/usr/bin:/bin")
+	t.Setenv("SPACEDOCK_INSTALL_SCRIPT", script)
+
+	var terminal bytes.Buffer
+	if code := Run([]string{"update", "--verbose"}, &terminal, &terminal); code != 0 {
+		t.Fatalf("update exited %d, want 0:\n%s", code, &terminal)
+	}
+	const timestamp = `(?m)^\[\+\d+\.\d{3}s\] `
+	required := []string{
+		`Checking installed versions before the update\.\.\. \(gap 0\.000s\)\n`,
+		`Checking installed versions after the update\.\.\. \(gap \d+\.\d{3}s\)\n`,
+		`Elapsed: Checking installed versions after the update: \d+\.\d{3}s\n`,
+		`Programs\n`,
+		`Total: \d+\.\d{3}s \(gap \d+\.\d{3}s\)\n\z`,
+	}
+	out := terminal.Bytes()
+	end := 0
+	for _, pattern := range required {
+		line := regexp.MustCompile(timestamp + pattern).FindIndex(out)
+		if line == nil || line[0] < end {
+			t.Fatalf("missing or misplaced line %q in:\n%s", pattern, out)
+		}
+		end = line[1]
+	}
+}
+
 func TestUpdateVerboseArguments(t *testing.T) {
 	for _, tc := range []struct {
 		args []string

@@ -168,12 +168,17 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 	}
 
 	endFinal := progress.step("Checking installed versions after the update")
-	defer endFinal()
 	if d.selfPath != "" && !brew {
 		inputs.selfVersion = programReportedVersion(d.selfPath, d.env, "spacedock ")
 	}
 	after := collectVersions(inputs)
 	piHeld := addPiPackages(&after, inputs)
+	piMissing := false
+	if pi.err == nil {
+		rows, _ := piInventory(inputs)
+		piMissing = piHeld && rows[0].version == notInstalled
+	}
+	endFinal()
 	for _, h := range hosts {
 		h.after = after.hostPlugins[h.name]
 	}
@@ -186,7 +191,7 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 	if pi.err != nil {
 		fmt.Fprintf(stderr, "spacedock update: the Pi package update failed: %v\n", pi.err)
 		code = 1
-	} else if rows, _ := piInventory(inputs); piHeld && rows[0].version == notInstalled {
+	} else if piMissing {
 		fmt.Fprintln(stderr, "spacedock update: the Spacedock package is not installed on Pi. Run: spacedock install --host pi")
 		code = 1
 	}
