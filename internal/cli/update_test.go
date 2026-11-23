@@ -2,12 +2,15 @@ package cli
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"testing"
@@ -79,6 +82,130 @@ func updateDepsFor(s *stagedInstall, host hostOps, script string) updateDeps {
 	}
 	return updateDeps{env: env, dir: s.project, host: host, selfPath: filepath.Join(s.first, "spacedock"), lookPath: claudeOnPath,
 		fetchScript: func(string) error { return errors.New("no network in tests") }}
+}
+
+func TestProbeSelfAndPiInventoryEntry(t *testing.T) {
+	s := stageInstall(t)
+	dir := t.TempDir()
+	progress, err := os.Create(filepath.Join(dir, "progress"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer progress.Close()
+
+	script := filepath.Join(dir, "install.sh")
+	mustWrite(t, script, "exit 0\n")
+	d := updateDepsFor(s, s.host, script)
+	d.selfPath = filepath.Join(dir, "launcher")
+	trace := filepath.Join(dir, "trace")
+	d.env = append(d.env, "TRACE="+trace, "PROGRESS="+progress.Name())
+	mustWrite(t, d.selfPath, "#!/bin/sh\ntail -n 1 \"$PROGRESS\" >> \"$TRACE\"\nprintf 'spacedock 1.0.0\\n'\n")
+	if err := os.Chmod(d.selfPath, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	var piObserved []string
+	d.lookPath = func(name string) (string, error) {
+		if name == "pi" {
+			data, err := os.ReadFile(progress.Name())
+			if err != nil {
+				t.Fatal(err)
+			}
+			lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+			piObserved = append(piObserved, lines[len(lines)-1])
+		}
+		return "", errors.New("not on PATH")
+	}
+	if code := runUpdate(d, io.Discard, progress); code != 0 {
+		t.Fatalf("update exit = %d", code)
+	}
+	got, err := os.ReadFile(trace)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const want = "Checking installed versions before the update...\nChecking installed versions after the update...\n"
+	if string(got) != want {
+		t.Errorf("version subprocess saw %q, want %q", got, want)
+	}
+	const wantPi = "Checking which Pi packages are installed...\nChecking installed versions after the update...\nChecking installed versions after the update..."
+	if strings.Join(piObserved, "\n") != wantPi {
+		t.Errorf("Pi discovery saw %q, want %q", piObserved, wantPi)
+	}
+}
+
+func TestUpdateVerboseScriptFailureKeepsMergedLinesAndTotal(t *testing.T) {
+	s := stageInstall(t)
+	script := filepath.Join(t.TempDir(), "install.sh")
+	mustWrite(t, script, "printf part >&2\nprintf 'ial\\n\\nchild tail' >&2\nprintf 'output tail'\nexit 7\n")
+	d := updateDepsFor(s, s.host, script)
+	d.verbose = true
+
+	var terminal bytes.Buffer
+	if code := runUpdate(d, &terminal, &terminal); code != 1 {
+		t.Fatalf("update exit = %d, want 1", code)
+	}
+	prefix := regexp.MustCompile(`^\[\+\d+\.\d{3}s\] (.*)$`)
+	var lines []string
+	for _, line := range strings.Split(strings.TrimSuffix(terminal.String(), "\n"), "\n") {
+		parts := prefix.FindStringSubmatch(line)
+		if parts == nil {
+			t.Fatalf("unprefixed line %q in:\n%s", line, &terminal)
+		}
+		lines = append(lines, parts[1])
+	}
+	want := []string{
+		`Checking installed versions before the update\.\.\. \(gap 0\.000s\)`,
+		`Listing claude plugins\.\.\. \(parent work \d+\.\d{3}s\)`,
+		`Elapsed: Listing claude plugins: \d+\.\d{3}s`,
+		`Elapsed: Checking installed versions before the update: \d+\.\d{3}s`,
+		`Updating Spacedock on the edge channel \(installed with install\.sh\)`,
+		`Running the install script\.\.\. \(gap \d+\.\d{3}s\)`,
+		`partial`, ``, `child tail`,
+		`Elapsed: Running the install script: \d+\.\d{3}s`,
+		`output tail`,
+		`spacedock update: the install script failed: exit status 7`,
+		`Total: \d+\.\d{3}s \(gap \d+\.\d{3}s\)`,
+	}
+	if len(lines) != len(want) {
+		t.Fatalf("unexpected lines:\n%s", &terminal)
+	}
+	for i, pattern := range want {
+		if !regexp.MustCompile("^" + pattern + "$").MatchString(lines[i]) {
+			t.Errorf("line %d = %q, want %q", i+1, lines[i], pattern)
+		}
+	}
+}
+
+func TestUpdateVerboseArguments(t *testing.T) {
+	for _, tc := range []struct {
+		args []string
+		code int
+		want string
+	}{
+		{[]string{"--verbose", "--help"}, 0, "Usage:\n  spacedock update [--verbose]"},
+		{[]string{"--verbose", "--verbose"}, 2, "unknown argument \"--verbose\""},
+		{[]string{"-v"}, 2, "unknown argument \"-v\""},
+		{[]string{"--verbose", "extra"}, 2, "unknown argument \"extra\""},
+	} {
+		t.Run(strings.Join(tc.args, " "), func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			dir := t.TempDir()
+			cmd := newUpdateCommand(context.Background(), []string{"HOME=" + dir}, dir, &stdout, &stderr)
+			err := cmd.RunE(cmd, tc.args)
+			code := 0
+			if err != nil {
+				var exit exitCodeError
+				if !errors.As(err, &exit) {
+					t.Fatal(err)
+				}
+				code = exit.code
+			}
+			output := stdout.String() + stderr.String()
+			if code != tc.code || !strings.Contains(output, tc.want) || strings.Contains(output, "Checking installed versions") {
+				t.Errorf("exit = %d, output = %q, want exit %d and %q with no progress", code, output, tc.code, tc.want)
+			}
+		})
+	}
 }
 
 func TestUpdateShowsEachPieceBeforeAndAfterAndIsIdempotent(t *testing.T) {
