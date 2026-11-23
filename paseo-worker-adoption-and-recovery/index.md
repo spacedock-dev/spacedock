@@ -10,8 +10,8 @@ score: 0.70
 sprint: paseo-backend
 worktree: .worktrees/spacedock-ensign-paseo-worker-adoption-and-recovery
 issue:
-pr:
-mod-block:
+pr: "#895"
+mod-block: merge:pr-merge
 sprint-readiness: ready
 gates:
     version: 1
