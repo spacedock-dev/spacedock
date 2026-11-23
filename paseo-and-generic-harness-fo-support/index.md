@@ -22,6 +22,17 @@ gates:
                 id: briefing:xdhbscjmpv0prk3k5yz1ngpw:backlog:attempt-1:revision-1
                 digest: sha256:69a37a507dadd7f2fba03e3f3b7bdaea1f1a17f05c5036e44db8d3a34a79d253
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:xdhbscjmpv0prk3k5yz1ngpw:backlog:1
+                briefing: briefing:xdhbscjmpv0prk3k5yz1ngpw:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-11-23T23:47:18.861991Z"
+                decision: approve
+                reason: 'Captain directive: dispatch xdh and sweep unnecessary operating-contract loads on Paseo path'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Make any Paseo-hosted first officer boot and run cleanly regardless of inner harness (fixing `F4` and Paseo-vs-native dispatch selection), audit whether any runtime-specific constructs remain when running under Paseo, and give unsupported harnesses clear guidance to map Spacedock's worker capabilities onto their own Claude/Codex-like native features.
