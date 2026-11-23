@@ -1,7 +1,7 @@
 ---
 id: x9mfvnkqtbwgm4tba7dy41tw
 title: Paseo worker record, FO restart adoption, and dispatch recovery
-status: validation
+status: implementation
 source: captain (2026-11-21)
 started: 2026-11-22T17:09:25Z
 completed:
@@ -337,6 +337,7 @@ No existing primary proof owner covers FO restart adoption or `## Paseo Worker` 
 
 - Cycle 1: REJECTED — detached adversarial audit (`0693a5c1`, `spike-paseo-worker-adoption-and-recovery`); surface 5/+358 vs estimate 5/+278 (+28.8%); AC unchanged
 - Cycle 2: REJECTED — sprint pre-merge staff audit (`dd553ee3`, `_roadmap/paseo-backend/pre-merge-audit.md` `9e71ce2c3`); surface 5/+363 vs estimate 5/+278 (+30.6%); AC unchanged
+- Cycle 3: REJECTED — Captain-authorized post-merge worktree assertion fix in `TestLivePaseoAdoptionSmoke` (`paseo_adoption_live_test.go:144-171`); surface 5/+356 vs estimate 5/+278 (+28.1%); AC unchanged
 
 ## Stage Report: ideation
 
