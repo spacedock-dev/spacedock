@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:936b86qpa8xy4fb6v0n5cafs:validation:attempt-1:revision-1",
+  "question": "Approve validation of task 936 (paseo-dispatch-backend) on commit e1b971b32 to proceed to PR creation and merge to main?",
+  "artifacts": [
+    {
+      "id": "artifact:936b86qpa8xy4fb6v0n5cafs:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/4523bffa86e48b88625a1a2284e8f37a5f08aa54/paseo-dispatch-backend/index.md",
+      "rev": "sha256:50d76b5da3f396445cc9f0f7422a64e204abe4dddbb69f4e01d35811d1fdea98",
+      "mediaType": "text/markdown",
+      "summary": "Commit e1b971b32 (+1,103 net LOC across 17 files, within +850 +/-30% cap) satisfies AC-1 through AC-4: all 24 Go packages pass normal and -race, TestLivePaseoDispatchSmoke passed live on both default codex (185.6s) and antigravity/gemini-4-neon (252.0s), all 3 Cycle 1 Material findings from detached adversarial audit and live smoke are closed, and Cycle 2 validation recommends PASSED with 0 Material findings."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:936b86qpa8xy4fb6v0n5cafs:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/37dd5c876d152aed273a5a755650e78f39e97c0d/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:47fdb50f43c626904ee13d88168d3f3e0cbca3a7f44f34a5d553df0ef6ecbb2d"
+    }
+  ]
+}
