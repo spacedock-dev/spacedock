@@ -1,7 +1,7 @@
 ---
 id: 936b86qpa8xy4fb6v0n5cafs
 title: Opt-in Paseo dispatch backend (--host paseo, CLI-first FO binding, and live smoke)
-status: implementation
+status: validation
 source: captain (2026-11-21)
 started: 2026-11-22T17:09:22Z
 completed:
