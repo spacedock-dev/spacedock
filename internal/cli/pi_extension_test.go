@@ -5,6 +5,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -185,6 +186,42 @@ func TestUpdateRefreshesThePiPackagesWithTheNewProgramAndShowsTheirRefs(t *testi
 	}
 	if strings.Contains(out, "noise") {
 		t.Errorf("the new program's other output was printed:\n%s", out)
+	}
+}
+
+func TestUpdateVerboseIncludesBothFinalPiInventoryReads(t *testing.T) {
+	f := newPiUpdateFixture(t, piPackageStatus{registered: true, source: piSpacedockPackageSource + "@stable"})
+	f.deps.verbose = true
+
+	var terminal bytes.Buffer
+	type inventoryPhase struct {
+		finalStarted bool
+		finalEnded   bool
+	}
+	var probes []inventoryPhase
+	lookPath := f.deps.lookPath
+	f.deps.lookPath = func(name string) (string, error) {
+		if name == "pi" {
+			output := terminal.String()
+			probes = append(probes, inventoryPhase{
+				finalStarted: strings.Contains(output, "Checking installed versions after the update..."),
+				finalEnded:   strings.Contains(output, "Elapsed: Checking installed versions after the update:"),
+			})
+		}
+		return lookPath(name)
+	}
+
+	if code := runUpdate(f.deps, &terminal, &terminal); code != 0 {
+		t.Fatalf("update exited %d, want 0:\n%s", code, &terminal)
+	}
+	want := []inventoryPhase{{}, {finalStarted: true}, {finalStarted: true}}
+	if !slices.Equal(probes, want) {
+		t.Errorf("Pi inventory phases = %+v, want planning followed by both reads before final inventory elapsed:\n%s", probes, &terminal)
+	}
+	out := terminal.String()
+	elapsed := strings.Index(out, "Elapsed: Checking installed versions after the update:")
+	if report := strings.Index(out, "Programs\n"); elapsed < 0 || report < elapsed {
+		t.Errorf("final inventory elapsed line must precede the report:\n%s", out)
 	}
 }
 
