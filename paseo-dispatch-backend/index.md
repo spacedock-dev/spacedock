@@ -1,7 +1,7 @@
 ---
 id: 936b86qpa8xy4fb6v0n5cafs
 title: Opt-in Paseo dispatch backend (--host paseo, CLI-first FO binding, and live smoke)
-status: validation
+status: implementation
 source: captain (2026-11-21)
 started: 2026-11-22T17:09:22Z
 completed:
@@ -361,6 +361,8 @@ Verified by: `internal/contractlint/paseo_live_lane_test.go` parses `.github/wor
   3. **One-off implementation/validation spot-checks:** non-`/tmp` Safehouse sibling `.spacedock-state` write check (recorded in implementation/validation report), detached adversarial audit on high-stakes surfaces (`spike-paseo-dispatch-backend`), and `gofmt -w ./cmd ./internal` + `spacedock status --workflow-dir docs/dev --validate`.
 
 ### Feedback Cycles
+
+- Cycle 1: REJECTED — detached adversarial audit (`c8441547`, `spike-paseo-dispatch-backend`) + Commander live Codex smoke; surface 17/+1102 vs estimate 17/+850 (+29.6%); AC unchanged
 
 ## Stage Report: ideation
 
