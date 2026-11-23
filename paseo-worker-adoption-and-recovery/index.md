@@ -8,7 +8,7 @@ completed:
 verdict:
 score: 0.70
 sprint: paseo-backend
-worktree:
+worktree: .worktrees/spacedock-ensign-paseo-worker-adoption-and-recovery
 issue:
 pr:
 mod-block:
