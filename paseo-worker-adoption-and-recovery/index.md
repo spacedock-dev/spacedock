@@ -1,7 +1,7 @@
 ---
 id: x9mfvnkqtbwgm4tba7dy41tw
 title: Paseo worker record, FO restart adoption, and dispatch recovery
-status: validation
+status: implementation
 source: captain (2026-11-21)
 started: 2026-11-22T17:09:25Z
 completed:
@@ -10,8 +10,8 @@ score: 0.70
 sprint: paseo-backend
 worktree: .worktrees/spacedock-ensign-paseo-worker-adoption-and-recovery
 issue:
-pr: "#895"
-mod-block: merge:pr-merge
+pr:
+mod-block:
 sprint-readiness: ready
 gates:
     version: 1
@@ -88,7 +88,7 @@ gates:
                 reason: 'Captain approved validation gate attempt-2 toward pushing ca39881e2 to stacked PR #895 and running stack-tip live CI'
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 ---
 
 Persist the Paseo worker handle in the task so a restarted or compacted first officer adopts a live worker instead of double-dispatching, and handle wait timeouts, lost create receipts, dead workers, and duplicate completion events with deterministic single-retry-then-hold recovery isolated per entity.
@@ -354,6 +354,7 @@ No existing primary proof owner covers FO restart adoption or `## Paseo Worker` 
 - Cycle 1: REJECTED — detached adversarial audit (`0693a5c1`, `spike-paseo-worker-adoption-and-recovery`); surface 5/+358 vs estimate 5/+278 (+28.8%); AC unchanged
 - Cycle 2: REJECTED — sprint pre-merge staff audit (`dd553ee3`, `_roadmap/paseo-backend/pre-merge-audit.md` `9e71ce2c3`); surface 5/+363 vs estimate 5/+278 (+30.6%); AC unchanged
 - Cycle 3: REJECTED — Captain-authorized post-merge worktree assertion fix in `TestLivePaseoAdoptionSmoke` (`paseo_adoption_live_test.go:144-171`); surface 5/+356 vs estimate 5/+278 (+28.1%); AC unchanged
+- Cycle 4: REJECTED — Captain design-reset ruling (move runtime worker handle and retries out of entity markdown into temporary local lease `<git-common-dir>/spacedock-paseo-leases/<slug>.yaml`; revert `fo-write-core.md`; remove `internal/status/paseo_worker_compat_test.go`); surface 5/+363 vs estimate 5/+278 (+30.6%); AC narrowed: design-reset to temporary local lease (superseded by `79`)
 
 ## Stage Report: ideation
 
