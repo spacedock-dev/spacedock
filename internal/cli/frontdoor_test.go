@@ -341,14 +341,29 @@ func executableFixture(t *testing.T) string {
 	return real
 }
 
-func envValue(env []string, key string) (string, bool) {
-	prefix := key + "="
-	for _, entry := range env {
-		if strings.HasPrefix(entry, prefix) {
-			return strings.TrimPrefix(entry, prefix), true
-		}
+// TestSubprocessEnvScrubActive covers the truthy/falsy parsing of
+// CLAUDE_CODE_SUBPROCESS_ENV_SCRUB that gates the launch warning (Task 2) and
+// the doctor note (Task 3).
+func TestSubprocessEnvScrubActive(t *testing.T) {
+	cases := []struct {
+		name string
+		env  []string
+		want bool
+	}{
+		{"unset", nil, false},
+		{"empty value", []string{"CLAUDE_CODE_SUBPROCESS_ENV_SCRUB="}, false},
+		{"explicit zero", []string{"CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=0"}, false},
+		{"set to 1", []string{"CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1"}, true},
+		{"set to true", []string{"CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=true"}, true},
+		{"unrelated env untouched", []string{"OTHER_VAR=1"}, false},
 	}
-	return "", false
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := subprocessEnvScrubActive(tc.env); got != tc.want {
+				t.Fatalf("subprocessEnvScrubActive(%v) = %v, want %v", tc.env, got, tc.want)
+			}
+		})
+	}
 }
 
 // TestClaudeFrontDoorLaunchesOnCompatible: on a compatible contract the front
@@ -367,6 +382,79 @@ func TestClaudeFrontDoorLaunchesOnCompatible(t *testing.T) {
 	want := []string{"claude", "--agent", "spacedock:first-officer", "--permission-mode", "auto", "-p", "do the thing", wantBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
+	}
+}
+
+// TestClaudeFrontDoorWarnsOnSubprocessEnvScrub: when
+// CLAUDE_CODE_SUBPROCESS_ENV_SCRUB is set truthy and the operator has not
+// declared --allowedTools themselves, spacedock claude prints its own
+// attributed warning — on both the unsandboxed and --safehouse launch paths,
+// since --dangerously-skip-permissions is not known to be exempt from Claude
+// Code's hardening.
+func TestClaudeFrontDoorWarnsOnSubprocessEnvScrub(t *testing.T) {
+	cases := []struct {
+		name string
+		args []string // bare --safehouse forces the wrap path, matching TestClaudeForceSafehouseWrapsNoProfile
+	}{
+		{"unsandboxed", []string{"--", "-p", "do the thing"}},
+		{"safehouse", []string{"--safehouse"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			withVersion(t, testBinaryVersion)
+			t.Setenv(subprocessEnvScrubEnv, "1")
+			fake := &fakeHost{manifest: compatibleManifest(t)}
+			var stdout, stderr bytes.Buffer
+
+			code := runClaude(context.Background(), tc.args, t.TempDir(), fake, lookFound, &stdout, &stderr)
+
+			if code != 0 {
+				t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+			}
+			if !strings.Contains(stderr.String(), "CLAUDE_CODE_SUBPROCESS_ENV_SCRUB") {
+				t.Fatalf("stderr missing env-scrub warning: %q", stderr.String())
+			}
+			if !strings.Contains(stderr.String(), "--allowedTools") {
+				t.Fatalf("stderr missing the --allowedTools remedy: %q", stderr.String())
+			}
+		})
+	}
+}
+
+// TestClaudeFrontDoorSuppressesSubprocessEnvScrubWarning covers the two
+// suppression cases: the var isn't truthy, or the operator already declared
+// --allowedTools themselves (the documented workaround).
+func TestClaudeFrontDoorSuppressesSubprocessEnvScrubWarning(t *testing.T) {
+	cases := []struct {
+		name string
+		env  string // value to set subprocessEnvScrubEnv to ("" means leave unset)
+		args []string
+	}{
+		{"var unset", "", []string{"--", "-p", "do the thing"}},
+		{"var explicit zero", "0", []string{"--", "-p", "do the thing"}},
+		{"operator declared allowedTools", "1", []string{"--", "--allowedTools", "Bash(git *)", "-p", "do the thing"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			withVersion(t, testBinaryVersion)
+			if tc.env == "" {
+				t.Setenv(subprocessEnvScrubEnv, "") // register restore-on-cleanup, then unset for real
+				os.Unsetenv(subprocessEnvScrubEnv)
+			} else {
+				t.Setenv(subprocessEnvScrubEnv, tc.env)
+			}
+			fake := &fakeHost{manifest: compatibleManifest(t)}
+			var stdout, stderr bytes.Buffer
+
+			code := runClaude(context.Background(), tc.args, t.TempDir(), fake, lookFound, &stdout, &stderr)
+
+			if code != 0 {
+				t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+			}
+			if strings.Contains(stderr.String(), "CLAUDE_CODE_SUBPROCESS_ENV_SCRUB") {
+				t.Fatalf("stderr should not carry the env-scrub warning: %q", stderr.String())
+			}
+		})
 	}
 }
 
@@ -450,7 +538,7 @@ func TestClaudeFrontDoorInjectsResolvedLauncherBin(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	got, ok := envValue(fake.launchedEnv, spacedockBinEnv)
+	got, ok := envValueOf(fake.launchedEnv, spacedockBinEnv)
 	if !ok || got != bin {
 		t.Fatalf("%s in launch env = %q, %v; want %q, true (env=%v)", spacedockBinEnv, got, ok, bin, fake.launchedEnv)
 	}
@@ -468,7 +556,7 @@ func TestClaudeFrontDoorOmitsStaleLauncherBinWhenResolutionFails(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	if got, ok := envValue(fake.launchedEnv, spacedockBinEnv); ok {
+	if got, ok := envValueOf(fake.launchedEnv, spacedockBinEnv); ok {
 		t.Fatalf("%s in launch env = %q, want omitted", spacedockBinEnv, got)
 	}
 }
@@ -489,7 +577,7 @@ func TestClaudeFrontDoorLaunchEnvResolvesSymlink(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	if got, ok := envValue(fake.launchedEnv, spacedockBinEnv); !ok || got != real {
+	if got, ok := envValueOf(fake.launchedEnv, spacedockBinEnv); !ok || got != real {
 		t.Fatalf("%s = %q, %v; want symlink target %q, true", spacedockBinEnv, got, ok, real)
 	}
 }
@@ -510,7 +598,7 @@ func TestClaudeFrontDoorEnablesAgentTeamsWhenParentUnset(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	got, ok := envValue(fake.launchedEnv, agentTeamsEnv)
+	got, ok := envValueOf(fake.launchedEnv, agentTeamsEnv)
 	if !ok || got != "1" {
 		t.Fatalf("%s in launch env = %q, %v; want %q, true (env=%v)", agentTeamsEnv, got, ok, "1", fake.launchedEnv)
 	}
@@ -530,7 +618,7 @@ func TestClaudeFrontDoorPreservesExplicitAgentTeams(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	got, ok := envValue(fake.launchedEnv, agentTeamsEnv)
+	got, ok := envValueOf(fake.launchedEnv, agentTeamsEnv)
 	if !ok || got != "0" {
 		t.Fatalf("%s in launch env = %q, %v; want %q, true (env=%v)", agentTeamsEnv, got, ok, "0", fake.launchedEnv)
 	}
@@ -1037,7 +1125,7 @@ func TestCodexFrontDoorInjectsLauncherBinThroughSafehouseResume(t *testing.T) {
 	if !equalArgv(fake.launchedArg, wantArgv) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, wantArgv)
 	}
-	got, ok := envValue(fake.launchedEnv, spacedockBinEnv)
+	got, ok := envValueOf(fake.launchedEnv, spacedockBinEnv)
 	if !ok || got != bin {
 		t.Fatalf("%s in launch env = %q, %v; want %q, true (env=%v)", spacedockBinEnv, got, ok, bin, fake.launchedEnv)
 	}
@@ -1104,7 +1192,7 @@ func TestCodexFrontDoorDoesNotEnableAgentTeams(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	if got, ok := envValue(fake.launchedEnv, agentTeamsEnv); ok {
+	if got, ok := envValueOf(fake.launchedEnv, agentTeamsEnv); ok {
 		t.Fatalf("%s in codex launch env = %q, want omitted", agentTeamsEnv, got)
 	}
 }

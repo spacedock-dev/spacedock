@@ -31,6 +31,8 @@ Machine modes, non-TTY stdout, help, version, completions and agent-facing subco
 The day is recorded under `${XDG_STATE_HOME:-$HOME/.local/state}/spacedock/version-checks/`.
 A slow or failed check stays silent and does not hold up the launch.
 
+If `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` is set in your environment (Claude Code's own subprocess credential-scrubbing hardening), Claude Code forces the launched session's permission mode back to `default` unless you declare `--allowedTools` yourself — `spacedock claude` warns about this at launch, and `spacedock doctor --host claude` notes it too. Declare `--allowedTools` explicitly to keep both the hardening and a friction-free dispatch, or unset the var for the launch.
+
 ## Setup
 
 | Command | Purpose |
