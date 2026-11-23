@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:x9mfvnkqtbwgm4tba7dy41tw:validation:attempt-1:revision-1",
+  "question": "Approve validation of task x9m (paseo-worker-adoption-and-recovery) on commit 01d66ed16 (stacked atop paseo-dispatch-backend e1b971b32) to open the stacked PR targeting --base paseo-dispatch-backend?",
+  "artifacts": [
+    {
+      "id": "artifact:x9mfvnkqtbwgm4tba7dy41tw:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/1f92f985e310a2f23191700545a7231ff2dcea21/paseo-worker-adoption-and-recovery/index.md",
+      "rev": "sha256:7ae9211d6ce8801fd86a8d5b9ebb02be8724d34a4c6380db139f9150d5f68532",
+      "mediaType": "text/markdown",
+      "summary": "Commit 01d66ed16 stacked atop e1b971b32 (+363 net LOC across 5 files, within +278 tolerance +195..+365, zero edits to 936 test files or first-officer-shared-core.md) satisfies AC-1 through AC-3: all 24 Go packages pass normal and -race, detached adversarial audit Material findings (0693a5c1) are closed, tightened TestLivePaseoAdoptionSmoke passed live in 268.93s, and Cycle 2 validation recommends PASSED with 0 Material findings."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:x9mfvnkqtbwgm4tba7dy41tw:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/439abf789d6cdddd846bed8753a42ea67e18a68f/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:47fdb50f43c626904ee13d88168d3f3e0cbca3a7f44f34a5d553df0ef6ecbb2d"
+    }
+  ]
+}
