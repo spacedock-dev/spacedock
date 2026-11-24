@@ -9,8 +9,8 @@ verdict:
 score: 0.90
 worktree: .worktrees/spacedock-ensign-paseo-vm-dispatch-and-version-frictions
 issue:
-pr:
-mod-block:
+pr: "#899"
+mod-block: merge:pr-merge
 gates:
     version: 1
     records:
