@@ -1,7 +1,7 @@
 ---
 id: x9mfvnkqtbwgm4tba7dy41tw
 title: Paseo worker record, FO restart adoption, and dispatch recovery
-status: validation
+status: implementation
 source: captain (2026-11-21)
 started: 2026-11-22T17:09:25Z
 completed:
@@ -318,6 +318,7 @@ No existing primary proof owner covers FO restart adoption via temporary local l
 - Cycle 3: REJECTED — Captain-authorized post-merge worktree assertion fix in `TestLivePaseoAdoptionSmoke` (`paseo_adoption_live_test.go:144-171`); surface 5/+356 vs estimate 5/+278 (+28.1%); AC unchanged
 - Cycle 4: REJECTED — Captain design-reset ruling (move runtime worker handle and retries out of entity markdown into temporary local lease `<git-common-dir>/spacedock-paseo-leases/<slug>.yaml`; revert `fo-write-core.md`; remove `internal/status/paseo_worker_compat_test.go`); surface 5/+363 vs estimate 5/+278 (+30.6%); AC narrowed: design-reset to temporary local lease (superseded by `79`)
 - Cycle 5: REJECTED — Commander live `TestLivePaseoAdoptionSmoke` on `6f146bb29` caught `skills/first-officer/SKILL.md:38` resume-load gap (FO-2 exited `idle` before adopting running `W1` because `SKILL.md:38` bound `paseo-fo-dispatch.md` only "at first dispatch"); Captain authorized 1-line `SKILL.md:38` fix + `waitForPaseoAdoptionCall` failure diagnostic (4-file surface vs `e1b971b32`); AC unchanged
+- Cycle 6: REJECTED — Captain validation attempt-3 `decision=revise` (drop temporary orphan lease file completely; reconcile roster purely from pre-existing Paseo labels + inspect + Git state on top of merged `main` `3d134b255`); surface 4/+311 vs estimate 4/+311 (0.0%); AC narrowed: pure 3-source-of-truth reconciliation with zero lease file and zero entity-body worker writes
 
 ## Stage Report: ideation
 
