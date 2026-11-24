@@ -1,7 +1,7 @@
 ---
 id: kdpzm9pckwj4pm1djvaf01ce
 title: "Paseo stack Layer 3: dev build SHA in --version, collision-free immutable dispatch files, and --dispatch-dir"
-status: ideation
+status: implementation
 source: "CL via MetaFO (2026-11-23, Studfleet VM dogfooding /tmp/paseo-frictions-studfleet-vm-2026-11-24.md)"
 started: 2026-11-24T06:53:43Z
 completed:
@@ -57,7 +57,7 @@ gates:
                     source: CL via MetaFO message to driver 846d9a2 (2026-11-23 22:47 PT)
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Identify the running source build and preserve each dispatch assignment. Let first officers select a directory that their workers can read.
