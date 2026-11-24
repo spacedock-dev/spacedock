@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:kdpzm9pckwj4pm1djvaf01ce:backlog:attempt-1:revision-1",
+  "question": "Approve Layer 3 task (Studfleet VM dispatch/version frictions) to enter ideation under CL's authorization?",
+  "artifacts": [
+    {
+      "id": "artifact:kdpzm9pckwj4pm1djvaf01ce:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/533924979d692d33eb963a54829254252dfc406b/paseo-vm-dispatch-and-version-frictions/index.md",
+      "rev": "sha256:c04336306845945d469abcc5af9016149e952f5707c1d693c8ad1052aac064ff",
+      "mediaType": "text/markdown",
+      "summary": "CL authorized continuing the Paseo PR stack to fix Studfleet VM frictions (#1 dev SHA in --version, #4 collision-free immutable dispatch files across all hosts, #5 --dispatch-dir / SPACEDOCK_DISPATCH_DIR, plus concise #3/#6 notes in paseo-fo-dispatch.md)."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:kdpzm9pckwj4pm1djvaf01ce:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/3d134b255fbcc493bd5e5ccc77a16c496c8b3662/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:47fdb50f43c626904ee13d88168d3f3e0cbca3a7f44f34a5d553df0ef6ecbb2d"
+    }
+  ]
+}

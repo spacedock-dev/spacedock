@@ -11,6 +11,31 @@ worktree:
 issue:
 pr:
 mod-block:
+gates:
+    version: 1
+    records:
+        - id: gate:kdpzm9pckwj4pm1djvaf01ce:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:kdpzm9pckwj4pm1djvaf01ce-backlog-1
+              briefing:
+                id: briefing:kdpzm9pckwj4pm1djvaf01ce:backlog:attempt-1:revision-1
+                digest: sha256:f15aac9719b6ca4f73dc627f7e3a36a8e5c2eb235554cb19cd92c03cb495e42e
+                room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:kdpzm9pckwj4pm1djvaf01ce:backlog:1
+                briefing: briefing:kdpzm9pckwj4pm1djvaf01ce:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-11-24T06:52:56.224469Z"
+                decision: approve
+                reason: 'Continuing Paseo PR stack atop PR #897 (5210d36d0) per CL authorization; merge/release/tag remain CL gates.'
+                conn:
+                    quote: 'the driver is authorized to continue the paseo PR stack to fix those frictions. This word of CL covers the continuation of that stack as it was done until now. It does not cover a merge, a release or a tag: those stay gates of CL.'
+                    source: CL via MetaFO message to driver 846d9a2 (2026-11-23 22:47 PT)
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Fix the Spacedock-owned frictions surfaced by real Paseo backend dogfooding on the Studfleet VM (`studfleet-paseo`, PR #897 commit `5210d36d0`), stacked cleanly as Layer 3 atop PR #897 (`paseo-and-generic-harness-fo-support`):
