@@ -454,3 +454,55 @@ Candidate tests pass, but unresolved live-binary provenance prevents acceptance 
 ### Summary
 
 Commit `03a796c48` makes the relative dispatch-directory fixture distinguish the caller cwd from the workflow directory, with checked cleanup and Go 1.22-compatible APIs. The wrong-base mutation now fails, all required checks pass, and normal/race package coverage passes with the documented PATH adjustment. The cumulative surface remains 44 files with the first-officer shared core unchanged.
+
+
+## Validation work log (cycle 2)
+
+1. Candidate `03a796c4809c7e926040be9e34b17354ea789994` is clean. Cycle 2 changes only `internal/dispatch/build_artifact_test.go` (+13/-3); cumulative surface is 44 files, +640/-141 (net +499), within the approved 45-file and +400..+750 limits. Shared-core bytes match `5210d36d0` exactly at 23,464 B.
+2. Independently reproduced the authorized wrong-base mutation using a temporary Go overlay: inserting workflow-relative resolution before `filepath.Abs` makes `TestArtifactDirectorySelection/relative` fail at line 178 with `wrong locator` (exit 1); unmodified code passes (exit 0). Overlay files were removed and production bytes stayed unchanged.
+3. `go vet ./...`, changed-test formatting, diff checks, workflow validation, and focused AC-1 CLI tests pass. Targeted race suites pass: dispatch 38.035s, contractlint 3.528s, integration 6.508s. The directory-selection suite also passes with an invalid ambient override. Workflow validation retains only the existing unrelated `live-lane-gap-inventory` warning.
+4. Standalone `/tmp/spacedock-layer3-clean` reports `0.29.0-pre0+dev.03a796c`; embedded revision is `03a796c4809c7e926040be9e34b17354ea789994`, `vcs.modified=false`, SHA-256 `3cb990664114cc9b9b6e797263ef46be4011817b546c4069c30ba23221df8890`. Assignment SHA-256 independently equals `6f21932667c3dd26570f2e4ddd394e69ae81435bb365b545d7112ad710af9d0d`, matching its filename suffix.
+5. Commander records this pointer as emitted by that clean binary with `--host paseo --dispatch-dir /tmp/spacedock-layer3-shared-dispatch`, adopted workspace `wks_508514ca958b5a19`, `inspect.Cwd` at the assigned code worktree, `Worktree: null`, `inspect.Thinking == "high"`, and parent `Runtime: paseo (PASEO_AGENT_ID)`, contract 3. Worker directly observes the assigned cwd and pointer bytes; its inner runtime reports Codex and contract 3. Parent inspection is Commander evidence under the F8 boundary.
+
+No journal tool is available; this work log retains the validation evidence and remaining checks.
+
+
+## Review-finding disposition (cycle 2)
+
+1. Material evidence defect, AC-3 relative-directory test: FO authorized the fixture-only correction in `03a796c48`. Independent overlay reproduction now fails on workflow-based resolution and passes on caller-cwd resolution. The detached audit's only Material finding is closed; no production change was needed.
+2. Material evidence defect, AC-5 provenance: FO-owned correction supplies the standalone clean build and this fresh content-hashed dispatch. Independent binary version, embedded revision, clean flag, and digest match the assignment. Commander supplies parent inspection; this worker supplies pointer-read, cwd, and committed report evidence. The previous provenance blocker is resolved.
+3. Deferred risk, accepted post-stamp boundary: an existing `0555` dispatch directory can pass `MkdirAll` and fail publication after stamping. The approved contract requires writable, hard-link-capable shared storage and explicitly retains post-stamp failure without rollback; supported writable-directory, immutable publication, and invalid-directory pre-stamp fixtures pass. Promote to Material if preflight rejection of unwritable directories or rollback becomes promised, or writable supported storage exhibits this failure. FO declined candidate work at this boundary.
+4. Polish, pre-existing formatting: `internal/release/runtime_live_evidence_workflow_test.go` is unchanged from the baseline. FO declined unrelated formatting edits; the changed test is formatted. No new findings require disposition.
+
+## Stage Report: validation (cycle 2)
+
+Recommendation: PASSED
+
+- DONE: Verify Cycle 2 commit `03a796c4809c7e926040be9e34b17354ea789994`, one-file correction, cumulative surface, and shared-core byte identity.
+  `git diff --stat 1fdb1e42a..HEAD` contains only `internal/dispatch/build_artifact_test.go` (+13/-3); `5210d36d0..HEAD` is 44 files, +640/-141 (net +499), within tolerance. Shared core equals baseline byte-for-byte at 23,464 B.
+- DONE: Re-verify the detached audit's ONLY Material finding directly with a throwaway Go `-overlay`, keeping the code worktree clean.
+  Inserting workflow-relative resolution before `filepath.Abs(dir)` makes `TestArtifactDirectorySelection/relative` fail with `wrong locator` at line 178 (exit 1); unmodified code passes (exit 0). Overlay removed; production bytes unchanged.
+- DONE: Run targeted formatting, vet, race, diff, and workflow verification.
+  `gofmt -l ./internal/dispatch/build_artifact_test.go` is empty; `go vet ./...`, `go test -race -count=1 ./internal/dispatch ./internal/contractlint ./skills/integration` (38.035s/3.528s/6.508s), and `git diff --check 5210d36d0..HEAD` pass. `/tmp/spacedock-layer3-clean status --workflow-dir /Users/clkao/git/spacedock-research/spacedock-v1/docs/dev --validate` is VALID with the existing unrelated `live-lane-gap-inventory` warning.
+- DONE: Verify AC-5 live provenance cleanly and independently compute the assignment SHA-256 prefix.
+  `/tmp/spacedock-layer3-clean --version` reports `0.29.0-pre0+dev.03a796c`; `go version -m` gives revision `03a796c4809c7e926040be9e34b17354ea789994`, modified=false; binary SHA-256 is `3cb990664114cc9b9b6e797263ef46be4011817b546c4069c30ba23221df8890`. Read pointer `3b905937-e237-4060-af8c-87b279dd96d9-paseo-vm-dispatch-and-version-frictions-validation-6f219326.md` from the selected shared directory; independently computed prefix is `6f219326`.
+- DONE: AC-1 — Operators can distinguish two valid source revisions from `--version` alone.
+  Focused uncached CLI tests pass: `TestDevVersionVCSMetadata`, `TestUnstampedSourceBuildReportsCheckoutVersionPlusDev`, `TestVersionSessionRender`, and stamped/fallback/contract-placement tests assert literal tokens, independently read build metadata, 3/6 lines, and compatibility; omitting SHA, changing stamped output, or adding a line falsifies them.
+- DONE: AC-2 — Two overlapping briefs from one Claude or Paseo parent preserve two complete assignments.
+  Race-tested `TestArtifactOverlappingBriefsAndRetry` and `TestArtifactPublicationConflict` verify distinct complete sentinels after both builds, retry inode/mtime, conflict bytes, symlinks/directories, mode, and cleanup; removing the content suffix, replacing publication with truncation, or accepting conflicting bytes falsifies these assertions.
+- DONE: AC-3 — A worker can read the complete assignment from the selected shared directory.
+  `TestArtifactDirectorySelection`, `TestArtifactInvalidDirectoryBeforeStamp`, and `TestSplitRootFolderWorktreeDispatch` pass flag/env/default precedence, both flag forms, spaces, invalid values, entity bytes/HEAD, and fresh-process body reads. The executed wrong-base mutation fails; ignoring overrides, falling back from empty input, or stamping before rejection also violates assertions.
+- DONE: AC-4 — All host paths retain the content suffix and filename limit.
+  `TestArtifactHostsModesAndFilenameBoundary` and goldens pass four-host fresh/advance/supported-bare cases, independently hashed raw bytes, and 242/243-byte stems. Directory selection passes with an invalid external `SPACEDOCK_DISPATCH_DIR`; wrong digests, pre-suffix length checks, or removed environment clearing falsify these checks.
+- DONE: AC-5 — Operational instructions expose shared storage and actual Paseo settings without expanding the shared core.
+  Commander records clean-binary emission, adopted `wks_508514ca958b5a19`, `inspect.Cwd` at this assigned code worktree, `Worktree: null`, `inspect.Thinking == "high"`, and parent Paseo/contract 3. Worker directly verifies cwd, pointer bytes/digest, shared-core identity, and supplies this committed result. A second worktree, unreadable pointer, wrong thinking, or changed core falsifies the claim; parent inspection remains attributed to Commander under F8.
+- DONE: Semantic adversarial pass and FO-disposed findings.
+  Rechecked version variants, path selection/rejection before stamp, immutable publication/conflict/cleanup, host envelopes, and raw digest-before-normalization invariants; the Cycle 2 mutation closes the exact evidence gap. No new Material finding remains. Accepted Deferred and baseline Polish findings are recorded above.
+- SKIPPED: Repeating repository-wide normal/race tests and mutating formatting.
+  Explicit Cycle 2 scope reuses passing full-package coverage on `03a796c` and Cycle 1 validation; unchanged CLI does not require its 435-second race suite again. Focused AC-1 tests were rerun. Read-only validation preserves the FO-declined baseline formatting.
+- DONE: Record the Cycle 2 validation report and commit/push the assigned entity path in the split-root state checkout.
+  Only this entity body is changed; frontmatter and candidate code remain unchanged. The state commit containing this report is the durable worker result for the clean-binary shared-pointer handoff.
+
+### Summary
+
+Candidate `03a796c48` satisfies AC-1 through AC-5 with the independent mutation check, passing targeted tests, and reconciled clean-build provenance. Both Material evidence defects are resolved; the accepted post-stamp Deferred risk and pre-existing formatting Polish remain as authorized. Validation recommends PASSED; Commander retains ownership of parent inspection and any separate pre-merge runtime gates.
