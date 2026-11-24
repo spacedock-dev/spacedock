@@ -40,7 +40,7 @@ func TestLivePaseoAdoptionSmoke(t *testing.T) {
 	}
 	workerBase := fx.Slug + "-implementation"
 	wantEpoch := workerBase + "-c1-a1"
-	fo1Prompt := fmt.Sprintf("Load the installed Spacedock first-officer skill by name (no raw checkout paths) and dispatch entity %q in workflow %s (entity: %s) for stage `implementation` via Paseo.\nUse worker flags `--provider %s%s`, pass the stage checklist (write `receipt.txt` containing `%s` on the task branch and commit cleanly; poll every 1s up to 180s until `%s` exists; append `## Stage Report: implementation` and commit path-scoped in `.spacedock-state`), and wait on the worker.",
+	fo1Prompt := fmt.Sprintf("Use $spacedock:first-officer (load the installed Spacedock first-officer skill by name; no raw checkout paths) and dispatch entity %q in workflow %s (entity: %s) for stage `implementation` via Paseo.\nUse worker flags `--provider %s%s`, pass the stage checklist (write `receipt.txt` containing `%s` on the task branch and commit cleanly; poll every 1s up to 180s until `%s` exists; append `## Stage Report: implementation` and commit path-scoped in `.spacedock-state`), and wait on the worker.",
 		fx.Slug, fx.WorkflowDir, fx.EntityPath, d.WorkerProvider, extraFlags, paseoAdoptionMarker, releaseFile)
 	var fo1, fo2 struct{ AgentID string }
 	d.runJSON(t, &fo1, paseoRunArgs(foWs.WorkspaceID, d.FOProvider, d.Thinking, "paseo-adoption-fo1", []string{"role=first-officer"}, []string{"SPACEDOCK_BIN=" + d.SpacedockBin}, fo1Prompt)...)
@@ -64,7 +64,7 @@ func TestLivePaseoAdoptionSmoke(t *testing.T) {
 		t.Fatalf("after FO-1 stop, W1 = %+v, want running parent=%s unarchived", w1, fo1.AgentID)
 	}
 
-	fo2Prompt := fmt.Sprintf("Load the installed Spacedock first-officer skill by name (no raw checkout paths) and resume workflow %s for entity %q (entity: %s) via Paseo.\nContinue from durable workflow state through stage completion to `done` (`verdict: PASSED`) and stop. If worker launch flags are ever needed, use `--provider %s%s`.",
+	fo2Prompt := fmt.Sprintf("Use $spacedock:first-officer (load the installed Spacedock first-officer skill by name; no raw checkout paths) and resume workflow %s for entity %q (entity: %s) via Paseo.\nContinue from durable workflow state through stage completion to `done` (`verdict: PASSED`) and stop. If worker launch flags are ever needed, use `--provider %s%s`.",
 		fx.WorkflowDir, fx.Slug, fx.EntityPath, d.WorkerProvider, extraFlags)
 	d.runJSON(t, &fo2, paseoRunArgs(foWs.WorkspaceID, d.FOProvider, d.Thinking, "paseo-adoption-fo2", []string{"role=first-officer"}, []string{"SPACEDOCK_BIN=" + d.SpacedockBin}, fo2Prompt)...)
 	if fo2.AgentID == "" {
