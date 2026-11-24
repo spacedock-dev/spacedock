@@ -89,6 +89,11 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:x9mfvnkqtbwgm4tba7dy41tw-validation-3
+              briefing:
+                id: briefing:x9mfvnkqtbwgm4tba7dy41tw:validation:attempt-3:revision-1
+                digest: sha256:db894831efe5942ac7004f0a420ad821389990372ea701c7f946613c9026dfa0
+                room-ref: '@review/validation/briefing-3'
 ---
 
 Persist the Paseo worker handle and retry ledger in a temporary local lease file (`<git-common-dir>/spacedock-paseo-leases/<slug>.yaml`, superseded by future lease work `79` / `entity-session-claim-lease`) with zero entity-markdown pollution so a restarted or compacted first officer adopts a live worker instead of double-dispatching, and handle wait timeouts, lost create receipts, dead workers, and duplicate completion events with deterministic single-retry-then-hold recovery isolated per entity.

@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:x9mfvnkqtbwgm4tba7dy41tw:validation:attempt-3:revision-1",
+  "question": "Approve task Paseo worker record, FO restart adoption, and dispatch recovery (validation) to push the temporary-local-lease refactor and resume-load fix to stacked PR #895?",
+  "artifacts": [
+    {
+      "id": "artifact:x9mfvnkqtbwgm4tba7dy41tw:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/83c4f5d9c0a08d9c42a1af3fc43a4038a253fad1/paseo-worker-adoption-and-recovery/index.md",
+      "rev": "sha256:c3378dc9b49759621bab8394267d1ce39978aac6d79914bd959c3fcbd296cad1",
+      "mediaType": "text/markdown",
+      "summary": "Moved Paseo worker handles and dispatch retries out of entity markdown into a temporary local lease file under the shared git common directory, reverted fo-write-core and status compatibility edits, fixed first-officer resume loading for Paseo, and passed strict live adoption smoke and validation."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:x9mfvnkqtbwgm4tba7dy41tw:validation:attempt-3:revision-1:item-2",
+      "uri": "git-root://main/439abf789d6cdddd846bed8753a42ea67e18a68f/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:47fdb50f43c626904ee13d88168d3f3e0cbca3a7f44f34a5d553df0ef6ecbb2d"
+    }
+  ]
+}
