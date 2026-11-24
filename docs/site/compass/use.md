@@ -39,7 +39,7 @@ For a walkthrough with saved results, choose **See an example** above the Sessio
 
 ![The session's Goal card with text marked From your /goal.](img/goal-from-slash-goal.png)
 
-*The source above the goal shows that the words came from `/goal` in the session.*
+*The line above the goal says it came from your `/goal` and is not saved yet. Press **Save goal** to keep it.*
 
 ## Read the board
 
@@ -48,7 +48,7 @@ For a walkthrough with saved results, choose **See an example** above the Sessio
 
 ![Sessions with counts for Waiting on you, Working now and Worth a look, plus status tabs, search, Filters and the Right now list.](img/sessions-screen.png)
 
-*Under **At a glance**, **Waiting on you** and **Worth a look** take you to **Needs you**. **Working now** selects **Working** in the list.*
+*The three cards at the top count what needs you. **Waiting on you** and **Worth a look** open **Needs you**, and **Working now** shows those sessions in the list below.*
 
 | Open | To see |
 | --- | --- |
