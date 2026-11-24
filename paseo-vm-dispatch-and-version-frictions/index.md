@@ -1,7 +1,7 @@
 ---
 id: kdpzm9pckwj4pm1djvaf01ce
 title: "Paseo stack Layer 3: dev build SHA in --version, collision-free immutable dispatch files, and --dispatch-dir"
-status: backlog
+status: ideation
 source: "CL via MetaFO (2026-11-23, Studfleet VM dogfooding /tmp/paseo-frictions-studfleet-vm-2026-11-24.md)"
 started:
 completed:
@@ -35,7 +35,7 @@ gates:
                     source: CL via MetaFO message to driver 846d9a2 (2026-11-23 22:47 PT)
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Fix the Spacedock-owned frictions surfaced by real Paseo backend dogfooding on the Studfleet VM (`studfleet-paseo`, PR #897 commit `5210d36d0`), stacked cleanly as Layer 3 atop PR #897 (`paseo-and-generic-harness-fo-support`):
