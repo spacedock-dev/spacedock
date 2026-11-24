@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:kdpzm9pckwj4pm1djvaf01ce:ideation:attempt-1:revision-1",
+  "question": "Approve task Paseo stack Layer 3: dev build SHA in --version, collision-free immutable dispatch files, and --dispatch-dir (ideation) to enter implementation atop PR #897?",
+  "artifacts": [
+    {
+      "id": "artifact:kdpzm9pckwj4pm1djvaf01ce:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/074b3e1559f12798f49aa33cb104246a197fadea/paseo-vm-dispatch-and-version-frictions/index.md",
+      "rev": "sha256:e2a940e97a9c00192782c1945890e43e3290fa86a033abdb035a8c50d262d263",
+      "mediaType": "text/markdown",
+      "summary": "Specifies VCS build metadata in dev --version, atomic SHA-256 content-hashed immutable dispatch files across all hosts, --dispatch-dir and SPACEDOCK_DISPATCH_DIR override before stamping, golden hash verification, and three concise operational notes in paseo-fo-dispatch and command reference."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:kdpzm9pckwj4pm1djvaf01ce:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/3d134b255fbcc493bd5e5ccc77a16c496c8b3662/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:47fdb50f43c626904ee13d88168d3f3e0cbca3a7f44f34a5d553df0ef6ecbb2d"
+    }
+  ]
+}

@@ -36,6 +36,14 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:kdpzm9pckwj4pm1djvaf01ce:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:kdpzm9pckwj4pm1djvaf01ce-ideation-1
+              briefing:
+                id: briefing:kdpzm9pckwj4pm1djvaf01ce:ideation:attempt-1:revision-1
+                digest: sha256:5ce69114377b181a60c57a86bb14a14127af7264c668d78f6d03de6b61bdc95e
+                room-ref: '@review/ideation/briefing-1'
 ---
 
 Identify the running source build and preserve each dispatch assignment. Let first officers select a directory that their workers can read.
