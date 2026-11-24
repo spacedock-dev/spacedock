@@ -24,13 +24,19 @@ type reviewSetting struct {
 	DecidedAt string `json:"decided_at,omitempty"`
 }
 
-// reviewSettingPath keys the setting by project root beside Subspace's relay
-// device credentials ($XDG_STATE_HOME/subspace), outside the repository, so a
-// choice is never committed and never inherited through a clone.
 func reviewSettingPath(env []string, dir string) (project, path string) {
 	project = dir
-	if out, err := exec.Command("git", "-C", dir, "rev-parse", "--show-toplevel").Output(); err == nil {
-		project = strings.TrimSpace(string(out))
+	if physical, err := filepath.EvalSymlinks(dir); err == nil {
+		project = physical
+	}
+	if out, err := exec.Command("git", "-C", project, "rev-parse", "--git-common-dir").Output(); err == nil {
+		common := strings.TrimSuffix(string(out), "\n")
+		if !filepath.IsAbs(common) {
+			common = filepath.Join(project, common)
+		}
+		if physical, err := filepath.EvalSymlinks(common); err == nil {
+			project = physical
+		}
 	}
 	vars := envMap(env)
 	base := vars["XDG_STATE_HOME"]
