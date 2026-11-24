@@ -325,3 +325,37 @@ JSON keys, worker identity, stage authority, and release versions retain their e
 The design specifies VCS version metadata, immutable dispatch publication, directory selection, and exact operational doc additions.
 It preserves the filename cap and records the golden normalization requirement. Validation reported one unrelated warning for live-lane-gap-inventory.
 The first scanner calls required this stage report. Both scanners succeeded after report creation. Product tests and live runtime proofs remain implementation and validation work.
+
+## Implementation work log
+
+1. Complete: dispatch publication and directory fixtures plus production behavior. Concurrent Claude/Paseo briefs, immutable retries, conflict rejection, pre-stamp refusal, and all-host digest assertions pass.
+2. Complete: VCS version fixtures/implementation and approved operational documentation. Complete: full validation and code commit `1fdb1e42a`; state sync accompanies this report.
+3. Runtime observation for AC-5 is assigned to Commander under the F8 ensign sandbox boundary. No journal tool is available; this log records implementation decisions and evidence.
+
+4. Investigation notes: parent tokens are capped at 36 bytes, so filename limits use the approved direct boundary test. OS environments reject NUL before Go can read it; NUL is covered through both flag forms. One additional Pi pathname assertion required migration, within the 45-file cap.
+
+5. Validation: all packages passed normal tests with the required CLI/default PATH split; full race validation also passed. Vet, explicit contractlint/integration race checks, strict docs build, external-directory isolation, and workflow validation passed. The workflow validator retains the unrelated live-lane-gap-inventory warning.
+6. Docs tooling required an explicit Python interpreter to avoid ambient UV virtualenv discovery; the isolated pinned-dependency build passed. A 90-second diagnostic CLI run timed out during existing state fixtures; the standard-timeout normal and race CLI runs passed (253s/267s).
+
+## Stage Report: implementation
+
+- DONE: Implement Friction #1 in internal/cli/dev_version.go (+ dev_version_test.go, version_session_test.go): injectable debug.ReadBuildInfo seam appending .<sha7>[.dirty] inside +dev build metadata when Version=="dev", preserving ^spacedock \S+$, 3/6-line output, contract.ParseMajorMinor, and linker-stamped releases (AC-1)
+  AC-1: `TestDevVersionVCSMetadata`, `TestUnstampedSourceBuildReportsCheckoutVersionPlusDev`, and `TestVersionSessionRender` prove revision/dirty tokens, independent binary VCS metadata, compatibility, and 3/6-line output; removing SHA, adding a line, or changing stamped output makes them fail.
+- DONE: Implement Frictions #4 & #5 in internal/dispatch/build.go and internal/dispatch/dispatch.go (+ build_artifact_test.go, parity_harness_test.go TestMain, golden_harness_test.go raw-digest check + -<HASH8>.md norm, 6 updated test files, and 26 updated golden fixtures): deterministic 8-hex SHA-256 dispatchBody suffix across all 4 hosts enforcing 251-char cap after suffix, atomic temp+os.Link immutable publication with fail-closed EEXIST byte check, and --dispatch-dir > SPACEDOCK_DISPATCH_DIR > /tmp/spacedock-dispatch validated+created before runStamp (AC-2, AC-3, AC-4)
+  AC-2/3/4: `build_artifact_test.go` exercises concurrent briefs, immutable retries/conflicts, directory selection, pre-stamp failures, every host/mode, and 242/243-byte boundaries; raw-body SHA assertions precede golden normalization.
+- DONE: Apply exact 3-line operational notes in skills/first-officer/references/paseo-fo-dispatch.md (keeping first-officer-shared-core.md strictly untouched at 23,464 B), update docs/site/reference/command-reference.md + skills/integration/dispatch_test.go, run gofmt -w ./cmd ./internal, go test ./... + go test ./... -race, contractlint, and spacedock status --validate, commit cleanly on paseo-vm-dispatch-and-version-frictions atop 5210d36d0, and commit+push path-scoped ## Stage Report: implementation (AC-5)
+  AC-5: exact three adapter bullets and command reference committed in `1fdb1e42a`; shared core is byte-identical to `5210d36d0` at 23,464 bytes. Code surface is 44 files, +489 net LOC (630 additions/141 deletions), within tolerance.
+- DONE: AC-2 preserves both overlapping assignments and identical retry identity.
+  `TestArtifactOverlappingBriefsAndRetry` and `TestArtifactPublicationConflict` inspect complete sentinel bodies, inode/mtime, conflicting bytes, symlinks, and directories; dropping the suffix, restoring truncating writes, or accepting conflicts makes them fail.
+- DONE: AC-3 proves shared-directory selection and rejection before stamping.
+  `TestArtifactDirectorySelection`, `TestArtifactInvalidDirectoryBeforeStamp`, and `TestSplitRootFolderWorktreeDispatch` compare selected paths, entity bytes/Git HEAD, and a fresh reader's complete body; ignoring precedence, falling back from empty values, or stamping before rejection makes them fail.
+- DONE: AC-4 retains content hashes across all hosts and the filename cap.
+  `TestArtifactHostsModesAndFilenameBoundary` plus `readDispatchBody` compare raw SHA-256 and exact limits; a wrong digest or measuring before the suffix fails. Dispatch suite passed with an invalid external `SPACEDOCK_DISPATCH_DIR`; all 26 locator goldens retain `-<HASH8>.md`.
+- DONE: Required validation and documentation build.
+  All packages passed normal and race tests with CLI PATH `/opt/homebrew/bin:/usr/bin:/bin` and default PATH elsewhere; `go vet ./...`, uncached race contractlint/integration, strict MkDocs, and workflow validation passed. `gofmt -w ./cmd ./internal` ran; touched Go files and `git diff --check` are clean.
+- SKIPPED: Live Paseo runtime observation in AC-5.
+  F8 ensign sandbox boundary: Commander will directly record inspect.Cwd, inspect.Thinking, pointer readability, and the worker's result commit. Fixture accessibility is proven; live observations are not claimed.
+
+### Summary
+
+Commit `1fdb1e42a` adds VCS dev metadata, immutable content-hashed assignments, configurable shared storage, and the approved operational notes. Workflow validation is VALID with the existing unrelated live-lane-gap-inventory warning; the code worktree is clean and the state report is committed path-scoped. Commander owns the AC-5 live observation; live host lanes and the detached adversarial audit remain pre-merge validation gates.
