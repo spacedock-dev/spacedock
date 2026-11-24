@@ -1,17 +1,17 @@
 ---
 id: 936b86qpa8xy4fb6v0n5cafs
 title: Opt-in Paseo dispatch backend (--host paseo, CLI-first FO binding, and live smoke)
-status: validation
+status: done
 source: captain (2026-11-21)
 started: 2026-11-22T17:09:22Z
-completed:
-verdict:
+completed: 2026-11-24T02:22:34Z
+verdict: PASSED
 score: 0.90
 sprint: paseo-backend
 worktree: .worktrees/spacedock-ensign-paseo-dispatch-backend
 issue:
 pr: pr-merge:893
-mod-block: merge:pr-merge
+mod-block:
 sprint-readiness: ready
 gates:
     version: 1
@@ -72,7 +72,8 @@ gates:
                 reason: Captain approved validation gate toward PR (including push and PR creation)
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-11-24T02:22:35Z
 ---
 
 Let any Paseo-hosted first officer (Claude, Codex, Pi, or Antigravity) dispatch fresh ensigns through Paseo using one host-neutral `--host paseo` contract and 5 `paseo` CLI verbs, backed by a real isolated-daemon live E2E smoke test and an optional (non-required) CI lane using the repo's `codex.exec` model from `internal/release/live_models.txt`.
