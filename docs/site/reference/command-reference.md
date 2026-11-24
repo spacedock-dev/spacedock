@@ -4,7 +4,7 @@ Run `spacedock <command> --help` for the full options. Run `spacedock` for the c
 
 ## Version
 
-`spacedock --version` reports the version, platform and release channel. Inside an agent session, it also reports the runtime and sandbox.
+`spacedock --version` reports the version, platform, and release channel. Inside a supported or Paseo-hosted agent session, it also reports the runtime, sandbox, and contract level.
 
 ## Launch
 

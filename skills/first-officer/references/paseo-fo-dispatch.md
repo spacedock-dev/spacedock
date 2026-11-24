@@ -1,6 +1,6 @@
 # First Officer Dispatch Module (Paseo)
 
-The Paseo dispatch parts (deferred from `fo-dispatch-core.md`), loaded alongside `fo-dispatch-core.md` whenever `fo-dispatch-core.md` loads — at first dispatch or on resume before `«dispatch.next-action»()` / `«roster-reconcile»()` — when `PASEO_AGENT_ID` is set or the captain selects Paseo dispatch. Any Paseo-hosted first officer (Claude, Codex, Pi, or Antigravity) drives fresh workers through five `paseo` CLI verbs and `spacedock dispatch build --host paseo`.
+The Paseo dispatch parts (deferred from `fo-dispatch-core.md`), read alongside `fo-dispatch-core.md` at the dispatch/resume boundary (before resume reconciliation, `«dispatch.next-action»()`, worker dispatch, or terminal teardown) when Paseo is active (reachable `paseo` daemon with `PASEO_AGENT_ID` set, or explicit captain selection). Any Paseo-hosted first officer (regardless of inner harness) drives fresh workers through five `paseo` CLI verbs and `spacedock dispatch build --host paseo`.
 
 **Zero sidecar/lease files, zero entity-body worker writes:** Reconcile worker state solely from the three pre-existing sources of truth — (1) entity frontmatter + `.spacedock-state` Git history (`status`, `started`, `worktree`, `### Feedback Cycles`, and stage-entry baseline commit SHA), (2) code worktree Git state (expected task branch, clean status), and (3) Paseo daemon labels (`spacedock.worker`, `spacedock.epoch`) + `paseo inspect`. Never write `## Paseo Worker` or `### Dispatch Retries` into entity markdown, and never create sidecar or lease files.
 

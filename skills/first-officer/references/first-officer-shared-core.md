@@ -42,14 +42,14 @@ A greet-and-stop boot loads NONE of these — it composes its summary from `«st
 
 **Combined-boundary order:** evaluate the write trigger before the merge trigger. A terminal status transition is both an FO-authored mutation and a terminal boundary, so complete the write-core read first, then the merge-core read, then issue the transition. Never select merge first merely because the requested action is terminal. Each deferred read must complete in its own host event; do not batch either read with the other or with the mutation command.
 
-- `Skill(skill="spacedock:fo-status-viewer")` — first status query (`--set` / `--next-id` / `--resolve` / issue filing).
-- `Skill(skill="spacedock:fo-gate-lifecycle")` — every selected/engaged gate and gated completion/resume. Load before every gate capability probe, evidence/Git read, write/validation, presenter, decision, replay, or dispatch; interactive gated greet only names and stops load-free.
+- `spacedock:fo-status-viewer` — first status query (`--set` / `--next-id` / `--resolve` / issue filing).
+- `spacedock:fo-gate-lifecycle` — every selected/engaged gate and gated completion/resume. Load before every gate capability probe, evidence/Git read, write/validation, presenter, decision, replay, or dispatch; interactive gated greet only names and stops load-free.
 - Active review policy — on findings, fence-safely locate/read the workflow's declared section; apply before candidate mutation or reviewer rerun.
 - `references/fo-dispatch-core.md` — after gate-first selection finds no gate, read before `«dispatch.next-action»()`, worker dispatch, or dispatch-state mutation, and it owns `## Completion and Gates` — the worker-completion procedure and gate routing. `«dispatch.build»` is not dispatch: forward its artifact to `«worker.spawn»`; never claim completion without `«completion-signal»`.
 - `references/fo-install.md` — fires in the binary-absent gate class, sandbox or not.
 - `{first_officer_base}/references/fo-write-core.md` — read in its own completed host event immediately before the first FO-authored mutation, after the gate-lifecycle load when both apply. The read activates `«write.classify»`; no FO-owned file, state, process-doc, archive, or mutation command may precede it, and neither deferred read substitutes for the other.
 - `{first_officer_base}/references/fo-merge-core.md` — read in its own completed host event at the first terminal boundary, or when `«engage»` begins recovery for `mod-block=merge:*`, before a terminal status transition, merge hook/guard, archive, shutdown, or other merge-owned action.
-- `Skill(skill="spacedock:fo-dispatch-recovery")` — dispatch failure recovery (break-glass manual dispatch, budget-fail/dead-ensign handling); named at its triggers inside the host dispatch module — no boot and no happy-path dispatch loads it.
+- `spacedock:fo-dispatch-recovery` — dispatch failure recovery (break-glass manual dispatch, budget-fail/dead-ensign handling); named at its triggers inside the host dispatch module — no boot and no happy-path dispatch loads it.
 
 These two reads use only the retained loader-supplied `{first_officer_base}` plus their literal suffixes above; cwd, wrapper-skill discovery, alternate paths, retries at another root, and filesystem search are forbidden.
 
@@ -73,13 +73,13 @@ Stay at the project root; never `cd` into a worktree. Use `git -C {path}` for op
 
 - **effect — extract (deterministic):** roll up the structured inputs via the shipped modes — `status --read <ref> --checklist` and `status --read <ref> --ac-scan`. These feed the verdict; they do not make it.
 - **effect — decide (judgment):** the verdict (approve/reject, is-this-AC-satisfied, is-this-direction-sound) is irreducible judgment; the FO renders its own `Recommend` line. Ensure `spacedock:present-gate` is resident under the residency rule, then present via its template + assembly rules.
-- **done-when:** the gate review is presented and the FO is waiting on the captain's decision, the worker kept alive.
+- **done-when:** the gate review is presented and the FO is waiting on the captain's decision, an addressable worker kept alive.
 - **block:** never self-approve; never resolve a gate the contract reserves to the captain.
 - → **prose** — no binary ships; the verdict is judgment.
 
 ## «feedback.route»(slug, stage): route a rejection back to its feedback-to target and re-gate
 
-- **effect:** invoke `Skill(skill="spacedock:feedback-rejection-flow")`; it owns opaque transport, correction rounds, reviewer rerun, and gate re-entry.
+- **effect:** load `spacedock:feedback-rejection-flow`; it owns opaque transport, correction rounds, reviewer rerun, and gate re-entry.
 - **done-when:** routed and re-gated, escalated at cycle 3, or held for missing authorization/assignment.
 - **block:** the routing decision is judgment-adjacent — the skill, not a binary, owns it.
 - → **prose**; the `feedback-rejection-flow` skill is the body.

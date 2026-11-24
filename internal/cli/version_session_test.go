@@ -123,6 +123,61 @@ func TestVersionSessionRender(t *testing.T) {
 				"contract 3\n",
 		},
 		{
+			// Non-{Claude,Codex,Pi} Paseo-hosted session inside safehouse: falls back
+			// to PASEO_AGENT_ID so Boot Step 1 sees contract 3.
+			name: "paseo-only-inside-safehouse",
+			vars: map[string]string{
+				"PASEO_AGENT_ID":           "b1c2d3e4-5678-90ab-cdef-1234567890ab",
+				"APP_SANDBOX_CONTAINER_ID": "agent-safehouse",
+			},
+			lookPath: lookMissing,
+			want: "spacedock " + version + "\n" +
+				"OS: " + osToken + "\n" +
+				"Channel: edge (spacedock@spacedock-edge)\n" +
+				"Runtime: paseo (PASEO_AGENT_ID)\n" +
+				"Sandbox: agent-safehouse\n" +
+				"contract 3\n",
+		},
+		{
+			name:     "paseo-only-unsandboxed",
+			vars:     map[string]string{"PASEO_AGENT_ID": "b1c2d3e4-5678-90ab-cdef-1234567890ab"},
+			lookPath: lookFound,
+			want: "spacedock " + version + "\n" +
+				"OS: " + osToken + "\n" +
+				"Channel: edge (spacedock@spacedock-edge)\n" +
+				"Runtime: paseo (PASEO_AGENT_ID)\n" +
+				"Sandbox: none (safehouse available)\n" +
+				"contract 3\n",
+		},
+		{
+			// PASEO_AGENT_ID carries a UUID value; the Runtime line reports only the
+			// env var name, never any fragment of the UUID.
+			name:     "paseo-marker-value-never-rendered",
+			vars:     map[string]string{"PASEO_AGENT_ID": "9f8e7d6c-aaaa-bbbb"},
+			lookPath: lookMissing,
+			want: "spacedock " + version + "\n" +
+				"OS: " + osToken + "\n" +
+				"Channel: edge (spacedock@spacedock-edge)\n" +
+				"Runtime: paseo (PASEO_AGENT_ID)\n" +
+				"Sandbox: none (safehouse not installed)\n" +
+				"contract 3\n",
+		},
+		{
+			// Native marker takes precedence over PASEO_AGENT_ID with zero ambiguity.
+			name: "claude-inside-paseo-no-ambiguity",
+			vars: map[string]string{
+				"CLAUDECODE":     "1",
+				"PASEO_AGENT_ID": "b1c2d3e4-5678-90ab-cdef-1234567890ab",
+			},
+			lookPath: lookFound,
+			want: "spacedock " + version + "\n" +
+				"OS: " + osToken + "\n" +
+				"Channel: edge (spacedock@spacedock-edge)\n" +
+				"Runtime: claude (CLAUDECODE)\n" +
+				"Sandbox: none (safehouse available)\n" +
+				"contract 3\n",
+		},
+		{
 			// Ambiguity is REPORTED, not guessed at, and carries no remedy: this
 			// surface exits 0 and has no fault to remedy. The one command the
 			// ambiguity blocks, `dispatch build`, prints its own complete remedy
@@ -194,13 +249,23 @@ func TestVersionSessionRender(t *testing.T) {
 // appear at all outside every runtime (every integer-era reader is itself a
 // session).
 func TestVersionContractTokenPlacement(t *testing.T) {
-	inSession := renderSession(claudeSession, lookMissing)
-	lines := strings.Split(strings.TrimRight(inSession, "\n"), "\n")
-	if lines[len(lines)-1] != "contract 3" {
-		t.Fatalf("in-session last line = %q, want %q", lines[len(lines)-1], "contract 3")
-	}
-	if strings.Contains(lines[0], "contract") {
-		t.Fatalf("line 1 = %q, want the contract token moved off it", lines[0])
+	for _, tc := range []struct {
+		name string
+		vars map[string]string
+	}{
+		{"claude", claudeSession},
+		{"paseo-only", map[string]string{"PASEO_AGENT_ID": "b1c2d3e4-5678-90ab-cdef-1234567890ab"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			inSession := renderSession(tc.vars, lookMissing)
+			lines := strings.Split(strings.TrimRight(inSession, "\n"), "\n")
+			if lines[len(lines)-1] != "contract 3" {
+				t.Fatalf("in-session last line = %q, want %q", lines[len(lines)-1], "contract 3")
+			}
+			if strings.Contains(lines[0], "contract") {
+				t.Fatalf("line 1 = %q, want the contract token moved off it", lines[0])
+			}
+		})
 	}
 
 	outside := renderSession(map[string]string{}, lookFound)
@@ -260,13 +325,14 @@ func TestVersionSandboxLineNamesTheSandbox(t *testing.T) {
 func TestVersionExecutesNoHostCLI(t *testing.T) {
 	shimDir := t.TempDir()
 	witness := filepath.Join(t.TempDir(), "witness")
-	for _, host := range []string{"claude", "codex", "pi", "safehouse"} {
+	for _, host := range []string{"claude", "codex", "pi", "paseo", "safehouse"} {
 		script := "#!/bin/sh\necho " + host + " >> " + witness + "\nexit 0\n"
 		if err := os.WriteFile(filepath.Join(shimDir, host), []byte(script), 0o755); err != nil {
 			t.Fatal(err)
 		}
 	}
 	t.Setenv("PATH", shimDir)
+	t.Setenv("PASEO_AGENT_ID", "b1c2d3e4-5678-90ab-cdef-1234567890ab")
 
 	var stdout, stderr bytes.Buffer
 	if code := Run([]string{"--version"}, &stdout, &stderr); code != 0 {

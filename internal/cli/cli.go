@@ -912,9 +912,14 @@ func printVersion(w io.Writer, getenv func(string) string, lookPath func(string)
 
 	host, markers, ambiguous := runtimehost.Detect(getenv)
 	if !ambiguous && host == "" {
-		// Outside every runtime — a human at a terminal. Three lines: the version
-		// line, the OS line, and the Channel line, nothing else.
-		return
+		if getenv("PASEO_AGENT_ID") != "" {
+			host = "paseo"
+			markers = []string{"PASEO_AGENT_ID"}
+		} else {
+			// Outside every runtime — a human at a terminal. Three lines: the version
+			// line, the OS line, and the Channel line, nothing else.
+			return
+		}
 	}
 
 	if ambiguous {
