@@ -52,6 +52,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:xdhbscjmpv0prk3k5yz1ngpw:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:xdhbscjmpv0prk3k5yz1ngpw-validation-1
+              briefing:
+                id: briefing:xdhbscjmpv0prk3k5yz1ngpw:validation:attempt-1:revision-1
+                digest: sha256:ad399abe907a7b8228c9369ae7d02fdb779f28fac1c5d0e6eeba0b48a74b78ff
+                room-ref: '@review/validation/briefing-1'
 ---
 
 Make any Paseo-hosted first officer boot and run cleanly regardless of inner harness (fixing `F4` and Paseo-vs-native dispatch selection), eliminate unnecessary or contradictory operating-contract loads on the Paseo FO & ensign path while preserving the 23,500-byte shared-core cap, and give unsupported harnesses clear fallback guidance to map Spacedock's worker capabilities onto their own Claude/Codex-like native features.

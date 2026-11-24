@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:xdhbscjmpv0prk3k5yz1ngpw:validation:attempt-1:revision-1",
+  "question": "Approve validation for xdh (paseo-and-generic-harness-fo-support, commit 6e1d12fa1) to open PR and run live CI before merge?",
+  "artifacts": [
+    {
+      "id": "artifact:xdhbscjmpv0prk3k5yz1ngpw:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/1db9bd2c2fd2e8178beea8ee1328145ddae5e6b0/paseo-and-generic-harness-fo-support/index.md",
+      "rev": "sha256:12fcfb159ccba8b17e3b59d7ff57a6c6b863b16d70c9d14cbb27f2ac2234b1e0",
+      "mediaType": "text/markdown",
+      "summary": "Cycle 2 validation PASSED and cross-provider safehouse-codex detached adversarial audit PASSED on 6e1d12fa1 (12 files, +117 net LOC, first-officer-shared-core.md 23,464 B \u003c= 23,500 B cap, all 5 Cycle 1 audit findings closed, 0 Material findings; live Paseo and native claude/codex/pi CI lanes required on PR before merge)."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:xdhbscjmpv0prk3k5yz1ngpw:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/3d134b255fbcc493bd5e5ccc77a16c496c8b3662/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:47fdb50f43c626904ee13d88168d3f3e0cbca3a7f44f34a5d553df0ef6ecbb2d"
+    }
+  ]
+}
