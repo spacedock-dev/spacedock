@@ -2,7 +2,7 @@
 title: "In Terminal"
 description: "Your agents are waiting on you. Spacedock brings you the calls that need you, keeps your agents on the goal, and lets you decide in one place."
 doc_version: "0.20.2"
-last_updated: "2026-11-24 02:21:27"
+last_updated: "2026-11-24 09:25:53"
 ---
 
 # Terminal review
