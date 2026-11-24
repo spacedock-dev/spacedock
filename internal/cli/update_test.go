@@ -196,8 +196,8 @@ func TestUpdateVerboseScriptFailureKeepsMergedLinesAndTotal(t *testing.T) {
 	}
 	want := []string{
 		`Checking installed versions before the update\.\.\. \(gap 0\.000s\)`,
-		`Listing claude plugins\.\.\. \(parent work \d+\.\d{3}s\)`,
-		`Elapsed: Listing claude plugins: \d+\.\d{3}s`,
+		`Listing Claude Code plugins\.\.\. \(parent work \d+\.\d{3}s\)`,
+		`Elapsed: Listing Claude Code plugins: \d+\.\d{3}s`,
 		`Elapsed: Checking installed versions before the update: \d+\.\d{3}s`,
 		`Updating Spacedock on the edge channel \(installed with install\.sh\)`,
 		`Running the install script\.\.\. \(gap \d+\.\d{3}s\)`,

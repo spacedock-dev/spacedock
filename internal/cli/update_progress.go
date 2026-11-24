@@ -13,7 +13,7 @@ type verboseInventory struct {
 }
 
 func (ops verboseInventory) PluginInventory(host string) ([]pluginInventoryEntry, error) {
-	done := ops.progress.step("Listing " + host + " plugins")
+	done := ops.progress.step("Listing " + hostTitle(host) + " plugins")
 	defer done()
 	return ops.hostOps.PluginInventory(host)
 }

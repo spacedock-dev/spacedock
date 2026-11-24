@@ -72,7 +72,7 @@ func newUpdateCommand(ctx context.Context, env []string, dir string, stdout, std
 			return nil
 		},
 	}
-	cmd.Flags().Bool("verbose", false, "Show host inventory details and elapsed time per step")
+	cmd.Flags().Bool("verbose", false, "Prefix each line with the time since start and show how long each step took")
 	setSetupHelp(cmd, stdout, `
 Update every program and plugin on the channel of this binary, for each of Claude
 Code and Codex that is on PATH and has the Spacedock plugin installed, and the Pi
