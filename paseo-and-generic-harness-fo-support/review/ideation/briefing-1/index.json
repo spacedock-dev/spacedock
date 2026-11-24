@@ -1,0 +1,45 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:xdhbscjmpv0prk3k5yz1ngpw:ideation:attempt-1:revision-1",
+  "question": "Approve ideation for xdh (paseo-and-generic-harness-fo-support) to enter implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:xdhbscjmpv0prk3k5yz1ngpw:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/7336b9e44092c17a2e36a085759e562823cb1dde/paseo-and-generic-harness-fo-support/index.md",
+      "rev": "sha256:7536061c29d455ab9992b1d818e96ae8657cbfe05c3a0f20ffc486e23b359654",
+      "mediaType": "text/markdown",
+      "summary": "Ideation complete: 5-line printVersion PASEO_AGENT_ID fallback (F4), Paseo-first daemon-reachability selection skipping 5.1-8.5 KB inner-host adapters at boot, sandboxed paseo-access=workspace fallback, Skill(skill=...) cleanup (-43 B on shared core), and unsupported-harness fallback reusing --host paseo (+90 net LOC across 10 files)."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:xdhbscjmpv0prk3k5yz1ngpw:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/439abf789d6cdddd846bed8753a42ea67e18a68f/internal/cli/cli.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:08411cc74f2e86872c001d3bb32be2821f35d56861f8b6631b4d8c22af62c3b7"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:xdhbscjmpv0prk3k5yz1ngpw:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/439abf789d6cdddd846bed8753a42ea67e18a68f/skills/first-officer/SKILL.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:32389cb5e666e412393a2fde11306614f8eb9b503cb8aeb12b3fd373db2c982e"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:xdhbscjmpv0prk3k5yz1ngpw:ideation:attempt-1:revision-1:item-4",
+      "uri": "git-root://main/439abf789d6cdddd846bed8753a42ea67e18a68f/skills/first-officer/references/first-officer-shared-core.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:ce118e3ca26414e87037974ba7ff175f752f99a6ade26fc9137fd39942159d13"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:xdhbscjmpv0prk3k5yz1ngpw:ideation:attempt-1:revision-1:item-5",
+      "uri": "git-root://main/439abf789d6cdddd846bed8753a42ea67e18a68f/skills/ensign/SKILL.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:f20f496405dc474c91e4af7ba46b50485301b902113ad69a258c3c17e46b0974"
+    }
+  ]
+}
