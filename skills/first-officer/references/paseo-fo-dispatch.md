@@ -1,6 +1,8 @@
 # First Officer Dispatch Module (Paseo)
 
-The Paseo dispatch parts (deferred from `fo-dispatch-core.md`), read alongside `fo-dispatch-core.md` at the first worker dispatch when `PASEO_AGENT_ID` is set or the captain selects Paseo dispatch. Any Paseo-hosted first officer (Claude, Codex, Pi, or Antigravity) drives fresh workers through five `paseo` CLI verbs and `spacedock dispatch build --host paseo`.
+The Paseo dispatch parts (deferred from `fo-dispatch-core.md`), loaded alongside `fo-dispatch-core.md` whenever `fo-dispatch-core.md` loads — at first dispatch or on resume before `«dispatch.next-action»()` / `«roster-reconcile»()` — when `PASEO_AGENT_ID` is set or the captain selects Paseo dispatch. Any Paseo-hosted first officer (Claude, Codex, Pi, or Antigravity) drives fresh workers through five `paseo` CLI verbs and `spacedock dispatch build --host paseo`.
+
+**Zero sidecar/lease files, zero entity-body worker writes:** Reconcile worker state solely from the three pre-existing sources of truth — (1) entity frontmatter + `.spacedock-state` Git history (`status`, `started`, `worktree`, `### Feedback Cycles`, and stage-entry baseline commit SHA), (2) code worktree Git state (expected task branch, clean status), and (3) Paseo daemon labels (`spacedock.worker`, `spacedock.epoch`) + `paseo inspect`. Never write `## Paseo Worker` or `### Dispatch Retries` into entity markdown, and never create sidecar or lease files.
 
 ## Common CLI Invariants (Paseo 0.17.1)
 
@@ -11,11 +13,11 @@ The Paseo dispatch parts (deferred from `fo-dispatch-core.md`), read alongside `
 - **Provider / model / thinking split:** Always pass an explicit `--provider <provider>/<model>` (never rely on `build.model`, which is `null`), and pass thinking effort separately via `--thinking <id>` when requested (for example `--provider antigravity/gemini-4-neon --thinking high` or `--provider codex/<model>`).
 - **Frozen shared label contract:**
   - `spacedock.worker` = `{worker_base}` (= `envelope.name` emitted by `spacedock dispatch build --host paseo` or `spacedock dispatch name`). Invariant across cycles and retries (always <= 56 chars); NEVER append `-retry` or `-cycleN` to `spacedock.worker`.
-  - `spacedock.epoch` = `{worker_base}-c{cycle}-a{attempt}` (`{worker_base}-c1-a1` for v1 fresh dispatch).
+  - `spacedock.epoch` = `{worker_base}-c{cycle}-a{attempt}`, where `cycle = 1 + count(### Feedback Cycles entries for stage S)` and `attempt` is `1` initially (`a1`) or `2` on the single allowed retry (`a2`).
 
 ## Pre-Spawn Worktree, Project-ID, and Safehouse Handling
 
-1. **Build envelope:** Run `${SPACEDOCK_BIN:-spacedock} dispatch build --host paseo --stamp --workflow-dir {workflow_dir} --entity-path {entity_path} --stage {stage} --checklist-file -` (omit `--bare-mode`). Retain `name` (`{worker_base}`), `description`, `dispatch_file_path`, and `prompt`. Set `epoch="${name}-c1-a1"`.
+1. **Build envelope & compute epoch:** Compute `cycle = 1 + count(### Feedback Cycles entries for stage S)` and `attempt` (`1` initially, `2` on single retry). Run `${SPACEDOCK_BIN:-spacedock} dispatch build --host paseo [--stamp] --workflow-dir {workflow_dir} --entity-path {entity_path} --stage {stage} --checklist-file -` (include `--stamp` on initial entry; omit `--stamp` on retry to reuse the existing worktree; always omit `--bare-mode`). Retain `name` (`{worker_base}`), `description`, `dispatch_file_path`, and `prompt`. Set `epoch="${name}-c${cycle}-a${attempt}"`.
 2. **Resolve physical `code_cwd` from structured status** (never parse the dispatch body):
    - Run `${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} --read {entity_path} --json` and read `frontmatter.worktree`.
    - If non-empty: join relative paths against `git -C {workflow_dir} rev-parse --show-toplevel`, keep absolute paths as-is, and canonicalize symlinks (`realpath` / `pwd -P`) to produce `code_cwd`.
@@ -56,14 +58,14 @@ paseo run --no-wait \
   --title "$description" \
   --label "role=ensign" \
   --label "spacedock.worker=$name" \
-  --label "spacedock.epoch=${name}-c1-a1" \
+  --label "spacedock.epoch=$epoch" \
   --json "$prompt"
 ```
 
 - **JSON stdout fields:** `agentId` (UUID), `status` (`"created"|"running"`), `provider`, `cwd`, `title`.
 - **Exit codes & branching:**
-  - `0`: **parse stdout only** (stderr prints `Using workspace <id>` on exit `0`). Record `agentId`, `workspaceId`, `spacedock.worker=$name`, `spacedock.epoch=${name}-c1-a1`, `cwd`, and requested/returned provider, model, thinking, and mode before waiting. CLI `--no-wait` leaves `notifyOnFinish=false`.
-  - `1`: `MISSING_PROVIDER`, `INVALID_OPTIONS`, `INVALID_THINKING_OPTION`, `WORKSPACE_NOT_FOUND`, `AGENT_CREATE_FAILED`.
+  - `0`: **parse stdout only** (stderr prints `Using workspace <id>` on exit `0`). Retain `agentId`, `workspaceId`, `spacedock.worker=$name`, `spacedock.epoch=$epoch`, `cwd`, and requested/returned provider, model, thinking, and mode in session memory before waiting. CLI `--no-wait` leaves `notifyOnFinish=false`.
+  - `1`: `MISSING_PROVIDER`, `INVALID_OPTIONS`, `INVALID_THINKING_OPTION`, `WORKSPACE_NOT_FOUND`, `AGENT_CREATE_FAILED` — run `## Roster Reconciliation` first (lost create receipt vs confirmed `spawn-error`), then route through `## Recovery Matrix`.
 
 ### Verb 3 — Bounded wait (`wait`)
 
@@ -73,12 +75,7 @@ paseo wait "$agent_id" --timeout 300 --json
 
 - **JSON stdout fields:** `agentId`, `status` (`"idle"|"timeout"|"permission"|"error"`), `message` (includes last 5 activity items on `idle`/`timeout`).
 - **Exit codes & branching:**
-  - `0` for ALL FOUR statuses — ALWAYS branch on JSON `status`:
-    - `timeout` -> keep waiting (normal progress, 0 retries).
-    - `idle` -> wake signal ONLY; verify durable Git commits + `## Stage Report: {stage}` before advancing.
-    - `permission` -> run `paseo inspect "$agent_id" --json` and escalate to the captain.
-    - `error` -> run `paseo inspect "$agent_id" --json` and hold.
-  - `1`: `AGENT_NOT_FOUND`, `INVALID_TIMEOUT`, `WAIT_FAILED`.
+  - `0` for ALL FOUR statuses (`timeout`, `permission`, `idle`, `error`) and `1` (`AGENT_NOT_FOUND`, `INVALID_TIMEOUT`, `WAIT_FAILED`): inspect the worker via Verb 4, evaluate `HasValidNewReport` when ended, and route EVERY outcome through `## Recovery Matrix` (the sole decision owner).
 
 ### Verb 4 — Inspect & roster query (`inspect`, `ls`)
 
@@ -104,13 +101,52 @@ Pass `--force` ONLY on explicit supersede of a running worker.
 - **Exit codes & branching:** `0` = worker archived; `1` = `AGENT_RUNNING` (fail-closed without `--force`), `AGENT_ALREADY_ARCHIVED`, `AGENT_NOT_FOUND`, `ARCHIVE_FAILED`.
 - **Cascade-archive guard:** Archiving a parent agent cascade-kills and archives every child in the same workspace (`parent.workspaceId === child.workspaceId` — all non-worktree stages share the repo-root workspace) and detaches cross-workspace children by deleting `paseo.parent-agent-id`. NEVER archive `$PASEO_AGENT_ID`, and NEVER archive an FO while any child worker is running (use `paseo stop` to interrupt an FO without killing or detaching its children).
 
+## Roster Reconciliation
+
+Run before spawning or advancing an entity in active stage `S = entity.status` (on boot, compaction resume, `«dispatch.next-action»()`, or after a failed/dropped `paseo run --no-wait`):
+
+1. **Derive `(worker_base, cycle, expected_cwd, baseline_rev)` from entity + `.spacedock-state` Git log:**
+   - Read entity frontmatter (`status`, `started`, `worktree`) and `### Feedback Cycles` (read-only).
+   - Run read-only `${SPACEDOCK_BIN:-spacedock} dispatch name --workflow-dir {workflow_dir} --entity-path {entity_path} --stage {S}` to get invariant `worker_base`.
+   - Compute `cycle = 1 + count(### Feedback Cycles entries for S)` and canonical physical `expected_cwd` (`realpath` / `pwd -P` of `worktree` if non-empty, else canonical repo root).
+   - Derive `baseline_rev` from `.spacedock-state` Git log on `{entity_rel}`: the latest `dispatch: {slug} entering {S}` (or backward-route / stage-entry) commit SHA for `(S, cycle)`.
+2. **Query and inspect-filter Paseo daemon rows:**
+   - Run `paseo ls --global --all --label "spacedock.worker={worker_base}" --json` and keep rows whose `labels["spacedock.epoch"]` matches `{worker_base}-c{cycle}-a*`.
+   - Call `paseo inspect <id> --json` on each matched row (NEVER filter on `ls[].cwd`, `ls[].created`, or `ls[].status` for archival) and keep ONLY rows where `inspect.Cwd == expected_cwd` AND (`frontmatter.started` is empty OR ISO-8601 `inspect.CreatedAt >= frontmatter.started`).
+3. **Partition and dispatch into Recovery Matrix:**
+   - Partition filtered rows into `running` (`!inspect.Archived && inspect.Status == "running"`) and `ended` (`inspect.Archived || inspect.Status != "running"`), and note whether any filtered row has `labels["spacedock.epoch"] == "{worker_base}-c{cycle}-a2"` (retry spent).
+   - If 0 filtered rows exist on boot/engage: advance if `HasValidNewReport` already holds, else `SpawnFresh` (`a1`, with `--stamp` if not yet stamped). If 0 filtered rows exist after a failed `paseo run --no-wait`, route to Row 8 (`spawn-error`).
+   - Otherwise route the partitioned roster directly through `## Recovery Matrix` below.
+
+## Recovery Matrix
+
+Sole decision owner for all `wait`, `inspect`, `archive`, lost-create-receipt, and resume outcomes. Every recovery decision is strictly isolated per entity (one held or failing entity never blocks unrelated entities). Obey the Verb 5 cascade-archive guard on every archival (`$PASEO_AGENT_ID` is never archived, and an FO is never archived while any child runs).
+
+**`HasValidNewReport(entity, stage, baseline_rev)`** — all three Git predicates must hold:
+1. `git -C {state_checkout} rev-list {baseline_rev}..HEAD -- {entity_rel}` is non-empty and the committed entity carries a new `## Stage Report: {stage}` passing `${SPACEDOCK_BIN:-spacedock} status --read <entity> --stage {stage} --checklist --json` with non-empty evidence, non-empty `### Summary`, and no `FAILED` items except feedback-review findings.
+2. `git -C {state_checkout} status --porcelain -- {entity_rel}` is empty.
+3. For worktree stages (`worktree != ""`), the code worktree is on the expected task branch with clean `git -C {worktree} status --porcelain`.
+
+| Row | Observed State | Decision & Action |
+|---|---|---|
+| 1 | `wait` `status=timeout` + `inspect` `Status=running` & `PendingPermissions=[]` | `ContinueWait`: re-issue `paseo wait <id> --timeout 300 --json` (0 retries). |
+| 2 | `wait` `status=permission` OR `inspect.PendingPermissions != []` (precedes Row 3 even when `Status=running`) | `HoldEntity`: keep worker live, stop this entity & surface to captain (0 retries). |
+| 3 | 1 running worker (on resume or dropped `run --no-wait` receipt) with `PendingPermissions=[]` | `AdoptRunning`: enter `paseo wait <id> --timeout 300 --json` loop (0 duplicate spawns, 0 retries). |
+| 4 | 0 running + `HasValidNewReport == true` | `VerifyAndArchive`: idempotent `paseo archive <id> --json` for any unarchived matched worker (treat `AGENT_ALREADY_ARCHIVED` and `AGENT_NOT_FOUND` as success) -> advance / `gate prepare` / `merge guard`. |
+| 5 | 0 running + `HasValidNewReport == false` + `a1` only (no `a2` row) | `ArchiveAndRetry`: idempotent `paseo archive <id> --json` for unarchived `a1` -> reuse workspace (Verb 1) & spawn ONE replacement `a2` (`spacedock.worker={worker_base}`, `spacedock.epoch={worker_base}-c{cycle}-a2`, omit `--stamp`, append WIP check note). |
+| 6 | 0 running + `HasValidNewReport == false` + `a2` row exists | `RetryExhausted`: idempotent `paseo archive <id> --json` for unarchived `a2` -> stop this entity & surface to captain (unrelated entities unaffected). |
+| 7 | `> 1` running workers | `AmbiguousRoster`: stop this entity & surface to captain; never spawn or kill unowned agents. |
+| 8 | `spawn-error` (`paseo run --no-wait` exits `1` and Roster Reconciliation confirms 0 agents created for `(S, cycle, attempt)`) | If on `a1`, retry ONCE in-turn with `spacedock.epoch={worker_base}-c{cycle}-a2` (reusing workspace via Verb 1, omitting `--stamp`); if already on `a2`, stop this entity & surface to captain. |
+
+Late or duplicate completion events for an already-advanced entity (`entity.status != S`) or an already-archived worker with no pending advance are a strict no-op.
+
 ## Runtime implementation
 
-- `«worker.spawn»` -> `${SPACEDOCK_BIN:-spacedock} dispatch build --host paseo --stamp` -> resolve canonical `code_cwd` -> Verb 1 find-or-create (`workspace ls` then `workspace create --isolation local` if absent) -> Verb 2 (`run --no-wait`, stdout-only JSON parse, `spacedock.worker=$name`, `spacedock.epoch=${name}-c1-a1`). Forward the intact helper pointer verbatim (optional ordinary FO scope notes appended after a newline).
+- `«worker.spawn»` -> Pre-Spawn (`dispatch build --host paseo [--stamp]`, compute `epoch="${name}-c${cycle}-a${attempt}"`, resolve canonical `code_cwd`) -> Verb 1 find-or-create -> Verb 2 (`run --no-wait`, stdout-only JSON parse, `spacedock.worker=$name`, `spacedock.epoch=$epoch`). Forward the emitted pointer verbatim (optional ordinary FO scope notes appended after a newline). Never write lease files or entity-body worker/retry sections.
 - `«addressable-worker»` -> ABSENT in v1 (fresh one-shot workers only; worker reuse and child-to-parent messaging are out of scope).
-- `«async-dispatch»` -> ASYNC (`paseo run --no-wait` returns `agentId`; bounded polling via Verb 3 `paseo wait --timeout 300 --json`).
-- `«worker-identity»` -> record `agentId`, `workspaceId`, `spacedock.worker` (`{worker_base}`), `spacedock.epoch` (`{worker_base}-c1-a1`), `cwd`, and requested/returned `provider`, `model`, `thinking`, `mode`; canonical model space is `<provider>/<model>` (+ optional `--thinking <id>`).
-- `«completion-signal»` -> Verb 3 `status == "idle"` wakes verification; Git state (committed worktree deliverable + path-scoped `## Stage Report: {stage}` commit on canonical entity + clean `git status --porcelain`) is the completion gate.
-- `«worker.shutdown»` -> Verb 5 `paseo archive "$agent_id" --json` after Git verification (or `--force` on supersede); guard `agentId != $PASEO_AGENT_ID` and never archive an FO with live children (same-workspace cascade-archive rule).
+- `«async-dispatch»` -> ASYNC (`paseo run --no-wait` returns `agentId`; bounded polling via Verb 3 `paseo wait --timeout 300 --json` routed through `## Recovery Matrix`).
+- `«worker-identity»` -> Paseo daemon labels (`spacedock.worker={worker_base}`, `spacedock.epoch={worker_base}-c{cycle}-a{attempt}`) + `paseo inspect` (`Id`, `Cwd`, `Provider`/`Model`, `Thinking`, `Mode`, `Status`, `Archived`) + entity/Git state; canonical model space is `<provider>/<model>` (+ optional `--thinking <id>`).
+- `«completion-signal»` -> Verb 3 `status == "idle"` wakes verification; `HasValidNewReport` in `## Recovery Matrix` (committed worktree deliverable + path-scoped post-`baseline_rev` `## Stage Report: {stage}` commit + clean `git status --porcelain`) is the completion gate.
+- `«worker.shutdown»` -> Verb 5 idempotent `paseo archive "$agent_id" --json` (treat `AGENT_ALREADY_ARCHIVED`/`AGENT_NOT_FOUND` as success; `--force` on supersede only), obeying the cascade-archive guard (`agentId != $PASEO_AGENT_ID`, never archive an FO with running children).
 - `«context-budget»` -> ABSENT (`inspect.LastUsage` omits context-window max and v1 dispatches fresh only).
-- `«roster-reconcile»` -> Verb 4 (`paseo ls --global --label "spacedock.worker=..." --json` + `paseo inspect "$agent_id" --json`).
+- `«roster-reconcile»` -> `## Roster Reconciliation` + `## Recovery Matrix` (pure 3-source-of-truth reconciliation from entity + `.spacedock-state` Git log, code worktree Git state, and Paseo `ls`/`inspect` labels; zero lease files, zero entity-body worker writes).
