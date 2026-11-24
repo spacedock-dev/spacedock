@@ -1,7 +1,7 @@
 ---
 id: xdhbscjmpv0prk3k5yz1ngpw
 title: Paseo-wide FO runtime support and generic unsupported-harness fallback hints
-status: ideation
+status: implementation
 source: captain (2026-11-23)
 started: 2026-11-23T23:47:27Z
 completed:
@@ -51,7 +51,7 @@ gates:
                 reason: 'Captain directive: proceed on all'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Make any Paseo-hosted first officer boot and run cleanly regardless of inner harness (fixing `F4` and Paseo-vs-native dispatch selection), eliminate unnecessary or contradictory operating-contract loads on the Paseo FO & ensign path while preserving the 23,500-byte shared-core cap, and give unsupported harnesses clear fallback guidance to map Spacedock's worker capabilities onto their own Claude/Codex-like native features.
