@@ -3,6 +3,9 @@
 package dispatch
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -59,6 +62,19 @@ func realpath(p string) string {
 
 // normRun root/home-normalizes all three channels of a run result.
 func normRun(res runResult, root, home string) runResult {
+	var envelope map[string]any
+	if json.Unmarshal([]byte(res.stdout), &envelope) == nil {
+		if path, ok := envelope["dispatch_file_path"].(string); ok {
+			normalized := regexp.MustCompile(`-[0-9a-f]{8}\.md$`).ReplaceAllString(path, "-<HASH8>.md")
+			encoded, _ := json.Marshal(path)
+			var replacement bytes.Buffer
+			enc := json.NewEncoder(&replacement)
+			enc.SetEscapeHTML(false)
+			_ = enc.Encode(normalized)
+			replacementJSON := strings.TrimSpace(replacement.String())
+			res.stdout = strings.ReplaceAll(res.stdout, string(encoded[1:len(encoded)-1]), replacementJSON[1:len(replacementJSON)-1])
+		}
+	}
 	return runResult{
 		stdout: normPaths(res.stdout, root, home),
 		stderr: normPaths(res.stderr, root, home),
@@ -169,4 +185,21 @@ func assertGolden(t *testing.T, name string, native goldenEnvelope) {
 	if native.body != want.body {
 		t.Errorf("%s: dispatch body mismatch\n--- native ---\n%s\n--- golden ---\n%s", name, native.body, want.body)
 	}
+}
+
+func readDispatchBody(t *testing.T, path string) string {
+	t.Helper()
+	b, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read dispatch body %s: %v", path, err)
+	}
+	digest := sha256.Sum256(b)
+	if !strings.HasSuffix(path, fmt.Sprintf("-%x.md", digest[:4])) {
+		t.Fatalf("dispatch path %s does not match raw body SHA-256", path)
+	}
+	return string(b)
+}
+
+func normalizedArtifactBase(path string) string {
+	return regexp.MustCompile(`-[0-9a-f]{8}\.md$`).ReplaceAllString(filepath.Base(path), "-<HASH8>.md")
 }

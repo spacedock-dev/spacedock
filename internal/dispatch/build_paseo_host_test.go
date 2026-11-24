@@ -63,7 +63,7 @@ func TestBuildPaseoHostPromptShapeAndSplitRoot(t *testing.T) {
 			t.Fatalf("decode envelope: %v", err)
 		}
 		t.Cleanup(func() { _ = os.Remove(out.DispatchFile) })
-		if out.SchemaVersion != 2 || out.SubagentType != "spacedock:ensign" || out.Description != "Thing: implementation" || out.Name != "thing-implementation" || len(out.FetchCommands) != 1 || filepath.Base(out.DispatchFile) != "thing-implementation.md" {
+		if out.SchemaVersion != 2 || out.SubagentType != "spacedock:ensign" || out.Description != "Thing: implementation" || out.Name != "thing-implementation" || len(out.FetchCommands) != 1 || normalizedArtifactBase(out.DispatchFile) != "thing-implementation-<HASH8>.md" {
 			t.Fatalf("unexpected envelope: %+v", out)
 		}
 		wantPrompt := fmt.Sprintf("Load the Spacedock ensign skill (with references/ensign-shared-core.md and references/paseo-ensign-runtime.md); then Read %s and treat its content as your assignment.", out.DispatchFile)
@@ -126,9 +126,8 @@ func TestBuildPaseoHostWithStampAndBareRejection(t *testing.T) {
 	bareEntity := filepath.Join(bareRoot, "paseobare.md")
 	writeFile(t, bareEntity, entityFM("Paseo Bare", "implementation", ""))
 	gitInit(t, bareRoot)
-	artifactPath := filepath.Join(dispatchFileDir, "paseobare-implementation.md")
-	_ = os.Remove(artifactPath)
-	t.Cleanup(func() { _ = os.Remove(artifactPath) })
+	dir := t.TempDir()
+	t.Setenv("SPACEDOCK_DISPATCH_DIR", dir)
 
 	bare := runNative("- item", "build", "--workflow-dir", bareRoot, "--entity-path", bareEntity,
 		"--stage", "implementation", "--checklist-file", "-", "--host", "paseo", "--bare-mode")
@@ -136,9 +135,7 @@ func TestBuildPaseoHostWithStampAndBareRejection(t *testing.T) {
 	if bare.exit != 2 || !strings.Contains(bare.stderr, wantErr) {
 		t.Fatalf("bare paseo exit=%d stderr=%q, want exit 2 + %q", bare.exit, bare.stderr, wantErr)
 	}
-	if _, err := os.Stat(artifactPath); !os.IsNotExist(err) {
-		t.Fatalf("bare paseo must not create dispatch artifact %s; stat err=%v", artifactPath, err)
-	}
+	assertEmptyArtifacts(t, dir)
 }
 
 func TestBuildPaseoHostModelDisambiguationAndResolve(t *testing.T) {
@@ -158,11 +155,7 @@ func TestBuildPaseoHostModelDisambiguationAndResolve(t *testing.T) {
 
 	hRoot, hEntity := buildHostFixture(t)
 	args := []string{"build", "--workflow-dir", hRoot, "--entity-path", hEntity, "--stage", "backlog", "--checklist-file", "-", "--host", "paseo"}
-	t.Cleanup(func() {
-		for _, f := range []string{"agent-alpha-01-thing-backlog.md", "agent-beta-02-thing-backlog.md"} {
-			_ = os.Remove(filepath.Join(dispatchFileDir, f))
-		}
-	})
+	t.Setenv("SPACEDOCK_DISPATCH_DIR", t.TempDir())
 	t.Setenv("PASEO_AGENT_ID", "Agent_Alpha/01")
 	a := runNative("- a", args...)
 	t.Setenv("PASEO_AGENT_ID", "Agent_Beta/02")
@@ -171,7 +164,7 @@ func TestBuildPaseoHostModelDisambiguationAndResolve(t *testing.T) {
 		t.Fatalf("disambiguated builds failed: a=%d b=%d", a.exit, b.exit)
 	}
 	pathA, pathB := dispatchFilePathFromStdout(t, a.stdout), dispatchFilePathFromStdout(t, b.stdout)
-	if pathA == pathB || filepath.Base(pathA) != "agent-alpha-01-thing-backlog.md" || filepath.Base(pathB) != "agent-beta-02-thing-backlog.md" {
+	if pathA == pathB || normalizedArtifactBase(pathA) != "agent-alpha-01-thing-backlog-<HASH8>.md" || normalizedArtifactBase(pathB) != "agent-beta-02-thing-backlog-<HASH8>.md" {
 		t.Fatalf("unexpected disambiguated paths: a=%q b=%q", pathA, pathB)
 	}
 

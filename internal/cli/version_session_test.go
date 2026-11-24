@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"testing"
 )
@@ -45,6 +46,10 @@ var claudeSession = map[string]string{
 // devBranch is untouched by this file (package default "next"), so every
 // Channel line here renders the edge rendering: `edge (spacedock@spacedock-edge)`.
 func TestVersionSessionRender(t *testing.T) {
+	withVersion(t, "dev")
+	withBuildInfo(t, &debug.BuildInfo{Settings: []debug.BuildSetting{
+		{Key: "vcs.revision", Value: "5210d36d0"}, {Key: "vcs.modified", Value: "true"},
+	}}, true)
 	version := displayVersion()
 	osToken := runtime.GOOS + "/" + runtime.GOARCH
 	cases := []struct {
@@ -200,6 +205,13 @@ func TestVersionSessionRender(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			got := renderSession(tc.vars, tc.lookPath)
+			wantLines := 6
+			if len(tc.vars) == 0 {
+				wantLines = 3
+			}
+			if strings.Count(got, "\n") != wantLines {
+				t.Fatalf("want %d lines: %q", wantLines, got)
+			}
 			// AC-2: the trimmed decorations are unreachable in EVERY shape. These
 			// run before the exact match on purpose: re-adding a decoration and
 			// regenerating the `want` literals in step would slip past an
@@ -325,7 +337,7 @@ func TestVersionSandboxLineNamesTheSandbox(t *testing.T) {
 func TestVersionExecutesNoHostCLI(t *testing.T) {
 	shimDir := t.TempDir()
 	witness := filepath.Join(t.TempDir(), "witness")
-	for _, host := range []string{"claude", "codex", "pi", "paseo", "safehouse"} {
+	for _, host := range []string{"claude", "codex", "pi", "paseo", "safehouse", "git"} {
 		script := "#!/bin/sh\necho " + host + " >> " + witness + "\nexit 0\n"
 		if err := os.WriteFile(filepath.Join(shimDir, host), []byte(script), 0o755); err != nil {
 			t.Fatal(err)

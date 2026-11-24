@@ -16,7 +16,7 @@ import (
 
 const testWorkflowLauncher = "/opt/spacedock/bin/spacedock"
 
-// TestMain clears CLAUDE_CODE_SESSION_ID for the whole package before any test
+// TestMain clears dispatch-directory and session overrides before any test
 // runs. Merged-mode dispatch (build.go) keys the dispatch filename on this var
 // when set, so a developer shell that happens to export it (e.g. a real Claude
 // Code session) would otherwise leak its live session id into every golden-
@@ -26,6 +26,7 @@ const testWorkflowLauncher = "/opt/spacedock/bin/spacedock"
 // t.Setenv, which scopes and restores per-test over this package-wide clear.
 func TestMain(m *testing.M) {
 	os.Unsetenv("CLAUDE_CODE_SESSION_ID")
+	os.Unsetenv("SPACEDOCK_DISPATCH_DIR")
 	os.Exit(m.Run())
 }
 
@@ -84,17 +85,6 @@ func restoreEnv(key, value string, had bool) {
 		return
 	}
 	os.Unsetenv(key)
-}
-
-// readDispatchBody reads the dispatch body file the run wrote (the path is
-// deterministic from the derived name). Returns "" when the run wrote none.
-func readDispatchBody(t *testing.T, path string) string {
-	t.Helper()
-	b, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read dispatch body %s: %v", path, err)
-	}
-	return string(b)
 }
 
 // gitInit initializes a git repo at dir so find_git_root resolves there.

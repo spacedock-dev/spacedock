@@ -271,13 +271,13 @@ func TestBuildInputFailuresDoNotReadOrStamp(t *testing.T) {
 	root, entity := buildHostFixture(t)
 	before, _ := os.ReadFile(entity)
 	head := gitOutput(t, root, "rev-parse", "HEAD")
-	artifactPath := filepath.Join(dispatchFileDir, "thing-backlog.md")
-	artifactBefore, artifactErr := os.ReadFile(artifactPath)
+	dir := t.TempDir()
+	t.Setenv("SPACEDOCK_DISPATCH_DIR", dir)
 	assertUnchanged := func(t *testing.T) {
 		t.Helper()
 		after, _ := os.ReadFile(entity)
-		artifactAfter, afterErr := os.ReadFile(artifactPath)
-		if string(after) != string(before) || gitOutput(t, root, "rev-parse", "HEAD") != head || string(artifactAfter) != string(artifactBefore) || (artifactErr == nil) != (afterErr == nil) {
+		assertEmptyArtifacts(t, dir)
+		if string(after) != string(before) || gitOutput(t, root, "rev-parse", "HEAD") != head {
 			t.Fatal("input failure mutated entity, commit, or dispatch artifact")
 		}
 	}

@@ -114,6 +114,8 @@ func RunWithLauncher(probe claudeteam.TeamStateProbe, workflowLauncher string, a
 
 type buildOptions struct {
 	WorkflowDir         string
+	DispatchDir         string
+	DispatchDirSet      bool
 	Host                string
 	EntityPath          string
 	Stage               string
@@ -130,6 +132,7 @@ func parseBuildOptions(args []string, stderr io.Writer) (buildOptions, int) {
 	var opts buildOptions
 	valueFlags := map[string]*string{
 		"--workflow-dir":          &opts.WorkflowDir,
+		"--dispatch-dir":          &opts.DispatchDir,
 		"--host":                  &opts.Host,
 		"--entity-path":           &opts.EntityPath,
 		"--stage":                 &opts.Stage,
@@ -151,6 +154,9 @@ func parseBuildOptions(args []string, stderr io.Writer) (buildOptions, int) {
 			name := a[:eq]
 			if dst, ok := valueFlags[name]; ok {
 				*dst = a[eq+1:]
+				if name == "--dispatch-dir" {
+					opts.DispatchDirSet = true
+				}
 			}
 			continue
 		}
@@ -160,6 +166,9 @@ func parseBuildOptions(args []string, stderr io.Writer) (buildOptions, int) {
 				return opts, 2
 			}
 			*dst = args[i+1]
+			if a == "--dispatch-dir" {
+				opts.DispatchDirSet = true
+			}
 			i++
 			continue
 		}
@@ -291,6 +300,7 @@ Missing required assignment flags fail before reading input:
 
 Flags:
   --workflow-dir DIR            Workflow definition directory containing README.md.
+  --dispatch-dir DIR           Assignment directory. Overrides SPACEDOCK_DISPATCH_DIR. Default: /tmp/spacedock-dispatch. Relative to the current directory.
   --host HOST                   Override the runtime host (claude|codex|pi|paseo). Defaults to the detected runtime.
   --entity-path FILE            Entity file for this dispatch.
   --stage STAGE                 Stage name to dispatch.

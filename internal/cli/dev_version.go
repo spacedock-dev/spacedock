@@ -4,15 +4,19 @@ package cli
 
 import (
 	"encoding/json"
+	"runtime/debug"
+	"strings"
 
 	spacedock "github.com/spacedock-dev/spacedock"
 )
+
+var readBuildInfo = debug.ReadBuildInfo
 
 // displayVersion returns the binary's effective display version, fed to every
 // compatibility gate and version-bearing message. A linker-stamped release
 // build returns Version unchanged. An unstamped `go build`/`go install` dev
 // build (Version == "dev") instead reports the embedded checkout manifest's
-// version with a `+dev` build tag appended (D3): the dev binary always claims
+// version with `+dev[.<sha7>[.dirty]]` build metadata: the dev binary always claims
 // its checkout's minor, so a stale checkout is rejected by newer skills and a
 // fresh one passes — no `dev` always-pass carve-out anywhere in the gate. A
 // `go install …@vX.Y.Z` proxy build (module proxy, no ldflags) self-reports
@@ -25,7 +29,33 @@ func displayVersion() string {
 	if !ok {
 		return Version
 	}
-	return v + "+dev"
+	version := v + "+dev"
+	info, ok := readBuildInfo()
+	if !ok {
+		return version
+	}
+	var revision, modified string
+	for _, setting := range info.Settings {
+		switch setting.Key {
+		case "vcs.revision":
+			revision = setting.Value
+		case "vcs.modified":
+			modified = setting.Value
+		}
+	}
+	if len(revision) < 7 {
+		return version
+	}
+	for _, c := range revision {
+		if !strings.ContainsRune("0123456789abcdefABCDEF", c) {
+			return version
+		}
+	}
+	version += "." + strings.ToLower(revision[:7])
+	if modified == "true" {
+		version += ".dirty"
+	}
+	return version
 }
 
 // embeddedManifestVersion reads the `version` field out of the module-root
