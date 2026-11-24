@@ -426,3 +426,30 @@ Recommendation: REJECTED
 ### Summary
 
 Candidate tests pass, but unresolved live-binary provenance prevents acceptance of AC-5. The proposed Material finding is an evidence defect owned by Commander, with no product fix or design reset proposed. Code remains unchanged at `1fdb1e42a`; this path-scoped state report is the worker result for the shared-pointer handoff.
+
+## Implementation work log (cycle 2)
+
+1. In progress: reproduce the wrong-base mutation, isolate the relative-path fixture, run verification, then commit code and the path-scoped report.
+2. Root cause: the old relative path climbs above both candidate bases, collapsing to the same absolute temp directory. The corrected fixture will use a child path under a distinct process cwd and derive its expected spelling from `os.Getwd()` for macOS symlink parity.
+3. Scope: FO authorized only `internal/dispatch/build_artifact_test.go`; Commander owns standalone-clone build provenance. Existing formatting and post-stamp boundaries remain declined. No journal tool is available; this log retains the evidence.
+
+## Stage Report: implementation (cycle 2)
+
+- FAILED: Rewrite `TestArtifactDirectorySelection` (`mode == "relative"`) in `internal/dispatch/build_artifact_test.go` to use a distinct `cwdDir := t.TempDir()` (`t.Chdir(cwdDir)`) separate from `--workflow-dir` with a simple relative child path (`filepath.Join("shared assignments", "tmp", "..", "nested")`), deriving expected dir from `os.Getwd()` after `t.Chdir` for macOS/Linux parity
+  The prescribed change passes the targeted test but fails required vet: `internal/dispatch/build_artifact_test.go:150:7: testing.Chdir requires go1.24 or later (module is go1.22)`. Restored the sole edited code file to HEAD pending FO authorization.
+- DONE: Prove via throwaway Go `-overlay` mutation (without editing `internal/dispatch/build.go` in the worktree) that resolving relative `--dispatch-dir` against `opts.WorkflowDir` FAILS `TestArtifactDirectorySelection/relative`, and passes on unmodified `build.go`
+  Before correction the wrong-base overlay passed (exit 0); with the prescribed correction it failed `wrong locator` at line 167 (exit 1), while unmodified production passed (exit 0). Overlay injected `if !filepath.IsAbs(dir) { dir = filepath.Join(opts.WorkflowDir, dir) }` immediately before `filepath.Abs(dir)`; temporary overlay files were removed.
+- FAILED: Run `gofmt -l ./internal/dispatch/build_artifact_test.go`, `go vet ./internal/dispatch`, and `go test -race -count=1 ./internal/dispatch`; verify `git diff --stat 5210d36d0..HEAD` stays 44 files and `skills/first-officer/references/first-officer-shared-core.md` stays byte-identical at 23,464 B; commit ONLY `internal/dispatch/build_artifact_test.go` on `paseo-vm-dispatch-and-version-frictions` and commit+push path-scoped `## Stage Report: implementation` in `docs/dev/.spacedock-state/paseo-vm-dispatch-and-version-frictions/index.md`
+  Formatting was empty and `go test -race -count=1 ./internal/dispatch -run 'TestArtifact'` passed (3.740s). Vet failed; full dispatch race and further candidate verification stopped. No code commit was made; HEAD remains `1fdb1e42a`. This blocker report is committed path-scoped.
+
+### Review-finding disposition
+
+1. Released user and normal workflow: contributors validating the Go 1.22 module with the required `go vet ./internal/dispatch` command.
+2. Observable harm: the explicitly prescribed `t.Chdir` fixture makes the required vet check fail and uses an API absent from the declared Go version.
+3. Affected authority: `contract[AGENTS.md#expected-commands]` — the test correction must preserve the project's executable test contract on its declared Go version.
+4. Trigger evidence: Go 1.26.7 vet reports `testing.Chdir requires go1.24 or later (module is go1.22)`; `go.mod` declares `go 1.22`. Existing `build_statecommit_test.go:26` documents the same compatibility boundary.
+5. Worker proposal: Material; owned by this test-only correction; proposed disposition `fix`. Authorize `os.Chdir(cwdDir)` plus checked `t.Cleanup` restoration of the original cwd, preserving isolated directories and `os.Getwd()` expectations. This replaces only the prescribed incompatible call and keeps Go/module/production files unchanged. FO disposition is pending.
+
+### Summary
+
+The isolated child-path fixture detects the previously surviving wrong-base mutation. The required `t.Chdir` call conflicts with the module's Go 1.22 declaration, so implementation is blocked pending authorization for a compatible cwd change and cleanup. Code is restored cleanly to `1fdb1e42a`; all temporary probe files are removed, and Commander still owns standalone-clone provenance.
