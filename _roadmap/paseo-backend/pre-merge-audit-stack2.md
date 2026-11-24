@@ -195,3 +195,28 @@ Executed successfully without Git/state fixture writes:
 The exact-tip Runtime CI offline job also completed its `go test ./...` step successfully. That result was read from GitHub, not rerun locally. I did not execute local full-suite, full-suite race, live smoke, or dispatch-fixture tests because they write Git/state fixtures. I did not run `gofmt -w` because it writes the checkout. These omissions preserve the explicit read-only restriction; they are not reported as passing checks.
 
 Review tracking is complete: all changed files inspected, composition paths traced, allowed checks run, CI evidence inspected, findings classified, and report delivered. No follow-up entities or source fixes were created.
+
+---
+
+# Stack 2 Staff Review — Sign-off Addendum
+
+**Code/contract verdict: READY pending live Tip CI + assembled-tip adoption smoke.**
+
+Independent read-only re-check of `pre-merge-audit-stack2.md`, dated November 23, 2026 (Pacific). Reviewed PR #895 at `4546505f4` and PR #897 at assembled tip `5210d36d092af463164b5f1c73ba24264ebe5354`.
+
+All four requested findings are **cleanly closed at the code/contract level, with zero new regressions found in this review**. This is not a claim of completed live runtime validation.
+
+1. **Ship-blocker 1 — CLOSED.** In `skills/first-officer/references/paseo-fo-dispatch.md:68,117–120,139–142`, failed-create reconciliation tests the exact current epoch before ordinary recovery. Tracing archived `a1` → one replacement `a2` create → exit 1 with no `a2` row now reaches Row 8 with `aK=a2` and stops only that entity. It cannot return to Row 5 or issue a third create. If the create succeeded but its receipt was lost, an inspect-filtered `a2` remains eligible for adoption (Row 3), valid-report completion (Row 4), or exhausted-attempt handling (Row 6). Labels, ownership filters, and archival guards remain intact.
+2. **Ship-blocker 2 — CLOSED.** `skills/first-officer/SKILL.md:46` places the marker-free version exception outside runtime selection. An explicit reachable Paseo selection therefore accepts the three-line output when the binary minor is 0.29; generic fallback receives the same exception. Wrong minors and explicitly incompatible contract tokens still abort. Reachability checks, single-transport selection, and native fallback remain intact; no synthetic marker or change to native-host ambiguity detection was introduced.
+3. **Polish 1 — CLOSED.** The complete three-source/no-sidecar invariant remains at `paseo-fo-dispatch.md:5`. Spawn and roster bindings at lines 148 and 155 reference it without repeating the prohibition or weakening reconciliation.
+4. **Follow-up 2 — CLOSED.** `SKILL.md:44` independently requires a live follow-up handle for addressability and a real context-usage/limit probe for context budget. A handle alone no longer enables budget capability.
+
+Cumulative integrity checked against local `origin/main` at `3d134b255fbcc493bd5e5ccc77a16c496c8b3662`: all 14 changed files accounted for; Layer 1 is an ancestor of the assembled tip. Inspected `ebb9f7b1f..4546505f4` and `0f01ad2f1..5210d36d0`. Relative to the previous audited tip, only the two expected instruction files differ; the Layer 1 correction survives stack composition. Shared core remains 23,464 bytes against its unchanged 23,500-byte cap.
+
+Validation passed:
+
+- `go test -race -count=1 ./internal/contractlint -skip '^TestBreakGlassCommitLandsInEntityRepo$'` (4.695s). The excluded test creates Git repositories and commits.
+- Focused race tests for native marker detection, version rendering/contract placement/sandbox output/no-host-command execution/ambiguity, and dispatch host selection in `internal/runtimehost`, `internal/cli`, and `internal/dispatch`.
+- `git diff --check origin/main..5210d36d0`; read-only `gofmt -l` on all changed Go files; clean checkout before and after review.
+
+**Ship-blocker 3 remains a merge gate:** obtain required live lanes on this exact tip, including Paseo dispatch and adoption, with the original audit’s probe/adapter-load and unreachable-daemon fallback evidence. Full normal/race suite results also remain required for the final revision. This re-check neither ran live tests nor refreshed CI status. Follow-up 1 remains non-blocking. No Git checkout or `.spacedock-state` was edited; only this addendum was written under `/tmp`.
