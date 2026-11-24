@@ -146,15 +146,25 @@ func TestArtifactDirectorySelection(t *testing.T) {
 				dir = dispatchFileDir
 				args = args[:len(args)-2]
 			case "relative":
+				originalCwd, err := os.Getwd()
+				if err != nil {
+					t.Fatal(err)
+				}
+				cwdDir := t.TempDir()
+				if err := os.Chdir(cwdDir); err != nil {
+					t.Fatal(err)
+				}
+				t.Cleanup(func() {
+					if err := os.Chdir(originalCwd); err != nil {
+						t.Fatal(err)
+					}
+				})
 				cwd, err := os.Getwd()
 				if err != nil {
 					t.Fatal(err)
 				}
-				relative, err := filepath.Rel(cwd, dir)
-				if err != nil {
-					t.Fatal(err)
-				}
-				args[len(args)-1] = filepath.Join(relative, "..", "nested")
+				dir = filepath.Join(cwd, "shared assignments", "nested")
+				args[len(args)-1] = filepath.Join("shared assignments", "tmp", "..", "nested")
 			case "precedence":
 				t.Setenv("SPACEDOCK_DISPATCH_DIR", "\n")
 			}
