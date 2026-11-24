@@ -1,165 +1,134 @@
 # Use Compass
 
-State an intent for a session, read the board, and act when an agent drifts from it.
+Use Spacedock Compass to find sessions that need you, check their progress and steer work back toward your goal.
 
-[Install Spacedock](../index.md#install), which includes Compass by default. Compass can also be [installed and run on its own](https://github.com/spacedock-dev/compass).
+[Install Spacedock](../get-started/install.md#install-spacedock), which includes Compass by default. For the Claude Code and Codex commands below, [set up your agent](../get-started/install.md#set-up-your-agent). You can also [install Compass on its own](https://github.com/spacedock-dev/compass#1-how-to-set-up).
 
 ## Start Compass
 
-=== "Claude Code"
+1. Run the command for where you want to start it.
 
-    ```text
-    /spacedock:compass
-    ```
+    === "Claude Code"
 
-=== "Codex"
+        ```text
+        /spacedock:compass
+        ```
 
-    ```text
-    $spacedock:compass
-    ```
+    === "Codex"
 
-=== "Other agents"
+        ```text
+        $spacedock:compass
+        ```
 
-    In Antigravity, any other tool, or with no agent at all, start Compass from a terminal:
+    === "Terminal"
 
-    ```bash
-    spacedock compass --daemon
-    ```
+        ```bash
+        spacedock compass --daemon
+        ```
 
-    Start and stop options are in the [reference](reference.md#start-and-stop).
+2. Open `http://127.0.0.1:4553/` in your browser. **Sessions** opens first.
 
-In Claude Code and Codex you can also ask your agent to "open compass". Compass starts on your machine and gives you its address, `http://127.0.0.1:4553/` by default. It does not open a browser for you, so open the address yourself.
-
-New to Intent and drift? Open **See a sample session (view only)** above the Sessions list. It is an anonymized Claude Code session that drifted, with a summary of what it did, its reading and the correction Compass composed. Nothing in it is saved, sent or run.
-
-Some of what follows works on some agent tools only. [What works on each tool](reference.md#what-works-on-each-tool) lists which.
+For a walkthrough with saved results, choose **See an example** above the Sessions list or in **Help**. The example is a view-only Claude Code session with a goal, a summary and a completed progress check.
 
 ## Set the goal
 
-1. **Open the session.** On the Sessions screen, click the session's row. Its page opens with an **Intent** card at the top.
+1. **Open a session.** Select its row in **Sessions**. Its page starts with **Goal** and **Is it on track?**
+2. **Fill in the goal.** Use **Edit goal** to type what should be true when the work is done. A `/goal` from Claude Code, Codex or Antigravity can fill the goal for you. **Use your prompt** lets you choose one of your messages. When you have no saved or detected goal, **Find goal** asks a model to look for a clear end state in your messages.
+3. **Add a line if you want a specific result checked.** Use **What “done” looks like (optional)** for up to six lines. With no lines, Compass checks against the end state in the goal.
+4. **Press Save goal.** The goal appears on the session page and its Sessions row. **Check progress** can also save and use an untouched draft.
 
-2. **Give it a goal.** Write what should be true when the work is done, in one box of up to 1,000 characters. There are four ways to fill it:
-    - **Type it.**
-    - **Set `/goal` in the session.** A `/goal` you set in Claude Code, Codex or Antigravity fills the box on its own, marked "From your /goal". A later `/goal` is offered beside your saved goal and never written over it.
-    - **Press Use your prompt** to choose from up to five of your prompts. With nothing typed, Compass drafts the goal from your first prompt in a Claude Code or Codex session.
-    - **Press Find goal** to have the model that runs Analyze drift look for a goal in the prompts you typed. It fills the box, marked **Goal detected**, only when your own words state a clear end state.
+![The session's Goal card with text marked From your /goal.](img/goal-from-slash-goal.png)
 
-3. **Add the expected outcome, if you want.** Open **Expected outcome (optional)** and add up to six lines of up to 240 characters, one check per line. With no lines, Compass reads the session against the goal's own end state.
-
-4. **Press Save intent.** Compass keeps the words and shows them beside the session from now on. Nothing is sent to the agent. Save typed or edited intent before analyzing. Analyze drift can adopt an untouched detected goal or prompt draft.
-
-![A session's Intent card holding the goal from its /goal, and the Drift card showing Claude Code's goal-met claim and a later message to settle](img/goal-from-slash-goal.png)
-
-*The goal came from the session's `/goal`. Below it, the Drift card shows that Claude Code marked the goal met, and asks about a later message that went beyond the goal.*
+*The source above the goal shows that the words came from `/goal` in the session.*
 
 ## Read the board
 
-Sessions puts active work first. Each active session answers four questions: where it is, what it is doing now, what it does next, and whether it is blocked. Your goal sits beside what the agent is doing, so a mismatch is visible without opening anything.
+1. **Open Sessions.** Find current work under **Right now**. Use the status tabs to narrow the list to sessions such as **Waiting on you** or **Working**.
+2. **Search for a session.** Use the search field for a title, goal, prompt or project name. Open **Filters** to narrow the results by **Project**, **Agent**, **Started** or **Progress check**.
 
-![The Sessions screen with the sample session link, the Active now and Working counts, and three active sessions](img/sessions-screen.png)
+![Sessions with counts for Waiting on you, Working now and Worth a look, plus status tabs, search, Filters and the Right now list.](img/sessions-screen.png)
 
-*The Sessions screen opens with the link to the sample session, a count of active sessions, and one row for each active session showing its goal, what it is doing now, and whether it is blocked.*
+*Under **At a glance**, **Waiting on you** and **Worth a look** take you to **Needs you**. **Working now** selects **Working** in the list.*
 
 | Open | To see |
 | --- | --- |
-| **Sessions**, key <kbd>s</kbd> | Every session, active work first |
-| **Projects**, key <kbd>p</kbd> | Sessions grouped by project. Each project opens to Now, Course, Decisions and Console |
-| **Attention**, key <kbd>a</kbd> | What needs you: sessions waiting on a person, and sessions at risk |
-| **Intent log** | Every session that has an intent, with what Compass raised about it. A link in the navigation, with no key |
+| **Needs you** | **Waiting on you** first, followed by **Worth a look** and **Ready to wrap up**. |
+| **Projects** | Sessions grouped by project. Open a project to see its **Overview**, **Timeline**, **Decisions** and **Usage and alerts**. |
+| **Goal history** | Current and older goals, searchable by goal text or session title. |
+| **Settings** | AI use, notifications and progress check limits. Changes save as you make them. |
+| **Help** | The icon legend, progress check terms and **See an example**. |
 
-Press <kbd>Escape</kbd> in a session to go back.
+At the top of Sessions, **Your AI allowance** shows the usage and reset time Compass has for your plan. Claude's five-hour and weekly figures can come from your [Claude Code status line](https://github.com/spacedock-dev/compass/blob/main/HOW_TO_USE.md#show-claudes-allowance-on-the-board-from-your-status-line) without a login token.
 
-## See what the session has done
+On a session page, open **Show technical details** for exact values and the **Activity log**. Filter its entries by **You**, **Agent**, **Commands**, **Files** or **Cited**.
 
-Below Intent, **What the session has done** outlines a Claude Code or Codex session in short lines, one group per message you sent. Only the Claude Code outline includes the agent's replies, checks, failures and written folders. The outline uses no model.
+## See what's happened so far
 
-On a Claude Code session the card also holds a summary written by a model: an opening paragraph on what the agent did, then phases you open one at a time. Each line cites the session entries it rests on, and a phase that holds evidence for a departure, or has failed tests, says so on its heading. A finished session is summarized when you open it. For a running one, press **Summarize** or **Update summary**.
+1. **Read What's happened so far.** The outline groups the record by your messages. The Claude Code outline also includes the agent's replies and recorded work.
+2. **Open a phase of the summary.** On Claude Code sessions, each phase links to the entries it rests on. If there is no summary for a running session, press **Summarize**. Opening an ended session can start a missing summary when summaries are enabled.
 
-![The sample session's What the session has done card, with an opening paragraph, one phase open, and phases marked Departure and 2 test failures](img/sample-session-summary.png)
+![What's happened so far shows the sample session's summary, Source links and phases marked Off course here.](img/sample-session-summary.png)
 
-*Each summary line cites the entries it rests on. Phase headings flag the departures and failed tests inside them.*
+*In **What's happened so far**, **Off course here** opens the evidence for that phase.*
 
-**Turn off summaries** stops them. **Delete summary** removes one session's summary; it takes two presses.
+Use **Turn off summaries** to stop session summaries. **Delete summary** removes the saved summary for the session and asks you to confirm on a second press.
 
-## Check a session for drift
+## Check a session's progress
 
-1. **Press Analyze drift** on the session's **Drift** card. It runs on your press. The first time, Compass tells you what it sends and to which agent tool. A Claude Code session is read by Claude Code, or by Codex when `claude` is not installed. For a Claude Code session the analysis also sends the checks the session ran, the files it wrote and any pull request it created.
+Before you check, **What is sent** explains what goes to the model and where. Find it under **Show technical details** on the **AI use and privacy** tab.
 
-2. **Read the result.** The card gives the drift level and the departures it found, or says it can't tell. Each departure is a card: **What** quotes the entries behind it, each with its number, such as [41], and **Why Compass reads this as drift** explains it. Hover a number to see that entry, or open it in **Full activity** at the bottom of the page. **What the analysis read** shows the model, your intent, the part of the session it read, and what it did not read.
+1. **Press Check progress** in the session header or in **Is it on track?** Both controls wait for the same result.
+2. **Read Is it on track?** It shows what the check found and a [progress level](reference.md#progress-levels) when the evidence supports one. Follow the quotes link to **Evidence**, then open a citation to jump to its entry in the **Activity log**.
 
-![The sample session's Drift card: Medium, one departure from the goal citing entries 41, 79 and 80, and a contradicted claim of the agent's](img/sample-session-drift.png)
+![Is it on track? shows Slightly off course and links to three quotes behind the finding.](img/sample-session-progress.png)
 
-*The departure quotes each cited entry with its number and time, then says why Compass reads it as drift. Below it, a claim of the agent's that the record contradicts.*
+*The quotes behind **Slightly off course** show where the work departed from the goal.*
 
-A session with a departure on record gets a **Drift** mark on the Sessions screen and moves up the list, below any session blocked on you.
+When Claude Code or Codex reports a goal as complete, **Is it on track?** shows the agent's claim. A progress check can compare it with the record. If you see **Goal too vague to check**, edit the goal to say what should be true when the work is done. Use **Check progress again** to run another check.
 
-When Claude Code or Codex says a `/goal` is met, the Drift card shows that as the harness's claim. Once you analyze, Compass says whether the session's record agrees with the claim, disputes it, or cannot confirm it. The claim never sets the drift level.
-
-If the goal is too vague to read the work against, Analyze says so under the Goal field and shows no level. Rewrite the goal with what should be true when the work is done.
-
-After a reading, the card offers **Check again** when new work or changed words came after it, and **Analyze again** when it is current.
-
-Analyze drift reads recorded work from Claude Code, Codex and Pi sessions. Codex check evidence needs records from codex-cli 0.149 or later. On the other tools, the Drift card says Compass can't read work from that tool.
-
-Each analysis uses model capacity from your Claude Code or Codex account. Compass allows 100 in a rolling twenty-four hours, shared across sessions and tools, and Find goal and failed attempts count. When the limit is spent, a banner at the top of the session page says when you can analyze again.
-
-To stop model calls, press **Pause model calls** in **Drift settings** on the Drift card. It stops Analyze drift, summaries and Live monitor until you press **Resume model calls**.
+To stop Compass's model calls across sessions, open **Settings** and press **Pause all AI use**. **Resume AI use** makes them available again.
 
 ## Watch a session live
 
-For a Claude Code session, turn on **Live monitor** in **Drift settings**. While the page is open and its tab is visible, Compass asks Haiku through your Claude Code about once a minute where the latest turns are heading. It sends your saved goal and the recent turns, without tool output. The card and the page header show the level, **None or low**, **Medium**, **High** or **Extreme**, labelled **Live monitor · Haiku**, with one sentence on where the session is heading. Until a check returns, or while the monitor is paused or capped, they show an estimate from the session's checks and written files instead, with no model call.
+1. **Open Show technical details** on a Claude Code session. Select **AI use and privacy**.
+2. **Turn on Live monitor.** While you view the page, Compass uses Haiku through Claude Code to check new work about once a minute. The source appears as **Live monitor · Haiku**. While waiting for a monitor result, Compass can show a **Live estimate** from recorded checks and file paths.
 
-Live monitor never notifies you and never shows on the Sessions screen. After 20 minutes it asks whether you still want it, and turns itself off if nobody answers within 10 minutes. It is not remembered across reloads. The [levels](reference.md#drift-levels) are in the reference.
+The browser asks after 20 minutes whether you still want to watch. It stops monitoring if you leave the session or let that question go unanswered for 10 minutes.
 
 ## Act on a departure
 
-Compass never writes into your session. You choose what happens next.
+If **Is it on track?** asks whether a later message changes your goal, choose **Add as a line**, **Make it the goal** or **Leave it**. Use **Save goal** to keep a change. **Leave it** settles the question on its own.
 
-If you gave the agent a direction after your intent, the Drift card quotes it ("Your 12:59 message adds:") and asks what it means for your intent:
+1. **Press Steer back** when a check offers it. Compass opens an editable message based on the goal and the finding.
+2. **Press Copy message.** The message goes to your clipboard.
+3. **Paste the message into the session** when you want the agent to act on it.
 
-- **Add as a line** makes it an expected outcome line.
-- **Make it the goal** replaces your goal with it.
-- **Leave it** keeps your intent as it was.
+![Steer back in the sample session, with an editable message and Copy message.](img/sample-session-steer-back.png)
 
-Each choice waits for Save intent, except Leave it, which settles at once. Settle it before you analyze: while a later direction is unsettled, the reading may say it can't tell.
+*Review the message under **Steer back** before you copy it into the session.*
 
-To correct the agent:
-
-1. **Press Steer back.** Compass composes a correction from your saved intent and the reading, under **Correction to paste**. Steer back is offered with a departure from your intent, on Claude Code sessions.
-
-2. **Press Copy correction, and paste it into the session yourself.** Compass never sends it.
-
-![The sample session's Steer back section with the composed correction ready to copy](img/sample-session-steer-back.png)
-
-*The correction restates the goal, says where the session departed, and carries Compass's reason for each departure.*
-
-If a reading is wrong, press **Mark as inaccurate**. The analysis stops setting the drift level and Steer back, and nothing is sent or re-run. Press **Undo** to bring it back.
+If the check looks wrong, press **This reading looks wrong**. Compass sets aside its level and **Steer back**. Press **Undo** to restore them if the evidence still supports them.
 
 ## Let Compass check while you are away
 
-Compass can also check sessions with a typed goal without being asked, and raise only the departures. It spends model capacity with nobody watching, so it is off until you start Compass with the option:
+1. **Start Compass with unasked checks enabled.** This lets Compass spend model capacity on eligible sessions while you are away.
 
-```text
-spacedock compass --daemon --unasked-readings
-```
+    ```bash
+    spacedock compass --daemon --unasked-readings
+    ```
 
-Claude Code runs these checks with no further step, except on Codex sessions. Codex runs them on Codex sessions, and on any session when `claude` is not installed. Before Codex can run a check, turn on **Allow Codex to run unasked checks** in the session's Drift card; Attention points to it when sessions are waiting.
-
-A goal saved unchanged from `/goal`, **Use your prompt** or a prompt draft is not checked; edit it or type your own, then press **Save intent**. A check reads your goal, not your outcome lines. On Antigravity it reads only the prompts you sent, so it can catch your own directions moving away from the goal, but not the agent's work. Unasked checks stop at three per session and twelve a day. What Compass raised shows on the session page under **Raised while you were away**, and in the Intent log.
+2. **Type or edit a goal, then use Save goal.** Unasked checks use goals you wrote. A goal adopted unchanged from `/goal` or a prompt is ineligible.
+3. **Turn on Allow Codex to run unasked checks** in **Is it on track?** if Codex will run the check. **Needs you** points to this control when permission is needed.
+4. **Look for Raised while you were away** on the session page to read any departures Compass found.
 
 ## Get alerted when work reaches a step
 
-With [Workflow](../workflow/index.md) running, Compass can tell you once when a work item reaches a step you choose.
+1. **Open the project** in **Projects**. Its **Overview** shows current work.
+2. **Open Show technical details** to find **Stage alerts**.
+3. **Choose a stage** from your Workflow.
+4. **Press Save.** A later observed entry into that stage triggers one alert. Press **Rearm** to be alerted again.
 
-1. **Open the project** from Projects, then its **Course** tab.
+**Related guides**
 
-2. **Find Stage alerts, and choose a step.** The list holds the steps your workflow declares.
-
-3. **Press Save.** The next time an item enters that step, Compass sends one notification. Items already in the step do not trigger it. Press **Rearm** to be alerted again.
-
-Notifications are native on macOS, and browser notifications elsewhere while a Compass tab is open.
-
-## Next
-
-- [Compass reference](reference.md): commands, options and keys.
-- **Workflow.** [Spacedock Workflow](../workflow/index.md) keeps work moving through steps you define, and Compass shows where each item is.
+- [See what Compass can tell you about your sessions](index.md).
+- [Look up supported tools, options and keyboard shortcuts](reference.md).

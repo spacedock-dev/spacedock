@@ -1,20 +1,25 @@
 # Compass reference
 
+Look up Spacedock Compass commands, options and board labels.
+
 ## Start and stop
 
 | Command | What it does | Default |
 | --- | --- | --- |
 | `/spacedock:compass` | Starts Compass from Claude Code. | Port 4553 |
 | `$spacedock:compass` | Starts Compass from Codex. | Port 4553 |
-| `spacedock compass --daemon` | Starts Compass in the background. Without `--daemon` it runs in the foreground. | Foreground |
-| `spacedock compass --status` | Says whether Compass is running on the port. | Port 4553 |
-| `spacedock compass --stop` | Stops Compass on the port. | Port 4553 |
-| `spacedock compass --diagnose` | Lists where Compass looks for each tool's sessions and whether it can read them. Starts nothing. `--json` prints it as JSON. | Off |
-| `spacedock compass --forget` | Deletes observation history, recorded session ends, stored session summaries and copied-correction records. Pauses model calls and turns summaries off until you turn them back on in the page. Keeps the goals you typed. Refused while Compass is running on the port. | Off |
-| `spacedock compass --version` | Prints the Compass version. | Off |
-| `spacedock compass --sessions [waiting]` | Lists running and recently finished sessions; with `waiting`, lists only sessions waiting on you, excluding the calling Claude Code session. Needs a running Compass instance. | No waiting filter |
-| `spacedock compass --footer` | Prints a Claude Code status-line segment from its input and Compass's saved state. Sends no request. May be used alone or with `--session`. | Silent when nothing can be reported |
-| `spacedock compass --help` | Prints the installed Compass options, including three experimental terminal and frontend development options omitted here. | Off |
+| `spacedock compass --daemon` | Starts Compass in the background. | Foreground without the flag |
+| `spacedock compass --status` | Reports whether Compass is running on the selected port. | Port 4553 |
+| `spacedock compass --stop` | Stops Compass on the selected port. | Port 4553 |
+| `spacedock compass --diagnose` | Reports where Compass looks for each agent's records and whether it can read them. Starts nothing. Add `--json` for JSON. | Text |
+| `spacedock compass --forget` | Deletes observation history, recorded ends, launcher parent declarations, stored summaries and copied-correction records. Keeps the goals and group labels you typed and the current model-use budget. Pauses AI use and turns summaries off. Requires proof that all dashboards using that Compass home have stopped. | Port 4553 |
+| `spacedock compass --version` | Prints the installed Compass version. | |
+| `spacedock compass --sessions [waiting]` | Lists sessions from a running board, starting with **Right now** when that group has entries. Add `waiting` to list only sessions waiting on you. Excludes the calling session when Compass can identify it. | All listed sessions |
+| `spacedock compass --drift [again]` | Prints a session's progress check. Reads a saved check for free. With no saved check or with `again`, asks the model and waits. | Session from `--session` or `CLAUDE_CODE_SESSION_ID` |
+| `spacedock compass --pause-model-calls` | Pauses model use on a running board. Use **Resume AI use** on the board. | Port 4553 |
+| `spacedock compass --footer` | Prints a Claude Code status line segment from its input and Compass's saved state, including `AI use paused` when applicable. Sends no request. Accepts `--session`. | Silent when nothing can be reported |
+| `spacedock compass --forward-usage` | Reads Claude Code's status line JSON on standard input and sends only the five-hour and seven-day usage percentages and reset times to a running local board. Reads no credential, prints nothing and starts nothing. | Off |
+| `spacedock compass --help` | Prints the installed Compass options. | |
 
 ```bash
 spacedock compass --port 4581 --daemon
@@ -22,44 +27,47 @@ spacedock compass --port 4581 --status
 spacedock compass --port 4581 --stop
 ```
 
+For the remaining terminal actions, see the [Compass command manual](https://github.com/spacedock-dev/compass/blob/main/MANUAL.md#options).
+
 ## Options
 
-Server options apply to the run you start. Stop and restart Compass to change one. Spell each option in full: an abbreviation is refused.
+Options are optional and must be spelled in full. Server options apply to the run you start. Stop and restart Compass to change them.
 
 | Option | What it does | Default |
 | --- | --- | --- |
 | `--port PORT` | Port to serve on. Also selects the instance for `--status`, `--stop` and `--forget`. | `4553` |
 | `--window-hours HOURS` | Hides sessions with no activity in this window. | `24` |
-| `--unasked-readings` | Checks eligible sessions with a typed goal for drift without being asked, and raises departures only. Claude Code runs the check, except on Codex sessions, which Codex checks. If one CLI is not installed, the other checks instead. Codex needs permission first, for the destination shown in the Drift card. A goal saved unchanged from `/goal`, **Use your prompt** or a prompt draft is not checked. Spends model capacity: at most three checks per session and twelve a day. | Off |
-| `--session HARNESS:SESSION_ID` | Selects the session for `--footer`, for example `claude:SESSION_ID`. Used only with `--footer`. | Status-line session ID, then `CLAUDE_CODE_SESSION_ID` |
-| `--claude-reading-model MODEL` | Claude model that reads a Claude Code session when you press Analyze drift. Takes an explicit Sonnet or Opus ID of generation 5 or later. | `claude-sonnet-5-5` |
-| `--claude-monitor-model MODEL` | Claude model that Live monitor asks about once a minute. Takes an explicit Haiku ID of generation 4 or later. | `claude-haiku-5-5` |
-| `--no-observer-model`, `--no-harness-usage` | Refuse every model call for the run, including Analyze drift, Find goal, summaries, Live monitor and unasked checks. **Pause model calls** in the page does the same until you resume. | Off |
-| `--no-annotations` | Does not read or save goals or outcome lines. Analyze drift stays visible and disabled. | Off |
-| `--no-git` | Does not run the end-of-session git check in your repositories. | Off |
-| `--no-ci-read` | Does not read pull-request or merge-request checks from GitHub or GitLab when you press Analyze drift. | Off |
-| `--no-focus` | Does not raise a session's terminal or record terminal identities. | Off |
-| `--no-dismiss` | Does not read or write the store of sessions marked handled. | Off |
-| `--no-ask` | Stops sessions from asking you questions through Compass. | Off |
-| `--no-events` | Stops the event coordinator, so state comes from scanning session files on a timer. | Off |
-| `--no-irreversible` | Stops reporting of risky command shapes such as force push and hard reset. | Off |
-| `--reach-url URL` | Webhook that receives counts-only nudges when sessions need input while you are away. | None |
-| `--no-reach` | Refuses off-machine nudges whatever URL is configured. | Off |
-| `--history-max-bytes BYTES` | Size cap on the history file, also its read cap. | `1048576` |
+| `--unasked-readings` | Checks eligible sessions with a goal you wrote and raises departures only. Claude Code and Codex sessions use their own provider. Other eligible sessions prefer Claude Code. If the preferred CLI is unavailable, the other can check. Codex needs permission for the destination shown in **Is it on track?** At most three checks per session and twelve per day. | Off |
+| `--session HARNESS:SESSION_ID` | Selects a session for `--footer`, `--drift`, `--goal`, `--project`, `--summary`, `--monitor` or `--set-group`. Example value: `claude:SESSION_ID`. | For `--footer`, stdin session ID then `CLAUDE_CODE_SESSION_ID`. Other session reads and monitoring use `CLAUDE_CODE_SESSION_ID`. Required for `--set-group`. |
+| `--claude-reading-model MODEL` | Model Claude Code uses for **Check progress**. Takes an explicit Sonnet or Opus ID of generation 5 or later. | `claude-sonnet-5-5` |
+| `--claude-monitor-model MODEL` | Model Claude Code uses for **Live monitor**. Takes an explicit Haiku ID of generation 4 or later. | `claude-haiku-5-5` |
+| `--no-observer-model`, `--no-harness-usage` | Refuse all model calls for the run, including **Check progress**, **Find goal**, summaries, **Live monitor** and unasked checks. | Off |
+| `--no-annotations` | Skips saved goals, outcome lines, readings and group labels. **Check progress** remains visible and disabled. | Off |
+| `--no-git` | Skips the end-of-session git check and the read of the project's committed check scripts. | Off |
+| `--no-ci-read` | Skips pull request and merge request checks from GitHub and GitLab when you press **Check progress**. | Off |
+| `--no-focus` | Disables raising a session's terminal and recording its terminal identity. | Off |
+| `--no-dismiss` | Skips the store of sessions marked handled and disables marking them. | Off |
+| `--no-ask` | Disables questions that sessions can ask through Compass. | Off |
+| `--no-events` | Stops collecting pushed session events. Compass scans session files on a timer. | Off |
+| `--no-irreversible` | Disables reports of command shapes such as force push and hard reset. | Off |
+| `--reach-url URL` | HTTPS webhook for counts-only nudges when sessions need input or end unread. A URL starting with `http://` is refused. | Unset |
+| `--no-reach` | Disables off-machine nudges for the run. | Off |
+| `--history-max-bytes BYTES` | Maximum size of the history file, also its read limit. | `1048576` |
 | `--history-days DAYS` | Days of observed history to keep. | `14` |
-| `--no-history` | Does not read or write observed history. | Off |
-| `--no-spacedock` | Does not read Workflow definitions, so stage strips are not shown. | Off |
-| `--no-tripwires` | Does not read or save stage alerts. | Off |
-| `--quiet-hours WINDOW` | Silences non-question notifications, including unasked-check notifications and stage alerts, in a local window such as `22:00-08:00`. Unasked model checks still run. | None |
+| `--no-history` | Skips reading and writing observed history. | Off |
+| `--no-spacedock` | Skips Spacedock Workflow state and hides its stage strips. Saved stage alerts are suspended. | Off |
+| `--no-tripwires` | Skips reading and saving stage alerts. | Off |
+| `--quiet-hours WINDOW` | Suppresses notifications and nudges other than questions in a local window such as `22:00-08:00`. Unasked checks still run. | Unset |
 | `--no-quiet-hours` | Ignores any configured quiet hours. | Off |
-| `--no-usage` | Does not read Claude Code and Cursor quota from the vendor for the run. Quota is read otherwise, and sends no session content. **Turn off** under the quota windows on the Sessions screen stops it from the page. | Off |
-| `--host ADDRESS` | `127.0.0.1`, or `0.0.0.0` to serve every network interface with no authentication. Prefer an SSH tunnel. | `127.0.0.1` |
-| `--observer-model`, `--allow-tool-output` | Accepted but do nothing; will be removed in a later release. | Off |
+| `--no-usage` | Stops vendor quota fetches and ignores quota forwarded from a status line. Quota read from an agent's own records can still appear. | Off |
+| `--no-update-check` | Skips the daily release lookup. The board also has **Look for new versions once a day** in **Settings**. | Off |
+| `--host ADDRESS` | Listen on `127.0.0.1` or expose the board on every IPv4 interface with `0.0.0.0`. Compass provides no authentication on that bind. | `127.0.0.1` |
+| `--allow-host NAME` | Trusts an exact DNS hostname for a board behind an authenticated proxy with direct port access blocked. Repeat for more names. Applies with `--host 0.0.0.0`. | Unset |
+| `--observer-model`, `--allow-tool-output` | Accepted for compatibility and have no effect. | Off |
 
 ```bash
 spacedock compass --port 4581 --window-hours 6 --no-observer-model
 spacedock compass --port 4581 --daemon --unasked-readings --quiet-hours 22:00-08:00
-spacedock compass --port 4581 --no-annotations --no-history
 spacedock compass --port 4581 --daemon --reach-url https://ntfy.sh/my-topic
 ```
 
@@ -67,45 +75,68 @@ spacedock compass --port 4581 --daemon --reach-url https://ntfy.sh/my-topic
 
 | Variable | Effect |
 | --- | --- |
-| `COMPASS_HOME` | Moves Compass's own state, logs and stores. Default: `.compass` under your home directory. Use the same value for start, stop, status and forget. |
-| `COMPASS_REACH_URL` | Reach webhook when `--reach-url` is absent. |
+| `COMPASS_HOME` | Moves Compass's state, logs and stores. Defaults to `.compass` under your home directory. Use the same value for start, stop, status and forget. |
+| `COMPASS_REACH_URL` | HTTPS webhook when `--reach-url` is absent. |
 | `COMPASS_QUIET_HOURS` | Quiet-hours window when `--quiet-hours` is absent. |
 
 ## What works on each tool
 
-Every session from the ten agent tools shows on the board. The rest depends on what each tool records.
+The board lists sessions from the ten supported agent tools when it can find their records.
 
 | Feature | Claude Code | Codex | Pi | Antigravity | Other tools |
 | --- | :-: | :-: | :-: | :-: | :-: |
 | Session on the board | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Goal filled from `/goal` | ✓ | ✓ | | ✓ | |
-| Goal drafted from your first prompt | ✓ | ✓ | | | |
-| Outline of what the session has done | ✓ | ✓ | | | |
-| Model-written summary | ✓ | | | | |
-| Drift level | ✓ | ✓; checks need codex-cli 0.149+ | ✓ | | |
-| Goal-met claim checked against the record | ✓ | ✓ | | | |
+| Goal drafted from a prompt | ✓ | ✓ | | | |
+| Session outline | ✓ | ✓, your messages only | | | |
+| Model-written session summary | ✓ | | | | |
+| Check progress | ✓ | ✓, findings without a level. Evidence from tests and builds requires codex-cli 0.149 or later. | ✓ | | |
+| Compare reported goal completion with the record | ✓ | ✓ | | | |
 | Live monitor | ✓ | | | | |
 | Steer back | ✓ | | | | |
-| Unasked checks | ✓ | ✓; once you allow Codex | ✓ | ✓; reads your prompts only | |
+| Unasked checks | ✓ | ✓, with permission | ✓ | ✓, your prompts only | |
 
-## Drift levels
-
-Shown after Analyze drift, and by Live monitor on Claude Code sessions. Live monitor's level, labelled **Live monitor · Haiku**, is Haiku's read of where the latest turns are heading. Until its check returns, or while it is paused or capped, the page shows an estimate from checks and written files, which does not read what your intent says. The meanings below are that estimate's and the analysis's.
+## Progress levels
 
 | Level | Meaning |
 | --- | --- |
-| None or low | No recorded signal against your intent. |
-| Medium | A check passed and files were written after it, a failed check was followed by writes, or the agent made a claim the record contradicts. For the live estimate, some writes outside the folders your intent names also contribute Medium. |
-| High | A check still fails after your last message with no later write. For the live estimate, most writes outside the folders your intent names also count as High. |
-| Extreme | Both High conditions hold. An analysis never reads Extreme. |
-| Not enough recorded yet | Too little in the record to estimate, or a goal too vague to read the work against. |
+| **On track** | No departure found in what Compass read. |
+| **Slightly off course** | Some work wandered from the goal. |
+| **Off course** | The work no longer serves the goal. |
+| **Way off course** | The work has gone far from the goal. |
+
+A saved progress check shows a level only while the evidence it used still matches. Lost history, an expired direction, a truncated transcript or a changed project key can remove the level. Checks saved before v3.0.0 need **Check progress again** before they can show a level.
+
+Sessions rows can show **Slightly off course** or **Off course** from that same saved evidence. A row says **Not checked yet** only if Compass can check the goal and has no record of a check or attempt. Codex leaves the progress cell blank and shows any findings on the session page.
+
+| Other progress text | Meaning |
+| --- | --- |
+| **Too early to tell** | The session has recorded too little to check its progress. |
+| **Can't tell** | Compass could not establish progress. The card gives the reason. |
+| **Goal too vague to check** | The goal needs a clearer end state. |
+| **Out of date** | The previous check no longer describes the evidence Compass can use. |
 
 ## Keys
 
 | Key | Does |
 | --- | --- |
-| <kbd>s</kbd> | Opens Sessions |
-| <kbd>p</kbd> | Opens Projects |
-| <kbd>a</kbd> | Opens Attention |
-| <kbd>/</kbd> | Focuses session search on the Sessions screen |
-| <kbd>Escape</kbd> | Returns from a session to where you opened it, and from any other view to Sessions |
+| <kbd>s</kbd> | Opens Sessions. |
+| <kbd>p</kbd> | Opens Projects. |
+| <kbd>n</kbd> | Opens Needs you. |
+| <kbd>/</kbd> | Focuses search on Sessions. |
+| <kbd>Escape</kbd> | Returns from a session to where you opened it, and from other pages to Sessions. |
+
+## Upgrading to v3.0.0
+
+| Area | Contract |
+| --- | --- |
+| Observation routes | Require an admitted browser `Origin` or same-origin fetch metadata. |
+| Compass state files | State files covered by the strict state policy must be regular files you own. Symlinks are refused. |
+| Scripts matching output | Match `AI use paused` from `--footer`, `Right now` from `--sessions` and `Check progress` in progress messages. The `--drift` flag keeps its name. |
+
+See the [v3.0.0 release notes](https://github.com/spacedock-dev/compass/releases/tag/v3.0.0#why-this-is-a-major-release) and the [Compass security policy](https://github.com/spacedock-dev/compass/blob/main/SECURITY.md#scope) for the full contracts.
+
+**Related guides**
+
+- [Understand what Compass reads and shows](index.md).
+- [Check a session's progress on the board](use.md#check-a-sessions-progress).
