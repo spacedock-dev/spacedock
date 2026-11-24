@@ -102,6 +102,11 @@ gates:
                 at: "2026-11-24T02:21:45.804365Z"
                 decision: revise
                 reason: 'Captain directive: drop temporary orphan lease file; reconcile roster purely from pre-existing Paseo labels + Git state on top of merged main (#893)'
+            - id: gate-attempt:x9mfvnkqtbwgm4tba7dy41tw-validation-4
+              briefing:
+                id: briefing:x9mfvnkqtbwgm4tba7dy41tw:validation:attempt-4:revision-1
+                digest: sha256:8c279341954d1db77f5e1d3213e7bf736160fedb6bc4473dc6d7fcd60a2b6f05
+                room-ref: '@review/validation/briefing-4'
 ---
 
 Reconcile Paseo worker state purely from the three pre-existing sources of truth — entity + `.spacedock-state` Git history, code worktree Git state, and Paseo daemon labels (`spacedock.worker`, `spacedock.epoch`) + `paseo inspect` — with zero sidecar/lease files and zero entity-markdown pollution, so a restarted or compacted first officer adopts a live worker instead of double-dispatching and handles wait timeouts, lost create receipts, dead workers, and duplicate completion events with deterministic single-retry-then-hold recovery isolated per entity.
