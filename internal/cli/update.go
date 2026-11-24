@@ -5,12 +5,14 @@ package cli
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -20,6 +22,7 @@ import (
 const installScriptURL = "https://raw.githubusercontent.com/spacedock-dev/spacedock/main/install.sh"
 
 type updateDeps struct {
+	verbose     bool
 	env         []string
 	dir         string
 	host        hostOps
@@ -32,13 +35,17 @@ type updateDeps struct {
 
 func newUpdateCommand(ctx context.Context, env []string, dir string, stdout, stderr io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:                "update",
+		Use:                "update [--verbose]",
 		Short:              "Update Spacedock, its extensions and their plugins to the newest release",
 		GroupID:            "setup",
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if wantsHelp(args) {
 				return cmd.Help()
+			}
+			verbose := len(args) > 0 && args[0] == "--verbose"
+			if verbose {
+				args = args[1:]
 			}
 			if len(args) > 0 {
 				fmt.Fprintf(stderr, "spacedock update: unknown argument %q\n", args[0])
@@ -47,7 +54,7 @@ func newUpdateCommand(ctx context.Context, env []string, dir string, stdout, std
 			applyDevBranchOverride(env)
 			applyMarketplaceSourceOverride(env)
 			selfPath, _ := resolvedLauncherBin()
-			deps := updateDeps{env: env, dir: dir, host: execHost{}, selfPath: selfPath, lookPath: exec.LookPath, piOps: execPiRuntimeOps{},
+			deps := updateDeps{verbose: verbose, env: env, dir: dir, host: execHost{}, selfPath: selfPath, lookPath: exec.LookPath, piOps: execPiRuntimeOps{},
 				fetchScript: func(dst string) error {
 					return exec.CommandContext(ctx, "curl", "-fsSL", "-o", dst, installScriptURL).Run()
 				}}
@@ -65,6 +72,7 @@ func newUpdateCommand(ctx context.Context, env []string, dir string, stdout, std
 			return nil
 		},
 	}
+	cmd.Flags().Bool("verbose", false, "Prefix each line with the time since start and show how long each step took")
 	setSetupHelp(cmd, stdout, `
 Update every program and plugin on the channel of this binary, for each of Claude
 Code and Codex that is on PATH and has the Spacedock plugin installed, and the Pi
@@ -77,7 +85,21 @@ SPACEDOCK_INSTALL_SCRIPT=PATH runs that script in place of the downloaded one.
 }
 
 func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
+	progress := &updateProgress{plain: stderr}
+	if d.verbose {
+		zero := time.Now()
+		verboseOut := &updateLineWriter{out: stdout, zero: zero}
+		progress.trace = &updateLineWriter{out: stderr, zero: zero}
+		verboseOut.peer, progress.trace.peer = progress.trace, verboseOut
+		progress.last = []time.Time{{}}
+		stdout, stderr = verboseOut, progress.trace
+		defer progress.finish()
+	}
+	endBefore := progress.step("Checking installed versions before the update")
 	inputs := versionInputs{env: d.env, dir: d.dir, host: d.host, lookPath: d.lookPath, selfPath: d.selfPath, selfVersion: displayVersion()}
+	if d.verbose {
+		inputs.host = verboseInventory{d.host, progress}
+	}
 	if d.piOps != nil {
 		inputs.piStatus = d.piOps.SpacedockPackageStatus
 	}
@@ -85,6 +107,7 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 		inputs.selfVersion = programReportedVersion(d.selfPath, d.env, "spacedock ")
 	}
 	before := collectVersions(inputs)
+	endBefore()
 	brew := d.selfPath != "" && isHomebrewPath(d.selfPath)
 
 	owner := "installed with install.sh"
@@ -96,7 +119,7 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 	hosts := planHostUpdates(before)
 	addRefused := map[string]bool{}
 	if !brew {
-		if err := runInstallScript(d, stdout, stderr); err != nil {
+		if err := runInstallScript(d, stdout, stderr, progress); err != nil {
 			fmt.Fprintf(stderr, "spacedock update: %v\n", err)
 			return 1
 		}
@@ -108,11 +131,13 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 		// The new program owns the install sequence, so a companion it adds reaches
 		// the host in the same run; Homebrew has not replaced the program yet.
 		var out string
+		endRefresh := progress.step("Refreshing " + h.title + " plugins")
 		if brew || d.runSelf == nil {
 			out, h.err = d.host.Install(h.name, channelMarketplaceSource(devBranch), devBranch)
 		} else {
 			out, h.err = d.runSelf("install", "--host", h.name)
 		}
+		endRefresh()
 		printInstallFailures(stdout, out)
 		addRefused[h.title] = strings.Contains(out, "spacedock install: "+h.name+" plugin marketplace add ")
 		if h.err != nil && strings.TrimSpace(out) != "" {
@@ -120,8 +145,11 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 		}
 	}
 
+	endPiCheck := progress.step("Checking which Pi packages are installed")
 	pi := planPiUpdate(inputs)
+	endPiCheck()
 	if pi.refresh {
+		endRefresh := progress.step("Refreshing Pi packages")
 		var out string
 		if brew || d.runSelf == nil {
 			var buf bytes.Buffer
@@ -137,13 +165,16 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 			pi.err = fmt.Errorf("%w\n%s", pi.err, strings.TrimSpace(out))
 		}
 		pi.after = piPackageRows(pi.agentDir, pi.home)
+		endRefresh()
 	}
 
+	endFinal := progress.step("Checking installed versions after the update")
 	if d.selfPath != "" && !brew {
 		inputs.selfVersion = programReportedVersion(d.selfPath, d.env, "spacedock ")
 	}
 	after := collectVersions(inputs)
-	piHeld := addPiPackages(&after, inputs)
+	_, piMissing := addPiPackages(&after, inputs)
+	endFinal()
 	for _, h := range hosts {
 		h.after = after.hostPlugins[h.name]
 	}
@@ -156,7 +187,7 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 	if pi.err != nil {
 		fmt.Fprintf(stderr, "spacedock update: the Pi package update failed: %v\n", pi.err)
 		code = 1
-	} else if rows, _ := piInventory(inputs); piHeld && rows[0].version == notInstalled {
+	} else if piMissing {
 		fmt.Fprintln(stderr, "spacedock update: the Spacedock package is not installed on Pi. Run: spacedock install --host pi")
 		code = 1
 	}
@@ -254,7 +285,7 @@ func pieceVersion(rows []pieceRow, label string) string {
 
 // runInstallScript installs into the directory of this binary, so the new program
 // replaces it.
-func runInstallScript(d updateDeps, stdout, stderr io.Writer) error {
+func runInstallScript(d updateDeps, stdout, stderr io.Writer, progress *updateProgress) error {
 	script := envMap(d.env)["SPACEDOCK_INSTALL_SCRIPT"]
 	if script == "" {
 		tmp, err := os.MkdirTemp("", "spacedock-update-")
@@ -263,7 +294,10 @@ func runInstallScript(d updateDeps, stdout, stderr io.Writer) error {
 		}
 		defer os.RemoveAll(tmp)
 		script = filepath.Join(tmp, "install.sh")
-		if err := d.fetchScript(script); err != nil {
+		endFetch := progress.step("Downloading the install script")
+		err = d.fetchScript(script)
+		endFetch()
+		if err != nil {
 			return fmt.Errorf("could not download the install script, nothing was changed: %w", err)
 		}
 	}
@@ -275,7 +309,14 @@ func runInstallScript(d updateDeps, stdout, stderr io.Writer) error {
 	cmd.Env = env
 	var out bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, stderr
-	if err := cmd.Run(); err != nil {
+	if d.verbose {
+		cmd.WaitDelay = time.Second
+	}
+	endScript := progress.step("Running the install script")
+	err := cmd.Run()
+	endScript()
+	// ErrWaitDelay means the script succeeded while a descendant held a pipe open.
+	if err != nil && !errors.Is(err, exec.ErrWaitDelay) {
 		io.Copy(stdout, &out)
 		return fmt.Errorf("the install script failed: %w", err)
 	}
