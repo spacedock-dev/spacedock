@@ -44,6 +44,20 @@ gates:
                 id: briefing:kdpzm9pckwj4pm1djvaf01ce:ideation:attempt-1:revision-1
                 digest: sha256:5ce69114377b181a60c57a86bb14a14127af7264c668d78f6d03de6b61bdc95e
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:kdpzm9pckwj4pm1djvaf01ce:ideation:1
+                briefing: briefing:kdpzm9pckwj4pm1djvaf01ce:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-11-24T07:02:48.991783Z"
+                decision: approve
+                reason: 'Ideation design covers all Studfleet VM Spacedock frictions (#1, #4, #5, plus 3-line operational notes #3/#5/#6) with concrete falsifying ACs, atomic link publication, golden raw-digest verification, and untouched first-officer-shared-core.md.'
+                conn:
+                    quote: 'the driver is authorized to continue the paseo PR stack to fix those frictions. This word of CL covers the continuation of that stack as it was done until now. It does not cover a merge, a release or a tag: those stay gates of CL.'
+                    source: CL via MetaFO message to driver 846d9a2 (2026-11-23 22:47 PT)
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Identify the running source build and preserve each dispatch assignment. Let first officers select a directory that their workers can read.
