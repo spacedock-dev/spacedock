@@ -359,3 +359,66 @@ The first scanner calls required this stage report. Both scanners succeeded afte
 ### Summary
 
 Commit `1fdb1e42a` adds VCS dev metadata, immutable content-hashed assignments, configurable shared storage, and the approved operational notes. Workflow validation is VALID with the existing unrelated live-lane-gap-inventory warning; the code worktree is clean and the state report is committed path-scoped. Commander owns the AC-5 live observation; live host lanes and the detached adversarial audit remain pre-merge validation gates.
+
+## Validation work log
+
+1. Candidate HEAD is `1fdb1e42ade7f42e026a40c2d2cfd70ce032cb2e`. The worktree remains clean. The diff has 44 files and +489 net lines.
+2. The shared first-officer core matches `5210d36d0` byte-for-byte at 23,464 bytes. All changed Go files pass `gofmt -l`.
+3. Repository-wide `gofmt -l` lists `internal/release/runtime_live_evidence_workflow_test.go`. The same formatting difference exists at baseline `5210d36d0`.
+4. The worker read the shared assignment pointer and independently computed SHA-256 prefix `608ad412`. Commander reports adopted workspace `wks_508514ca958b5a19` and `inspect.Thinking == "high"`.
+5. The current `/tmp/spacedock-layer3` reports `0.29.0-pre0+dev.3d134b2.dirty`. `go version -m` confirms revision `3d134b255fbcc493bd5e5ccc77a16c496c8b3662` and `vcs.modified=true`. This conflicts with the stated candidate provenance. The worker observes `Runtime: codex (CODEX_THREAD_ID)` and contract 3. Commander reports Paseo in the parent environment.
+6. `go vet ./...`, `git diff --check 5210d36d0..HEAD`, and workflow validation pass. The existing `live-lane-gap-inventory` warning remains. Normal and race suites are in progress.
+
+No journal tool is available. This log retains the validation evidence.
+
+## Review-finding disposition
+
+1. Live candidate provenance remains unresolved.
+   - Observation: Commander identifies `/tmp/spacedock-layer3` as a build from `1fdb1e42a`. The worker observes `+dev.3d134b2.dirty`. Embedded metadata independently confirms `vcs.revision=3d134b255fbcc493bd5e5ccc77a16c496c8b3662` and `vcs.modified=true`.
+   - Released user and normal workflow: operators dispatch a worker with the candidate binary and use the resulting commit as runtime evidence.
+   - Observable harm: the successful pointer read cannot establish which candidate produced that pointer. The binary can contain unrecorded source changes.
+   - Authority: value-ac[AC-5] The live runtime evidence must establish the candidate's shared-directory handoff and adopted workspace behavior.
+   - Trigger evidence: the binary metadata disagrees with the supplied candidate revision. The worker directly read pointer `608ad412` and independently verified its digest.
+   - Worker proposal: evidence defect, Material. Commander owns the runtime evidence. Hold the gate until Commander reconciles provenance or repeats the observation with a uniquely named candidate binary.
+   - Proposed narrow correction: retain the binary digest and embedded VCS metadata, `inspect.Cwd`, `inspect.Thinking`, emitted pointer, and worker result commit. No product change or new harness is proposed. FO authorization remains pending.
+2. Baseline formatting remains outside this candidate.
+   - Observation: `gofmt -l ./cmd ./internal` lists `internal/release/runtime_live_evidence_workflow_test.go`. Its two field-alignment differences also exist at `5210d36d0`.
+   - Released user and normal workflow: contributors run the repository formatting command. Observable harm: that check remains nonempty.
+   - Authority: none: the unchanged whitespace does not violate a value AC or a protected runtime boundary.
+   - Trigger evidence: formatting the baseline blob produces the same diff. Every changed Go file passes the formatting check.
+   - Worker proposal: Polish, pre-existing and outside this task. No candidate edit is proposed. FO disposition remains pending.
+
+## Stage Report: validation
+
+Recommendation: REJECTED
+
+- DONE: Verify commit 1fdb1e42a atop 5210d36d0 matches approved ideation design (44 files <= 45, +489 net LOC within +400..+750, first-officer-shared-core.md byte-identical at 23,464 B, exact 3-line operational notes in paseo-fo-dispatch.md, command-reference.md + dispatch.go help text in STE)
+  The candidate has 630 additions and 141 deletions. Independent baseline comparison confirms the shared-core bytes and exact three approved bullets. Changed documentation passes the structural STE review.
+- DONE: Independently reproduce AC-1 through AC-5 tests: gofmt -l ./cmd ./internal, go vet ./..., PATH=/opt/homebrew/bin:/usr/bin:/bin go test -race -count=1 ./internal/cli, go test -race -count=1 ./internal/dispatch ./internal/contractlint ./skills/integration, git diff --check 5210d36d0..HEAD, and /tmp/spacedock-layer3 status --workflow-dir /Users/clkao/git/spacedock-research/spacedock-v1/docs/dev --validate; perform semantic adversarial pass over VCS version parsing, atomic os.Link conflict handling, --dispatch-dir precedence & pre-stamp validation, and raw SHA-256 golden verification
+  Every listed command ran. Vet, race suites, diff checks, and workflow validation pass. Repository formatting lists one unchanged baseline file. AC-5 remains unresolved as recorded next.
+- DONE: Record ## Stage Report: validation (Recommendation: PASSED or REJECTED) citing AC-1 through AC-5 with falsifying edits, Review-finding disposition, and live dogfood evidence (you are reading a content-hashed pointer emitted by /tmp/spacedock-layer3 --dispatch-dir /tmp/spacedock-layer3-shared-dispatch) alongside F8 sandbox boundary
+  This report and the preceding disposition section retain the evidence, scope, proposed classification, and Commander handoff.
+- DONE: AC-1 — revision tokens, release compatibility, and output shape.
+  `TestDevVersionVCSMetadata`, `TestUnstampedSourceBuildReportsCheckoutVersionPlusDev`, and `TestVersionSessionRender` pass. Removing the SHA, changing stamped output, or adding a line violates their exact assertions.
+- DONE: AC-2 — complete overlapping briefs and immutable retries.
+  `TestArtifactOverlappingBriefsAndRetry` and `TestArtifactPublicationConflict` pass for Claude/Paseo sentinels, identity/mtime, conflicting bytes, symlinks, and directories. Removing the suffix or restoring truncating publication fails these assertions.
+- DONE: AC-3 — selected shared storage and refusal before stamping.
+  `TestArtifactDirectorySelection`, `TestArtifactInvalidDirectoryBeforeStamp`, and `TestSplitRootFolderWorktreeDispatch` pass. Ignoring precedence, changing the relative base, accepting empty input, or stamping before rejection fails path/state assertions.
+- DONE: AC-4 — raw hashes, envelopes, and filename limits.
+  `TestArtifactHostsModesAndFilenameBoundary` and the golden suite pass across four hosts. `readDispatchBody` independently hashes raw bytes. A wrong digest or a pre-suffix length check fails. The suite also passes with an invalid ambient `SPACEDOCK_DISPATCH_DIR`.
+- FAILED: AC-5 — establish candidate provenance for the live runtime observation.
+  Commander reports the adopted `code_cwd` workspace `wks_508514ca958b5a19`, `isolation: worktree`, `background: true`, `inspect.Thinking == "high"`, and parent `Runtime: paseo (PASEO_AGENT_ID)`, contract 3. The worker directly read the shared pointer ending `-608ad412.md` and independently reproduced its digest.
+  The current binary reports `0.29.0-pre0+dev.3d134b2.dirty`. `go version -m` confirms `3d134b255fbcc493bd5e5ccc77a16c496c8b3662` with modified sources. This conflicts with the claimed `1fdb1e42a` provenance. Binary SHA-256: dcf7714216add7b35233ae2e1ca0d8aa760ad578fcb8eeb73ffb47b270210195.
+  F8 ensign sandbox boundary: the worker has no Paseo daemon grant. Parent inspection remains Commander evidence. Worker output reports `Runtime: codex (CODEX_THREAD_ID)`, `Sandbox: agent-safehouse`, and contract 3. Changing shared-core bytes, losing pointer access, adopting a second worktree, or accepting unexpected thinking falsifies AC-5.
+- DONE: Semantic adversarial pass over adjacent inputs and lifecycle boundaries.
+  The inspected matrix covers missing/malformed/uppercase/dirty/stamped VCS values, both directory flag forms and environment precedence, invalid paths before stamp, conflicting destination types, retries, all host modes, and 242/243-byte stems. Existing fixtures exercise exact output, file identity, cleanup, entity bytes, and Git HEAD. Hash checks precede normalization. No product defect emerged.
+- DONE: Full normal and race package coverage with the prescribed PATH split.
+  All packages pass uncached normal and race runs. CLI uses `/opt/homebrew/bin:/usr/bin:/bin`; other packages use the default PATH. CLI race took 434.669s. Dispatch race took 144.976s. The final race package group also passed.
+- SKIPPED: Mutating formatting and candidate edits.
+  The assignment requires read-only validation. `gofmt -l` replaces `gofmt -w`. Every changed Go file is formatted. The baseline formatting issue remains a proposed Polish finding.
+- SKIPPED: Independent parent inspection, required host live lanes, and detached mutation audit.
+  F8 reserves parent inspection for Commander. Host live lanes and the throwaway-checkout adversarial audit remain required before merge. This read-only validation does not claim those results or executed falsifying edits.
+
+### Summary
+
+Candidate tests pass, but unresolved live-binary provenance prevents acceptance of AC-5. The proposed Material finding is an evidence defect owned by Commander, with no product fix or design reset proposed. Code remains unchanged at `1fdb1e42a`; this path-scoped state report is the worker result for the shared-pointer handoff.
