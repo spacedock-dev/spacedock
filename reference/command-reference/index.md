@@ -2,7 +2,7 @@
 title: "Command reference"
 description: "Your agents are waiting on you. Spacedock brings you the calls that need you, keeps your agents on the goal, and lets you decide in one place."
 doc_version: "0.20.2"
-last_updated: "2026-11-24 09:25:53"
+last_updated: "2026-11-24 09:48:04"
 ---
 
 # Command reference
@@ -42,6 +42,8 @@ Once per UTC day, an interactive launch asks `spacedock.md` for the newest Space
 | `spacedock update`  | Update Spacedock, Review, Compass and their plugins to the newest release on this binary's channel |
 
 `install` and `doctor` accept `--host claude`, `--host codex` or `--host pi`. The default is Claude Code. Follow the doctor output to resolve setup problems.
+
+`update` prints each step it runs to stderr. `update --verbose` also prefixes every line with the time since the update started and reports how long each step took.
 
 See [Installation](../../get-started/install/) for the manual setup path.
 
