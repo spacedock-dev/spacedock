@@ -66,6 +66,20 @@ gates:
                 id: briefing:kdpzm9pckwj4pm1djvaf01ce:validation:attempt-1:revision-1
                 digest: sha256:16a5d6a893df55f59ff4adf510b8c5230943b2f9800af007167396a6d67c5270
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:kdpzm9pckwj4pm1djvaf01ce:validation:1
+                briefing: briefing:kdpzm9pckwj4pm1djvaf01ce:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-11-24T07:58:01.867142Z"
+                decision: approve
+                reason: Cycle 2 validation PASSED on 03a796c48 across AC-1..AC-5 with 13/13 detached-audit mutations caught, full normal+race coverage, strict MkDocs, untouched 23,464 B shared core, and clean standalone-clone live Paseo provenance.
+                conn:
+                    quote: 'the driver is authorized to continue the paseo PR stack to fix those frictions. This word of CL covers the continuation of that stack as it was done until now. It does not cover a merge, a release or a tag: those stay gates of CL.'
+                    source: CL via MetaFO message to driver 846d9a2 (2026-11-23 22:47 PT)
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Identify the running source build and preserve each dispatch assignment. Let first officers select a directory that their workers can read.
