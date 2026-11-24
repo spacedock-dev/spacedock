@@ -11,7 +11,7 @@ sprint: paseo-backend
 worktree: .worktrees/spacedock-ensign-paseo-worker-adoption-and-recovery
 issue:
 pr:
-mod-block:
+mod-block: merge:pr-merge
 sprint-readiness: ready
 gates:
     version: 1
