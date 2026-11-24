@@ -94,6 +94,14 @@ gates:
                 id: briefing:x9mfvnkqtbwgm4tba7dy41tw:validation:attempt-3:revision-1
                 digest: sha256:db894831efe5942ac7004f0a420ad821389990372ea701c7f946613c9026dfa0
                 room-ref: '@review/validation/briefing-3'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:x9mfvnkqtbwgm4tba7dy41tw:validation:3
+                briefing: briefing:x9mfvnkqtbwgm4tba7dy41tw:validation:attempt-3:revision-1
+                by: person:captain
+                at: "2026-11-24T02:21:45.804365Z"
+                decision: revise
+                reason: 'Captain directive: drop temporary orphan lease file; reconcile roster purely from pre-existing Paseo labels + Git state on top of merged main (#893)'
 ---
 
 Persist the Paseo worker handle and retry ledger in a temporary local lease file (`<git-common-dir>/spacedock-paseo-leases/<slug>.yaml`, superseded by future lease work `79` / `entity-session-claim-lease`) with zero entity-markdown pollution so a restarted or compacted first officer adopts a live worker instead of double-dispatching, and handle wait timeouts, lost create receipts, dead workers, and duplicate completion events with deterministic single-retry-then-hold recovery isolated per entity.
