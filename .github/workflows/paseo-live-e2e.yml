@@ -1,0 +1,120 @@
+# Optional Paseo live E2E workflow (pull_request, never pull_request_target).
+name: Paseo Live E2E
+
+on:
+  workflow_dispatch:
+    inputs:
+      paseo_version:
+        description: "Pin @getpaseo/cli version (empty = npm latest)."
+        required: false
+        type: string
+        default: ""
+      codex_version:
+        description: "Pin @openai/codex version (empty = npm latest)."
+        required: false
+        type: string
+        default: ""
+      paseo_provider:
+        description: "Override SPACEDOCK_PASEO_LIVE_PROVIDER (empty = codex/<codex.exec>)."
+        required: false
+        type: string
+        default: ""
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+    paths:
+      - "internal/dispatch/**"
+      - "internal/ensigncycle/paseo_*"
+      - "internal/contractlint/paseo_*"
+      - "internal/release/live_models.txt"
+      - "skills/first-officer/**"
+      - "skills/ensign/**"
+      - ".github/workflows/paseo-live-e2e.yml"
+      - "docs/runtime-live-ci.md"
+
+permissions:
+  contents: read
+
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    outputs:
+      codex_exec: ${{ steps.live_models.outputs.codex_exec }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26"
+      - name: Resolve codex.exec model
+        id: live_models
+        run: |
+          set -euo pipefail
+          codex_exec="$(awk -F= '$1 == "codex.exec" { print $2 }' internal/release/live_models.txt)"
+          test -n "$codex_exec"
+          printf 'codex_exec=%s\n' "$codex_exec" >> "$GITHUB_OUTPUT"
+      - name: Run offline tests
+        run: go test ./internal/dispatch ./internal/contractlint ./internal/ensigncycle
+
+  paseo-live:
+    needs: offline
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    environment:
+      name: CI-E2E-CODEX
+    env:
+      CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      PASEO_PROVIDER: ${{ inputs.paseo_provider }}
+      SPACEDOCK_LIVE_ARTIFACT_DIR: ${{ github.workspace }}/live-artifacts/paseo
+    steps:
+      - name: Check required secret
+        run: |
+          if [ -z "${CODEX_AUTH_JSON}" ] && [ -z "${OPENAI_API_KEY}" ]; then
+            echo "CODEX_AUTH_JSON or OPENAI_API_KEY is required after CI-E2E-CODEX approval." >&2
+            exit 1
+          fi
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+      - name: Install Codex and Paseo CLIs
+        env:
+          CODEX_VERSION: ${{ inputs.codex_version }}
+          PASEO_VERSION: ${{ inputs.paseo_version }}
+        run: |
+          set -euo pipefail
+          npm install -g "@openai/codex${CODEX_VERSION:+@$CODEX_VERSION}" "@getpaseo/cli${PASEO_VERSION:+@$PASEO_VERSION}"
+      - name: Build spacedock binary
+        run: |
+          go build -o ./spacedock ./cmd/spacedock
+          echo "SPACEDOCK_BIN=$(pwd)/spacedock" >> "$GITHUB_ENV"
+          echo "SPACEDOCK_REPO_ROOT=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
+      - name: Install gotestsum
+        run: bash .github/scripts/install-gotestsum.sh
+      - name: Configure git and print versions
+        run: |
+          set -euo pipefail
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global init.defaultBranch main
+          paseo --version && codex --version && go version
+      - name: Run Paseo live dispatch smoke
+        run: |
+          set -euo pipefail
+          mkdir -p "$SPACEDOCK_LIVE_ARTIFACT_DIR"
+          SPACEDOCK_PASEO_LIVE_REQUIRED=1 \
+          SPACEDOCK_PASEO_LIVE_PROVIDER="${PASEO_PROVIDER:-codex/${{ needs.offline.outputs.codex_exec }}}" \
+          gotestsum --jsonfile paseo-live-smoke-detail.jsonl --format pkgname -- \
+            -tags live -count=1 -timeout 15m -run '^TestLivePaseoDispatchSmoke$' ./internal/ensigncycle
+      - name: Upload Paseo live artifacts
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: paseo-live-e2e-artifacts
+          if-no-files-found: ignore
+          path: |
+            paseo-live-smoke-detail.jsonl
+            live-artifacts/paseo/**

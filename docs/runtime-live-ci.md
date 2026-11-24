@@ -100,6 +100,18 @@ For a custom slow `:max`-thinking model, lower `PI_LIVE_PARALLEL` (e.g. `PI_LIVE
 
 Without auth, the respective live suite skips locally (Claude/Codex/Pi), except in CI where the lane requires it.
 
+### Paseo live smoke
+
+Run the isolated-daemon Paseo smoke locally with the `codex.exec` model from `internal/release/live_models.txt`:
+
+```bash
+go test -tags live -count=1 -timeout 15m -run '^TestLivePaseoDispatchSmoke$' ./internal/ensigncycle -v
+```
+
+Override the binary, provider, or thinking level with `SPACEDOCK_PASEO_BIN`, `SPACEDOCK_PASEO_LIVE_PROVIDER`, and `SPACEDOCK_PASEO_LIVE_THINKING`.
+
+In CI, `.github/workflows/paseo-live-e2e.yml` runs `TestLivePaseoDispatchSmoke` under `CI-E2E-CODEX` with `CODEX_AUTH_JSON` or `OPENAI_API_KEY`. This job is optional (`continue-on-error: true`) and does not block merges.
+
 ### GitHub setup
 
 #### Subscription OAuth secrets

@@ -35,4 +35,6 @@ Load the runtime adapter for your platform:
 - Codex (`CODEX_THREAD_ID` env var is set): read `references/codex-first-officer-runtime.md`
 - Pi (`PI_CODING_AGENT_DIR` is set, or this session is running under Pi without the Claude/Codex markers above): read `references/pi-first-officer-runtime.md`
 
+**Paseo dispatch backend:** When `PASEO_AGENT_ID` is set in the environment or the captain explicitly selects Paseo dispatch, bind worker dispatch at first dispatch by reading `{first_officer_base}/references/paseo-fo-dispatch.md` alongside `{first_officer_base}/references/fo-dispatch-core.md` instead of the host's native subagent transport (on hosts without a dedicated adapter above, communicate with the captain via direct conversation text).
+
 Then begin the Startup procedure from the shared core.

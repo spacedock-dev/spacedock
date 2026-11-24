@@ -262,7 +262,7 @@ func printUsage(w io.Writer) {
 	fmt.Fprint(w, `spacedock dispatch assembles ensign dispatch artifacts.
 
 Usage:
-  spacedock dispatch build --workflow-dir DIR --entity-path FILE --stage STAGE --checklist-file FILE|- [--host claude|codex|pi]
+  spacedock dispatch build --workflow-dir DIR --entity-path FILE --stage STAGE --checklist-file FILE|- [--host claude|codex|pi|paseo]
   spacedock dispatch name --workflow-dir DIR --entity-path FILE --stage STAGE
   spacedock dispatch show-stage-def --workflow-dir DIR --stage STAGE
   spacedock dispatch trunk --workflow-dir DIR
@@ -274,7 +274,7 @@ func printBuildUsage(w io.Writer) {
 	fmt.Fprint(w, `Usage:
   spacedock dispatch build --workflow-dir DIR --entity-path FILE --stage STAGE
     --checklist-file FILE|- [--scope-notes-file FILE] [--feedback-context-file FILE]
-    [--host claude|codex|pi] [--bare-mode] [--feedback-reflow] [--stamp | --advance]
+    [--host claude|codex|pi|paseo] [--bare-mode] [--feedback-reflow] [--stamp | --advance]
 
 Build an ensign dispatch artifact and write the JSON envelope to stdout.
 Assignment identifiers and invocation controls are CLI flags.
@@ -291,13 +291,13 @@ Missing required assignment flags fail before reading input:
 
 Flags:
   --workflow-dir DIR            Workflow definition directory containing README.md.
-  --host HOST                   Override the runtime host (claude|codex|pi). Defaults to the detected runtime.
+  --host HOST                   Override the runtime host (claude|codex|pi|paseo). Defaults to the detected runtime.
   --entity-path FILE            Entity file for this dispatch.
   --stage STAGE                 Stage name to dispatch.
   --checklist-file FILE|-       FILE contains one checklist item per non-empty line; use - to read the same format from stdin until EOF. Blank lines are ignored; CRLF and LF are accepted.
   --scope-notes-file FILE       Optional scope-notes file.
   --feedback-context-file FILE  Optional feedback-context file; required with --feedback-reflow.
-  --bare-mode                   Emit the bare sequential shape (no name, no run_in_background); unsupported on host=codex.
+  --bare-mode                   Emit the bare sequential shape (no name, no run_in_background); unsupported on host=codex and host=paseo.
   --feedback-reflow             Route a rejection back to its feedback-to target stage; requires --feedback-context-file.
   --advance                     Emit a reuse-advance pointer message for a live worker instead of a spawn envelope. Incompatible with --bare-mode.
   --stamp                       Fold the ordinary post-gate dispatch steps (started/worktree frontmatter stamps, state commit+sync, worktree creation) into this build, before assembling the envelope. Refuses (no mutation) unless the entity's status already equals --stage. Incompatible with --advance.

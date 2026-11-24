@@ -35,7 +35,7 @@ func TestResolveBuildHostFromMarkers(t *testing.T) {
 			"codex-and-claude-refused",
 			map[string]string{"CODEX_THREAD_ID": "t1", "CLAUDECODE": "1"},
 			"",
-			"ambiguous runtime host sources: multiple runtime markers are set (CODEX_THREAD_ID, CLAUDECODE); pass --host claude, codex, or pi",
+			"ambiguous runtime host sources: multiple runtime markers are set (CODEX_THREAD_ID, CLAUDECODE); pass --host claude, codex, pi, or paseo",
 		},
 		{
 			"no-markers",

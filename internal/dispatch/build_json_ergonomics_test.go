@@ -158,7 +158,7 @@ func TestBuildHostResolutionFromFlagAndEnv(t *testing.T) {
 		root, entity := buildHostFixture(t)
 
 		native := runNativePreservingHostEnv("- a\n- b", "build", "--workflow-dir", root, "--entity-path", entity, "--stage", "backlog", "--checklist-file", "-", "--host", "banana")
-		assertBuildHostError(t, native, "unsupported host", "claude, codex, or pi")
+		assertBuildHostError(t, native, "unsupported host", "claude, codex, pi, or paseo")
 	})
 
 	t.Run("missing-source", func(t *testing.T) {
@@ -186,7 +186,7 @@ func TestBuildHostResolutionFromFlagAndEnv(t *testing.T) {
 		root, entity := buildHostFixture(t)
 
 		native := runNativePreservingHostEnv("- a\n- b", "build", "--workflow-dir", root, "--entity-path", entity, "--stage", "backlog", "--checklist-file", "-")
-		assertBuildHostError(t, native, "ambiguous", "CODEX_THREAD_ID", "PI_CODING_AGENT", "--host claude, codex, or pi")
+		assertBuildHostError(t, native, "ambiguous", "CODEX_THREAD_ID", "PI_CODING_AGENT", "--host claude, codex, pi, or paseo")
 	})
 
 	t.Run("explicit-overrides-runtime", func(t *testing.T) {
