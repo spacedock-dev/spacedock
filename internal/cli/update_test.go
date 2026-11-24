@@ -134,6 +134,46 @@ func TestProbeSelfAndPiInventoryEntry(t *testing.T) {
 	}
 }
 
+// TestUpdateDefaultProgressNamesEachStepInOrder pins the default-mode progress
+// lines for a run that downloads the script, refreshes a host and refreshes Pi.
+func TestUpdateDefaultProgressNamesEachStepInOrder(t *testing.T) {
+	f := newPiUpdateFixture(t, piPackageStatus{registered: true, source: piSpacedockPackageSource + "@stable"})
+	var env []string
+	for _, kv := range f.deps.env {
+		if !strings.HasPrefix(kv, "SPACEDOCK_INSTALL_SCRIPT=") {
+			env = append(env, kv)
+		}
+	}
+	f.deps.env = env
+	var fetched []string
+	f.deps.fetchScript = func(path string) error {
+		fetched = append(fetched, path)
+		return os.WriteFile(path, []byte("#!/bin/sh\n:\n"), 0o755)
+	}
+	f.deps.lookPath = hostsOnPath("claude", "pi")
+
+	var stdout, stderr bytes.Buffer
+	if code := runUpdate(f.deps, &stdout, &stderr); code != 0 {
+		t.Fatalf("update exited %d:\n%s\n%s", code, &stdout, &stderr)
+	}
+	if len(fetched) != 1 {
+		t.Errorf("fetchScript calls = %d, want 1", len(fetched))
+	}
+	if strings.Join(f.ran, ";") != "install --host claude;install --host pi" {
+		t.Errorf("runSelf calls = %v, want the Claude Code then the Pi refresh", f.ran)
+	}
+	const want = "Checking installed versions before the update...\n" +
+		"Downloading the install script...\n" +
+		"Running the install script...\n" +
+		"Refreshing Claude Code plugins...\n" +
+		"Checking which Pi packages are installed...\n" +
+		"Refreshing Pi packages...\n" +
+		"Checking installed versions after the update...\n"
+	if got := stderr.String(); got != want {
+		t.Errorf("default progress =\n%s\nwant\n%s", got, want)
+	}
+}
+
 func TestUpdateVerboseScriptFailureKeepsMergedLinesAndTotal(t *testing.T) {
 	s := stageInstall(t)
 	script := filepath.Join(t.TempDir(), "install.sh")
