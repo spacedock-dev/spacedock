@@ -7,7 +7,7 @@ started: 2026-11-23T23:47:27Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-paseo-and-generic-harness-fo-support
 issue:
 pr:
 mod-block:
