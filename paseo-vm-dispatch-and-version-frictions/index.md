@@ -1,7 +1,7 @@
 ---
 id: kdpzm9pckwj4pm1djvaf01ce
 title: "Paseo stack Layer 3: dev build SHA in --version, collision-free immutable dispatch files, and --dispatch-dir"
-status: implementation
+status: validation
 source: "CL via MetaFO (2026-11-23, Studfleet VM dogfooding /tmp/paseo-frictions-studfleet-vm-2026-11-24.md)"
 started: 2026-11-24T06:53:43Z
 completed:
