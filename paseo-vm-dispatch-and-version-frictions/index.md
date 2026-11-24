@@ -1,7 +1,7 @@
 ---
 id: kdpzm9pckwj4pm1djvaf01ce
 title: "Paseo stack Layer 3: dev build SHA in --version, collision-free immutable dispatch files, and --dispatch-dir"
-status: validation
+status: implementation
 source: "CL via MetaFO (2026-11-23, Studfleet VM dogfooding /tmp/paseo-frictions-studfleet-vm-2026-11-24.md)"
 started: 2026-11-24T06:53:43Z
 completed:
@@ -310,6 +310,10 @@ JSON keys, worker identity, stage authority, and release versions retain their e
    Live cost depends on host availability and model latency. A deterministic fixture does not replace these runtime proofs.
 7. The shipped adapter change requires the workflow's detached adversarial audit before merge. Use a throwaway checkout and the stated falsifying edits.
    No live smoke, code test, or audit result is claimed by this ideation report.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — detached adversarial audit (`0f5e8a8c`) + validation (`7dd87755`); 1 Material test-strength hole at `internal/dispatch/build_artifact_test.go:153-157` (relative `--dispatch-dir` subtest collapsed `cwd` and `--workflow-dir` bases) + Commander-owned linked-worktree binary provenance (resolved by standalone-clone build); surface 44/+489 vs estimate 43/+574 (-14.8%); AC unchanged
 
 ## Stage Report: ideation
 
