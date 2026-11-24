@@ -58,6 +58,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:kdpzm9pckwj4pm1djvaf01ce:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:kdpzm9pckwj4pm1djvaf01ce-validation-1
+              briefing:
+                id: briefing:kdpzm9pckwj4pm1djvaf01ce:validation:attempt-1:revision-1
+                digest: sha256:16a5d6a893df55f59ff4adf510b8c5230943b2f9800af007167396a6d67c5270
+                room-ref: '@review/validation/briefing-1'
 ---
 
 Identify the running source build and preserve each dispatch assignment. Let first officers select a directory that their workers can read.
