@@ -7,7 +7,7 @@ started: 2026-11-24T06:53:43Z
 completed:
 verdict:
 score: 0.90
-worktree:
+worktree: .worktrees/spacedock-ensign-paseo-vm-dispatch-and-version-frictions
 issue:
 pr:
 mod-block:
