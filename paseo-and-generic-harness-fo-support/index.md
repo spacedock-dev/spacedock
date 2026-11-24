@@ -60,6 +60,17 @@ gates:
                 id: briefing:xdhbscjmpv0prk3k5yz1ngpw:validation:attempt-1:revision-1
                 digest: sha256:ad399abe907a7b8228c9369ae7d02fdb779f28fac1c5d0e6eeba0b48a74b78ff
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:xdhbscjmpv0prk3k5yz1ngpw:validation:1
+                briefing: briefing:xdhbscjmpv0prk3k5yz1ngpw:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-11-24T03:47:13.338269Z"
+                decision: approve
+                reason: 'Captain directive: Approve both for pr stack and tip ci'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Make any Paseo-hosted first officer boot and run cleanly regardless of inner harness (fixing `F4` and Paseo-vs-native dispatch selection), eliminate unnecessary or contradictory operating-contract loads on the Paseo FO & ensign path while preserving the 23,500-byte shared-core cap, and give unsupported harnesses clear fallback guidance to map Spacedock's worker capabilities onto their own Claude/Codex-like native features.
