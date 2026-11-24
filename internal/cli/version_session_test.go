@@ -332,11 +332,18 @@ func TestVersionExecutesNoHostCLI(t *testing.T) {
 		}
 	}
 	t.Setenv("PATH", shimDir)
+	t.Setenv("CLAUDECODE", "")
+	t.Setenv("CODEX_THREAD_ID", "")
+	t.Setenv("PI_CODING_AGENT", "")
+	t.Setenv("PI_CODING_AGENT_DIR", "")
 	t.Setenv("PASEO_AGENT_ID", "b1c2d3e4-5678-90ab-cdef-1234567890ab")
 
 	var stdout, stderr bytes.Buffer
 	if code := Run([]string{"--version"}, &stdout, &stderr); code != 0 {
 		t.Fatalf("--version exit = %d, want 0 (stderr=%q)", code, stderr.String())
+	}
+	if !lineEquals(stdout.String(), "Runtime: paseo (PASEO_AGENT_ID)") {
+		t.Fatalf("--version output = %q, want a whole line %q", stdout.String(), "Runtime: paseo (PASEO_AGENT_ID)")
 	}
 
 	if data, err := os.ReadFile(witness); err == nil {

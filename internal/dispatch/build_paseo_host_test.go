@@ -17,74 +17,87 @@ var paseoBannedTokens = []string{
 }
 
 func TestBuildPaseoHostPromptShapeAndSplitRoot(t *testing.T) {
-	t.Setenv("PASEO_AGENT_ID", "")
-	root := t.TempDir()
-	stateDir := filepath.Join(root, "state-checkout")
-	writeFile(t, filepath.Join(root, "README.md"), readmeWorktree(true))
-	worktreeRel := ".worktrees/spacedock-ensign-thing"
-	for _, dir := range []string{stateDir, filepath.Join(root, worktreeRel)} {
-		if err := os.MkdirAll(dir, 0o755); err != nil {
-			t.Fatal(err)
+	assertShape := func(t *testing.T, run func(string, ...string) runResult) {
+		t.Helper()
+		root := t.TempDir()
+		stateDir := filepath.Join(root, "state-checkout")
+		writeFile(t, filepath.Join(root, "README.md"), readmeWorktree(true))
+		worktreeRel := ".worktrees/spacedock-ensign-thing"
+		for _, dir := range []string{stateDir, filepath.Join(root, worktreeRel)} {
+			if err := os.MkdirAll(dir, 0o755); err != nil {
+				t.Fatal(err)
+			}
 		}
-	}
-	entityPath := filepath.Join(stateDir, "thing", "index.md")
-	writeFile(t, entityPath, entityFM("Thing", "implementation", worktreeRel))
-	gitInit(t, root)
-	gitInit(t, stateDir)
+		entityPath := filepath.Join(stateDir, "thing", "index.md")
+		writeFile(t, entityPath, entityFM("Thing", "implementation", worktreeRel))
+		gitInit(t, root)
+		gitInit(t, stateDir)
 
-	res := runNative("- first item\n- second item", "build", "--workflow-dir", root, "--entity-path", entityPath,
-		"--stage", "implementation", "--checklist-file", "-", "--host", "paseo")
-	if res.exit != 0 {
-		t.Fatalf("build exit=%d stderr=%q", res.exit, res.stderr)
-	}
-	var raw map[string]json.RawMessage
-	if err := json.Unmarshal([]byte(res.stdout), &raw); err != nil {
-		t.Fatalf("stdout is not JSON: %v\n%s", err, res.stdout)
-	}
-	for _, omitted := range []string{"run_in_background", "agent", "skill"} {
-		if _, present := raw[omitted]; present {
-			t.Errorf("paseo envelope must omit %q:\n%s", omitted, res.stdout)
+		res := run("- first item\n- second item", "build", "--workflow-dir", root, "--entity-path", entityPath,
+			"--stage", "implementation", "--checklist-file", "-", "--host", "paseo")
+		if res.exit != 0 {
+			t.Fatalf("build exit=%d stderr=%q", res.exit, res.stderr)
+		}
+		var raw map[string]json.RawMessage
+		if err := json.Unmarshal([]byte(res.stdout), &raw); err != nil {
+			t.Fatalf("stdout is not JSON: %v\n%s", err, res.stdout)
+		}
+		for _, omitted := range []string{"run_in_background", "agent", "skill"} {
+			if _, present := raw[omitted]; present {
+				t.Errorf("paseo envelope must omit %q:\n%s", omitted, res.stdout)
+			}
+		}
+		if string(raw["model"]) != "null" {
+			t.Errorf("model = %s, want null", raw["model"])
+		}
+		var out struct {
+			SchemaVersion int      `json:"schema_version"`
+			SubagentType  string   `json:"subagent_type"`
+			Description   string   `json:"description"`
+			FetchCommands []string `json:"fetch_commands"`
+			DispatchFile  string   `json:"dispatch_file_path"`
+			Prompt        string   `json:"prompt"`
+			Name          string   `json:"name"`
+		}
+		if err := json.Unmarshal([]byte(res.stdout), &out); err != nil {
+			t.Fatalf("decode envelope: %v", err)
+		}
+		t.Cleanup(func() { _ = os.Remove(out.DispatchFile) })
+		if out.SchemaVersion != 2 || out.SubagentType != "spacedock:ensign" || out.Description != "Thing: implementation" || out.Name != "thing-implementation" || len(out.FetchCommands) != 1 || filepath.Base(out.DispatchFile) != "thing-implementation.md" {
+			t.Fatalf("unexpected envelope: %+v", out)
+		}
+		wantPrompt := fmt.Sprintf("Load the Spacedock ensign skill (with references/ensign-shared-core.md and references/paseo-ensign-runtime.md); then Read %s and treat its content as your assignment.", out.DispatchFile)
+		if out.Prompt != wantPrompt {
+			t.Fatalf("prompt = %q, want %q", out.Prompt, wantPrompt)
+		}
+		body := readDispatchBody(t, out.DispatchFile)
+		for _, banned := range paseoBannedTokens {
+			if strings.Contains(out.Prompt, banned) || strings.Contains(body, banned) {
+				t.Errorf("paseo dispatch contains banned token %q", banned)
+			}
+		}
+		for _, want := range []string{
+			"load the Spacedock `ensign` skill (`SKILL.md`, `references/ensign-shared-core.md`, and `references/paseo-ensign-runtime.md`)",
+			"This assignment is delivered through Paseo.", "Read the entity file at " + entityPath,
+			"This workflow is split-root", "### Completion Signal",
+			"Done: Thing completed implementation. Report written to " + entityPath + ".",
+			"verifies completion from committed Git state and the entity stage report after your turn becomes idle",
+		} {
+			if !strings.Contains(body, want) {
+				t.Errorf("paseo dispatch body missing %q:\n%s", want, body)
+			}
 		}
 	}
-	if string(raw["model"]) != "null" {
-		t.Errorf("model = %s, want null", raw["model"])
-	}
-	var out struct {
-		SchemaVersion int      `json:"schema_version"`
-		SubagentType  string   `json:"subagent_type"`
-		Description   string   `json:"description"`
-		FetchCommands []string `json:"fetch_commands"`
-		DispatchFile  string   `json:"dispatch_file_path"`
-		Prompt        string   `json:"prompt"`
-		Name          string   `json:"name"`
-	}
-	if err := json.Unmarshal([]byte(res.stdout), &out); err != nil {
-		t.Fatalf("decode envelope: %v", err)
-	}
-	if out.SchemaVersion != 2 || out.SubagentType != "spacedock:ensign" || out.Description != "Thing: implementation" || out.Name != "thing-implementation" || len(out.FetchCommands) != 1 || filepath.Base(out.DispatchFile) != "thing-implementation.md" {
-		t.Fatalf("unexpected envelope: %+v", out)
-	}
-	wantPrompt := fmt.Sprintf("Load the Spacedock ensign skill (with references/ensign-shared-core.md and references/paseo-ensign-runtime.md); then Read %s and treat its content as your assignment.", out.DispatchFile)
-	if out.Prompt != wantPrompt {
-		t.Fatalf("prompt = %q, want %q", out.Prompt, wantPrompt)
-	}
-	body := readDispatchBody(t, out.DispatchFile)
-	for _, banned := range paseoBannedTokens {
-		if strings.Contains(out.Prompt, banned) || strings.Contains(body, banned) {
-			t.Errorf("paseo dispatch contains banned token %q", banned)
+
+	t.Setenv("PASEO_AGENT_ID", "")
+	assertShape(t, runNative)
+
+	t.Run("unsupported-harness-all-markers-scrubbed", func(t *testing.T) {
+		for _, k := range []string{"CLAUDECODE", "CODEX_THREAD_ID", "PI_CODING_AGENT", "PI_CODING_AGENT_DIR", "PASEO_AGENT_ID"} {
+			t.Setenv(k, "")
 		}
-	}
-	for _, want := range []string{
-		"load the Spacedock `ensign` skill (`SKILL.md`, `references/ensign-shared-core.md`, and `references/paseo-ensign-runtime.md`)",
-		"This assignment is delivered through Paseo.", "Read the entity file at " + entityPath,
-		"This workflow is split-root", "### Completion Signal",
-		"Done: Thing completed implementation. Report written to " + entityPath + ".",
-		"verifies completion from committed Git state and the entity stage report after your turn becomes idle",
-	} {
-		if !strings.Contains(body, want) {
-			t.Errorf("paseo dispatch body missing %q:\n%s", want, body)
-		}
-	}
+		assertShape(t, runNativePreservingHostEnv)
+	})
 }
 
 func TestBuildPaseoHostWithStampAndBareRejection(t *testing.T) {

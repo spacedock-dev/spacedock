@@ -73,7 +73,7 @@ Stay at the project root; never `cd` into a worktree. Use `git -C {path}` for op
 
 - **effect — extract (deterministic):** roll up the structured inputs via the shipped modes — `status --read <ref> --checklist` and `status --read <ref> --ac-scan`. These feed the verdict; they do not make it.
 - **effect — decide (judgment):** the verdict (approve/reject, is-this-AC-satisfied, is-this-direction-sound) is irreducible judgment; the FO renders its own `Recommend` line. Ensure `spacedock:present-gate` is resident under the residency rule, then present via its template + assembly rules.
-- **done-when:** the gate review is presented and the FO is waiting on the captain's decision, an addressable worker kept alive.
+- **done-when:** the gate review is presented and the FO is waiting on the captain's decision, keeping any existing worker alive when addressable.
 - **block:** never self-approve; never resolve a gate the contract reserves to the captain.
 - → **prose** — no binary ships; the verdict is judgment.
 
