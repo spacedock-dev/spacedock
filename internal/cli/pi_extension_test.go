@@ -360,3 +360,37 @@ func TestDoctorComparesNoPiPackageWithoutPiOrItsSpacedockPackage(t *testing.T) {
 		}
 	}
 }
+
+func TestOptOutReachesPiInventoryAndKeepsHostFailures(t *testing.T) {
+	f := newPiUpdateFixture(t, piPackageStatus{registered: true, source: piSpacedockPackageSource + "@stable"})
+	f.deps.env = append(f.deps.env, "SPACEDOCK_EXTRAS=none")
+	dir := filepath.SplitList(envMap(f.deps.env)["PATH"])[0]
+	if err := os.Remove(filepath.Join(dir, "spacedock-alpha")); err != nil {
+		t.Fatal(err)
+	}
+	for name, output := range map[string]string{"doctor": f.doctorReport(), "doctor-pi": f.piDoctorReport(t)} {
+		if !strings.Contains(output, "alpha program skipped by opt-out") || strings.Contains(output, "MISSING: the alpha program") || strings.Contains(output, "MIXED: the alpha") {
+			t.Fatalf("%s: %s", name, output)
+		}
+	}
+	var out, errOut bytes.Buffer
+	if code := runUpdate(f.deps, &out, &errOut); code != 0 {
+		t.Fatalf("Pi update=%d: %s", code, errOut.String())
+	}
+	writeProgram(t, filepath.Join(dir, "spacedock-alpha"), "0.16.0-beta.2")
+	f.piRef = "v0.16.0-beta.1"
+	out.Reset()
+	errOut.Reset()
+	if code := runUpdate(f.deps, &out, &errOut); code != 1 || !strings.Contains(errOut.String(), "still MIXED on Pi") {
+		t.Fatalf("installed Pi skew hidden: %d %s", code, errOut.String())
+	}
+	f.deps.runSelf = func(...string) (string, error) {
+		writeFile(t, f.settings, `{"packages":["`+piTestAlpha+`@v0.16.0-beta.2"]}`)
+		return "", nil
+	}
+	out.Reset()
+	errOut.Reset()
+	if code := runUpdate(f.deps, &out, &errOut); code != 1 || !strings.Contains(errOut.String(), "Spacedock package is not installed on Pi") {
+		t.Fatalf("host failure hidden: %d %s", code, errOut.String())
+	}
+}

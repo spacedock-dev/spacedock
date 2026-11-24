@@ -44,8 +44,8 @@ func writeProgramExiting(t *testing.T, path string, code int, stderr string) {
 // update note, so the tests drive the mechanism without naming any product.
 func fakeExtensions() []extension {
 	return []extension{
-		{name: "alpha", program: "spacedock-alpha", check: alphaChoiceCheck},
-		{name: "beta", program: "spacedock-beta", tree: true,
+		{name: "alpha", program: "spacedock-alpha", homebrewFormula: "fixture/tap/alpha", check: alphaChoiceCheck},
+		{name: "beta", program: "spacedock-beta", tree: true, homebrewFormula: "fixture/tap/beta",
 			afterUpdate: []string{"A running beta keeps its old version until you restart it:", "  spacedock beta --restart"}},
 	}
 }
@@ -318,7 +318,7 @@ func TestVersionReportCopiesNamePathVersionAndTheOneThatRuns(t *testing.T) {
 
 func TestVersionReportRemedyDependsOnWhoOwnsTheProgram(t *testing.T) {
 	const update = "Run `spacedock update` to bring every program and plugin to the same release."
-	const formulas = "spacedock-dev/tap/subspace-beta spacedock-dev/tap/compass"
+	const formulas = "fixture/tap/alpha fixture/tap/beta"
 	cask := "/opt/homebrew/Caskroom/spacedock@next/0.28.0/spacedock"
 	cases := map[string]struct {
 		alphaVersion, selfPath string
@@ -403,6 +403,7 @@ func TestVersionReportReadsATreeProgramsOwnVersionWhenItAnswers(t *testing.T) {
 
 func TestVersionReportOnHomebrewNamesNoRemedyForAnExtensionWithoutAFormula(t *testing.T) {
 	table := fakeExtensions()
+	table[0].homebrewFormula, table[1].homebrewFormula = "", ""
 	table[1].missingOnHomebrew = "Beta is not yet available from Homebrew."
 	s := stageInstallWith(t, table)
 	os.Remove(filepath.Join(s.first, "spacedock-beta"))

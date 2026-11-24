@@ -233,20 +233,26 @@ listing_version() {
 # listing up to five minutes after a release stamps it, which would pair the program
 # with the previous release.
 listing_body() {
-	lb_body=""
-	if command -v git >/dev/null 2>&1 && lb_dir="$(mktemp -d)"; then
-		GIT_TERMINAL_PROMPT=0 git clone -q --depth 1 --branch main "$LISTING_REPO" "$lb_dir" >/dev/null 2>&1 \
-			&& lb_body="$(cat "$lb_dir/.claude-plugin/marketplace.json" 2>/dev/null)" || lb_body=""
-		rm -rf "$lb_dir"
+	lb_cache="$tmp/extension-listing"
+	if [ ! -f "$lb_cache" ]; then
+		lb_body=""
+		if command -v git >/dev/null 2>&1 && lb_dir="$(mktemp -d)"; then
+			GIT_TERMINAL_PROMPT=0 git -c http.lowSpeedLimit=1 -c http.lowSpeedTime=5 clone -q --depth 1 --branch main "$LISTING_REPO" "$lb_dir" >/dev/null 2>&1 \
+				&& lb_body="$(cat "$lb_dir/.claude-plugin/marketplace.json" 2>/dev/null)" || lb_body=""
+			rm -rf "$lb_dir"
+		fi
+		[ -n "$lb_body" ] || lb_body="$(curl -fsSL --connect-timeout 2 --max-time 5 "$LISTING_URL" 2>/dev/null)" || lb_body=""
+		printf '%s' "$lb_body" > "$lb_cache" || return 1
 	fi
-	[ -n "$lb_body" ] || lb_body="$(curl -fsSL --connect-timeout 2 --max-time 5 "$LISTING_URL" 2>/dev/null)" || lb_body=""
-	printf '%s\n' "$lb_body"
+	[ -s "$lb_cache" ] || return 1
+	cat "$lb_cache"
 }
 
 # listed_tag: an extension's plugins and Pi package install from the listing, so its
 # program does too, whatever GitHub lists as the newest release.
 listed_tag() {
-	lt_version="$(listing_version "$1" "$(listing_body)")"
+	lt_body="$(listing_body)" || { err "could not read the spacedock marketplace listing for $1; check access to $LISTING_REPO and $LISTING_URL"; return 1; }
+	lt_version="$(listing_version "$1" "$lt_body")"
 	is_release_tag "v$lt_version" && { printf 'v%s\n' "$lt_version"; return 0; }
 	case "$CHANNEL:$lt_version" in
 		stable:*-*) err "refused $1 $lt_version: the spacedock marketplace listing names a prerelease, and the stable channel never installs one (read $LISTING_REPO)" ;;
@@ -344,8 +350,11 @@ install_extra() {
 		[ "$(installed_version "$name" "$programs" "$kind" "$links")" = "$ver" ] && { err "$name $ver unchanged"; rm -rf "$dir"; return 0; }
 		cp "$local_from/$asset" "$dir/$asset" && cp "$local_from/checksums.txt" "$dir/checksums.txt" || return 1
 	else
-		# This request is what spacedock.md counts as an install; its answer is not read.
-		release_tag "$repo" >/dev/null 2>&1 || :
+		# This request counts the install; its answer does not select the release.
+		count_url="https://spacedock.md/latest-release/${repo##*/}"
+		[ "$CHANNEL" != edge ] || count_url="$count_url?prerelease=1"
+		curl -fsSL --connect-timeout 2 --max-time 5 --max-redirs 5 -A "$LOOKUP_USER_AGENT" \
+			-o /dev/null "$count_url" >/dev/null 2>&1 || :
 		tag="$(listed_tag "$name")" || { LOOKUP_FAILED=1; return 1; }
 		ver="${tag#v}"
 		[ "$(installed_version "$name" "$programs" "$kind" "$links")" = "$ver" ] && { err "$name $ver unchanged"; rm -rf "$dir"; return 0; }
