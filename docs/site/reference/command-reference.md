@@ -41,6 +41,8 @@ A slow or failed check stays silent and does not hold up the launch.
 
 `install` and `doctor` accept `--host claude`, `--host codex` or `--host pi`. The default is Claude Code. Follow the doctor output to resolve setup problems.
 
+`update` prints each step it runs to stderr. `update --verbose` also prefixes every line with the time since the update started and reports how long each step took.
+
 See [Installation](../get-started/install.md) for the manual setup path.
 
 ## Workflow
