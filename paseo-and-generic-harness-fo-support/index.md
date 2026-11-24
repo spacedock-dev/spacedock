@@ -9,8 +9,8 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-paseo-and-generic-harness-fo-support
 issue:
-pr:
-mod-block:
+pr: "#897"
+mod-block: merge:pr-merge
 gates:
     version: 1
     records:
