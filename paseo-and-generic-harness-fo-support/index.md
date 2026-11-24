@@ -1,7 +1,7 @@
 ---
 id: xdhbscjmpv0prk3k5yz1ngpw
 title: Paseo-wide FO runtime support and generic unsupported-harness fallback hints
-status: validation
+status: implementation
 source: captain (2026-11-23)
 started: 2026-11-23T23:47:27Z
 completed:
@@ -338,6 +338,15 @@ Falsifying edit: requiring a native host marker inside `--host paseo` flips `Tes
   - Required native host live non-regression (`claude-live`, `codex-live`, `pi-live` per `docs/dev/README.md:85` because shared core & `fo-dispatch-core.md` change): targeted `ShallowBoot` + `FullEnsignCycle` (~5–15 minutes per host locally, or CI matrix before merge).
   - One-off manual check: real `spacedock --version` read-back across 3 env shapes (bare terminal, `PASEO_AGENT_ID`-only, `CLAUDECODE`-set) + ASD-STE100 check on `docs/site/reference/command-reference.md` (<1 minute).
 - **Detached adversarial audit:** Required before merge per `docs/dev/README.md:84` because this change touches shipped FO/ensign contract scaffolding (`skills/**/references/**`).
+
+### Feedback Cycles
+
+- **Cycle 1 (2026-11-23, detached `safehouse-codex` adversarial audit `b7f52561` + Cycle 1 validator `7320a70c`):** REJECTED on `284d19193` for 5 surgical fixes:
+  1. `skills/ensign/SKILL.md:13` (Material): exclude `PI_CODING_AGENT` alongside `PI_CODING_AGENT_DIR` in the Paseo-first predicate so native Pi ensigns with `PI_CODING_AGENT=1` + ambient `PASEO_AGENT_ID` do not misroute onto `paseo-ensign-runtime.md`.
+  2. `skills/first-officer/references/first-officer-shared-core.md:76` (Material): make keeping an addressable worker alive conditional on addressability (staying strictly `<= 23,496` B / `23,500` B cap) so fresh-worker Paseo gates satisfy the literal done condition.
+  3. `internal/cli/version_session_test.go:335` (Deferred Risk -> fix now): scrub `CLAUDECODE`, `CODEX_THREAD_ID`, `PI_CODING_AGENT`, and `PI_CODING_AGENT_DIR` in `TestVersionExecutesNoHostCLI` when testing `PASEO_AGENT_ID` fallback so the Paseo-only branch is genuinely exercised.
+  4. `internal/dispatch/build_paseo_host_test.go` (Deferred Risk -> fix now): add a marker-scrubbed subtest (all native host markers and `PASEO_AGENT_ID` empty, not `runNative`'s `CLAUDECODE=1`) proving AC-5 unsupported-harness `--host paseo` assembly.
+  5. `skills/first-officer/SKILL.md:42` (Polish / drift guard): split the dense fallback paragraph into short sentences and refer to Startup step 1's required binary minor instead of hardcoding `0.29`.
 
 ## Stage Report: ideation
 
