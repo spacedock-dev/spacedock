@@ -1,6 +1,6 @@
 ---
 name: review
-description: "Get a person's review of an artifact you produced or were handed: a plan, spec, report or other Markdown file. Use when you have a file that someone should read and react to before work continues, or when the user asks to send something for review. Picks the Terminal (TUI) or the Web from this project's recorded choice and never uploads without it. With no argument it shows or changes that choice; tui or web records it; a file path is reviewed; any other text is a prompt to carry out first."
+description: "Get a person's review of an artifact you produced or were handed: a plan, spec, report or other Markdown file. Use when you have a file that someone should read and react to before work continues, or when the user asks to send something for review. Picks the Terminal (TUI) or the Web from this project's recorded choice and never uploads without it. With no argument it shows or changes that choice; tui or web records it; a file path is reviewed; any other text is a prompt to carry out first. When you write a plan for someone's review, open with the decisions they need to make. Ask each independent decision as a separate question and give your recommended answer with a one-line reason. Follow with only the evidence they need to decide."
 ---
 
 # Review an artifact
