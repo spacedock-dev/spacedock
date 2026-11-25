@@ -71,7 +71,7 @@
         "headline": "Reference",
         "description": "Your agents are waiting on you. Spacedock brings you the calls that need you, keeps your agents on the goal, and lets you decide in one place.",
         "url": "https://spacedock.md/docs/compass/reference/",
-        "dateModified": "2026-11-24 09:48:04",
+        "dateModified": "2026-11-25 02:35:10",
         "isPartOf": { "@type": "WebSite", "name": "Spacedock", "url": "https://spacedock.md/docs/" }
       },
       {
@@ -746,9 +746,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#drift-levels" class="md-nav__link">
+  <a href="#progress-levels" class="md-nav__link">
     <span class="md-ellipsis">
-      Drift levels
+      Progress levels
     </span>
   </a>
   
@@ -758,6 +758,15 @@
   <a href="#keys" class="md-nav__link">
     <span class="md-ellipsis">
       Keys
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#upgrading-to-v300" class="md-nav__link">
+    <span class="md-ellipsis">
+      Upgrading to v3.0.0
     </span>
   </a>
   
@@ -1571,6 +1580,7 @@
 
 
 <h1 id="compass-reference">Compass reference<a class="headerlink" href="#compass-reference" title="Permanent link">&para;</a></h1>
+<p>Look up Spacedock Compass commands, options and board labels.</p>
 <h2 id="start-and-stop">Start and stop<a class="headerlink" href="#start-and-stop" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1593,56 +1603,72 @@
 </tr>
 <tr>
 <td><code>spacedock compass --daemon</code></td>
-<td>Starts Compass in the background. Without <code>--daemon</code> it runs in the foreground.</td>
-<td>Foreground</td>
+<td>Starts Compass in the background.</td>
+<td>Foreground without the flag</td>
 </tr>
 <tr>
 <td><code>spacedock compass --status</code></td>
-<td>Says whether Compass is running on the port.</td>
+<td>Reports whether Compass is running on the selected port.</td>
 <td>Port 4553</td>
 </tr>
 <tr>
 <td><code>spacedock compass --stop</code></td>
-<td>Stops Compass on the port.</td>
+<td>Stops Compass on the selected port.</td>
 <td>Port 4553</td>
 </tr>
 <tr>
 <td><code>spacedock compass --diagnose</code></td>
-<td>Lists where Compass looks for each tool's sessions and whether it can read them. Starts nothing. <code>--json</code> prints it as JSON.</td>
-<td>Off</td>
+<td>Reports where Compass looks for each agent's records and whether it can read them. Starts nothing. Add <code>--json</code> for JSON.</td>
+<td>Text</td>
 </tr>
 <tr>
 <td><code>spacedock compass --forget</code></td>
-<td>Deletes observation history, recorded session ends, stored session summaries and copied-correction records. Pauses model calls and turns summaries off until you turn them back on in the page. Keeps the goals you typed. Refused while Compass is running on the port.</td>
-<td>Off</td>
+<td>Deletes observation history, recorded ends, launcher parent declarations, stored summaries and copied-correction records. Keeps the goals and group labels you typed and the current model-use budget. Pauses AI use and turns summaries off. Requires proof that all dashboards using that Compass home have stopped.</td>
+<td>Port 4553</td>
 </tr>
 <tr>
 <td><code>spacedock compass --version</code></td>
-<td>Prints the Compass version.</td>
-<td>Off</td>
+<td>Prints the installed Compass version.</td>
+<td></td>
 </tr>
 <tr>
 <td><code>spacedock compass --sessions [waiting]</code></td>
-<td>Lists running and recently finished sessions; with <code>waiting</code>, lists only sessions waiting on you, excluding the calling Claude Code session. Needs a running Compass instance.</td>
-<td>No waiting filter</td>
+<td>Lists sessions from a running board, starting with <strong>Right now</strong> when that group has entries. Add <code>waiting</code> to list only sessions waiting on you. Excludes the calling session when Compass can identify it.</td>
+<td>All listed sessions</td>
+</tr>
+<tr>
+<td><code>spacedock compass --drift [again]</code></td>
+<td>Prints a session's progress check. Reads a saved check for free. With no saved check or with <code>again</code>, asks the model and waits.</td>
+<td>Session from <code>--session</code>. Otherwise <code>CLAUDE_CODE_SESSION_ID</code> or <code>CODEX_THREAD_ID</code>, whichever is set. Requires <code>--session</code> when both are set.</td>
+</tr>
+<tr>
+<td><code>spacedock compass --pause-model-calls</code></td>
+<td>Pauses model use on a running board. Use <strong>Resume AI use</strong> on the board.</td>
+<td>Port 4553</td>
 </tr>
 <tr>
 <td><code>spacedock compass --footer</code></td>
-<td>Prints a Claude Code status-line segment from its input and Compass's saved state. Sends no request. May be used alone or with <code>--session</code>.</td>
+<td>Prints a Claude Code status line segment from its input and Compass's saved state, including <code>AI use paused</code> when applicable. Sends no request. Accepts <code>--session</code>.</td>
 <td>Silent when nothing can be reported</td>
 </tr>
 <tr>
-<td><code>spacedock compass --help</code></td>
-<td>Prints the installed Compass options, including three experimental terminal and frontend development options omitted here.</td>
+<td><code>spacedock compass --forward-usage</code></td>
+<td>Reads Claude Code's status line JSON on standard input and sends only the five-hour and seven-day usage percentages and reset times to a running local board. Reads no credential, prints nothing and starts nothing.</td>
 <td>Off</td>
+</tr>
+<tr>
+<td><code>spacedock compass --help</code></td>
+<td>Prints the installed Compass options.</td>
+<td></td>
 </tr>
 </tbody>
 </table>
 <pre class="highlight"><code class="language-bash">spacedock compass --port 4581 --daemon
 spacedock compass --port 4581 --status
 spacedock compass --port 4581 --stop</code></pre>
+<p>For the remaining terminal actions, see the <a href="https://github.com/spacedock-dev/compass/blob/main/MANUAL.md#options">Compass command manual</a>.</p>
 <h2 id="options">Options<a class="headerlink" href="#options" title="Permanent link">&para;</a></h2>
-<p>Server options apply to the run you start. Stop and restart Compass to change one. Spell each option in full: an abbreviation is refused.</p>
+<p>Options are optional and must be spelled in full. Server options apply to the run you start. Stop and restart Compass to change them.</p>
 <table>
 <thead>
 <tr>
@@ -1664,82 +1690,82 @@ spacedock compass --port 4581 --stop</code></pre>
 </tr>
 <tr>
 <td><code>--unasked-readings</code></td>
-<td>Checks eligible sessions with a typed goal for drift without being asked, and raises departures only. Claude Code runs the check, except on Codex sessions, which Codex checks. If one CLI is not installed, the other checks instead. Codex needs permission first, for the destination shown in the Drift card. A goal saved unchanged from <code>/goal</code>, <strong>Use your prompt</strong> or a prompt draft is not checked. Spends model capacity: at most three checks per session and twelve a day.</td>
+<td>Checks eligible sessions with a goal you wrote and raises departures only. Claude Code and Codex sessions use their own provider. Other eligible sessions prefer Claude Code. If the preferred CLI is unavailable, the other can check. Codex needs permission for the destination shown in <strong>Is it on track?</strong> At most three checks per session and twelve per day.</td>
 <td>Off</td>
 </tr>
 <tr>
 <td><code>--session HARNESS:SESSION_ID</code></td>
-<td>Selects the session for <code>--footer</code>, for example <code>claude:SESSION_ID</code>. Used only with <code>--footer</code>.</td>
-<td>Status-line session ID, then <code>CLAUDE_CODE_SESSION_ID</code></td>
+<td>Selects a session for <code>--footer</code>, <code>--drift</code>, <code>--goal</code>, <code>--project</code>, <code>--summary</code>, <code>--monitor</code> or <code>--set-group</code>. Example value: <code>claude:SESSION_ID</code>.</td>
+<td>For <code>--footer</code>, stdin session ID then <code>CLAUDE_CODE_SESSION_ID</code>. Other session reads and monitoring use <code>CLAUDE_CODE_SESSION_ID</code>. <code>--drift</code> also uses <code>CODEX_THREAD_ID</code> when it is the only one set, and requires <code>--session</code> when both are set. Required for <code>--set-group</code>.</td>
 </tr>
 <tr>
 <td><code>--claude-reading-model MODEL</code></td>
-<td>Claude model that reads a Claude Code session when you press Analyze drift. Takes an explicit Sonnet or Opus ID of generation 5 or later.</td>
+<td>Model Claude Code uses for <strong>Check progress</strong>. Takes an explicit Sonnet or Opus ID of generation 5 or later.</td>
 <td><code>claude-sonnet-5-5</code></td>
 </tr>
 <tr>
 <td><code>--claude-monitor-model MODEL</code></td>
-<td>Claude model that Live monitor asks about once a minute. Takes an explicit Haiku ID of generation 4 or later.</td>
+<td>Model Claude Code uses for <strong>Live monitor</strong>. Takes an explicit Haiku ID of generation 4 or later.</td>
 <td><code>claude-haiku-5-5</code></td>
 </tr>
 <tr>
 <td><code>--no-observer-model</code>, <code>--no-harness-usage</code></td>
-<td>Refuse every model call for the run, including Analyze drift, Find goal, summaries, Live monitor and unasked checks. <strong>Pause model calls</strong> in the page does the same until you resume.</td>
+<td>Refuse all model calls for the run, including <strong>Check progress</strong>, <strong>Find goal</strong>, summaries, <strong>Live monitor</strong> and unasked checks.</td>
 <td>Off</td>
 </tr>
 <tr>
 <td><code>--no-annotations</code></td>
-<td>Does not read or save goals or outcome lines. Analyze drift stays visible and disabled.</td>
+<td>Skips saved goals, outcome lines, readings and group labels. <strong>Check progress</strong> remains visible and disabled.</td>
 <td>Off</td>
 </tr>
 <tr>
 <td><code>--no-git</code></td>
-<td>Does not run the end-of-session git check in your repositories.</td>
+<td>Skips the end-of-session git check and the read of the project's committed check scripts.</td>
 <td>Off</td>
 </tr>
 <tr>
 <td><code>--no-ci-read</code></td>
-<td>Does not read pull-request or merge-request checks from GitHub or GitLab when you press Analyze drift.</td>
+<td>Skips pull request and merge request checks from GitHub and GitLab when you press <strong>Check progress</strong>.</td>
 <td>Off</td>
 </tr>
 <tr>
 <td><code>--no-focus</code></td>
-<td>Does not raise a session's terminal or record terminal identities.</td>
+<td>Disables raising a session's terminal and recording its terminal identity.</td>
 <td>Off</td>
 </tr>
 <tr>
 <td><code>--no-dismiss</code></td>
-<td>Does not read or write the store of sessions marked handled.</td>
+<td>Skips the store of sessions marked handled and disables marking them.</td>
 <td>Off</td>
 </tr>
 <tr>
 <td><code>--no-ask</code></td>
-<td>Stops sessions from asking you questions through Compass.</td>
+<td>Disables questions that sessions can ask through Compass.</td>
 <td>Off</td>
 </tr>
 <tr>
 <td><code>--no-events</code></td>
-<td>Stops the event coordinator, so state comes from scanning session files on a timer.</td>
+<td>Stops collecting pushed session events. Compass scans session files on a timer.</td>
 <td>Off</td>
 </tr>
 <tr>
 <td><code>--no-irreversible</code></td>
-<td>Stops reporting of risky command shapes such as force push and hard reset.</td>
+<td>Disables reports of command shapes such as force push and hard reset.</td>
 <td>Off</td>
 </tr>
 <tr>
 <td><code>--reach-url URL</code></td>
-<td>Webhook that receives counts-only nudges when sessions need input while you are away.</td>
-<td>None</td>
+<td>HTTPS webhook for counts-only nudges when sessions need input or end unread. A URL starting with <code>http://</code> is refused.</td>
+<td>Unset</td>
 </tr>
 <tr>
 <td><code>--no-reach</code></td>
-<td>Refuses off-machine nudges whatever URL is configured.</td>
+<td>Disables off-machine nudges for the run.</td>
 <td>Off</td>
 </tr>
 <tr>
 <td><code>--history-max-bytes BYTES</code></td>
-<td>Size cap on the history file, also its read cap.</td>
+<td>Maximum size of the history file, also its read limit.</td>
 <td><code>1048576</code></td>
 </tr>
 <tr>
@@ -1749,23 +1775,23 @@ spacedock compass --port 4581 --stop</code></pre>
 </tr>
 <tr>
 <td><code>--no-history</code></td>
-<td>Does not read or write observed history.</td>
+<td>Skips reading and writing observed history.</td>
 <td>Off</td>
 </tr>
 <tr>
 <td><code>--no-spacedock</code></td>
-<td>Does not read Workflow definitions, so stage strips are not shown.</td>
+<td>Skips Spacedock Workflow state and hides its stage strips. Saved stage alerts are suspended.</td>
 <td>Off</td>
 </tr>
 <tr>
 <td><code>--no-tripwires</code></td>
-<td>Does not read or save stage alerts.</td>
+<td>Skips reading and saving stage alerts.</td>
 <td>Off</td>
 </tr>
 <tr>
 <td><code>--quiet-hours WINDOW</code></td>
-<td>Silences non-question notifications, including unasked-check notifications and stage alerts, in a local window such as <code>22:00-08:00</code>. Unasked model checks still run.</td>
-<td>None</td>
+<td>Suppresses notifications and nudges other than questions in a local window such as <code>22:00-08:00</code>. Unasked checks still run.</td>
+<td>Unset</td>
 </tr>
 <tr>
 <td><code>--no-quiet-hours</code></td>
@@ -1774,24 +1800,33 @@ spacedock compass --port 4581 --stop</code></pre>
 </tr>
 <tr>
 <td><code>--no-usage</code></td>
-<td>Does not read Claude Code and Cursor quota from the vendor for the run. Quota is read otherwise, and sends no session content. <strong>Turn off</strong> under the quota windows on the Sessions screen stops it from the page.</td>
+<td>Stops vendor quota fetches and ignores quota forwarded from a status line. Quota read from an agent's own records can still appear.</td>
+<td>Off</td>
+</tr>
+<tr>
+<td><code>--no-update-check</code></td>
+<td>Skips the daily release lookup. The board also has <strong>Look for new versions once a day</strong> in <strong>Settings</strong>.</td>
 <td>Off</td>
 </tr>
 <tr>
 <td><code>--host ADDRESS</code></td>
-<td><code>127.0.0.1</code>, or <code>0.0.0.0</code> to serve every network interface with no authentication. Prefer an SSH tunnel.</td>
+<td>Listen on <code>127.0.0.1</code> or expose the board on every IPv4 interface with <code>0.0.0.0</code>. Compass provides no authentication on that bind.</td>
 <td><code>127.0.0.1</code></td>
 </tr>
 <tr>
+<td><code>--allow-host NAME</code></td>
+<td>Trusts an exact DNS hostname for a board behind an authenticated proxy with direct port access blocked. Repeat for more names. Applies with <code>--host 0.0.0.0</code>.</td>
+<td>Unset</td>
+</tr>
+<tr>
 <td><code>--observer-model</code>, <code>--allow-tool-output</code></td>
-<td>Accepted but do nothing; will be removed in a later release.</td>
+<td>Accepted for compatibility and have no effect.</td>
 <td>Off</td>
 </tr>
 </tbody>
 </table>
 <pre class="highlight"><code class="language-bash">spacedock compass --port 4581 --window-hours 6 --no-observer-model
 spacedock compass --port 4581 --daemon --unasked-readings --quiet-hours 22:00-08:00
-spacedock compass --port 4581 --no-annotations --no-history
 spacedock compass --port 4581 --daemon --reach-url https://ntfy.sh/my-topic</code></pre>
 <h2 id="environment">Environment<a class="headerlink" href="#environment" title="Permanent link">&para;</a></h2>
 <table>
@@ -1804,11 +1839,11 @@ spacedock compass --port 4581 --daemon --reach-url https://ntfy.sh/my-topic</cod
 <tbody>
 <tr>
 <td><code>COMPASS_HOME</code></td>
-<td>Moves Compass's own state, logs and stores. Default: <code>.compass</code> under your home directory. Use the same value for start, stop, status and forget.</td>
+<td>Moves Compass's state, logs and stores. Defaults to <code>.compass</code> under your home directory. Use the same value for start, stop, status and forget.</td>
 </tr>
 <tr>
 <td><code>COMPASS_REACH_URL</code></td>
-<td>Reach webhook when <code>--reach-url</code> is absent.</td>
+<td>HTTPS webhook when <code>--reach-url</code> is absent.</td>
 </tr>
 <tr>
 <td><code>COMPASS_QUIET_HOURS</code></td>
@@ -1817,7 +1852,7 @@ spacedock compass --port 4581 --daemon --reach-url https://ntfy.sh/my-topic</cod
 </tbody>
 </table>
 <h2 id="what-works-on-each-tool">What works on each tool<a class="headerlink" href="#what-works-on-each-tool" title="Permanent link">&para;</a></h2>
-<p>Every session from the ten agent tools shows on the board. The rest depends on what each tool records.</p>
+<p>The board lists sessions from the ten supported agent tools when it can find their records.</p>
 <table>
 <thead>
 <tr>
@@ -1847,7 +1882,7 @@ spacedock compass --port 4581 --daemon --reach-url https://ntfy.sh/my-topic</cod
 <td style="text-align: center;"></td>
 </tr>
 <tr>
-<td>Goal drafted from your first prompt</td>
+<td>Goal drafted from a prompt</td>
 <td style="text-align: center;">✓</td>
 <td style="text-align: center;">✓</td>
 <td style="text-align: center;"></td>
@@ -1855,15 +1890,15 @@ spacedock compass --port 4581 --daemon --reach-url https://ntfy.sh/my-topic</cod
 <td style="text-align: center;"></td>
 </tr>
 <tr>
-<td>Outline of what the session has done</td>
+<td>Session outline</td>
 <td style="text-align: center;">✓</td>
-<td style="text-align: center;">✓</td>
+<td style="text-align: center;">✓, your messages only</td>
 <td style="text-align: center;"></td>
 <td style="text-align: center;"></td>
 <td style="text-align: center;"></td>
 </tr>
 <tr>
-<td>Model-written summary</td>
+<td>Model-written session summary</td>
 <td style="text-align: center;">✓</td>
 <td style="text-align: center;"></td>
 <td style="text-align: center;"></td>
@@ -1871,15 +1906,15 @@ spacedock compass --port 4581 --daemon --reach-url https://ntfy.sh/my-topic</cod
 <td style="text-align: center;"></td>
 </tr>
 <tr>
-<td>Drift level</td>
+<td>Check progress</td>
 <td style="text-align: center;">✓</td>
-<td style="text-align: center;">✓; checks need codex-cli 0.149+</td>
+<td style="text-align: center;">✓, findings without a level. Evidence from tests and builds requires codex-cli 0.149 or later.</td>
 <td style="text-align: center;">✓</td>
 <td style="text-align: center;"></td>
 <td style="text-align: center;"></td>
 </tr>
 <tr>
-<td>Goal-met claim checked against the record</td>
+<td>Compare reported goal completion with the record</td>
 <td style="text-align: center;">✓</td>
 <td style="text-align: center;">✓</td>
 <td style="text-align: center;"></td>
@@ -1905,15 +1940,14 @@ spacedock compass --port 4581 --daemon --reach-url https://ntfy.sh/my-topic</cod
 <tr>
 <td>Unasked checks</td>
 <td style="text-align: center;">✓</td>
-<td style="text-align: center;">✓; once you allow Codex</td>
+<td style="text-align: center;">✓, with permission</td>
 <td style="text-align: center;">✓</td>
-<td style="text-align: center;">✓; reads your prompts only</td>
+<td style="text-align: center;">✓, your prompts only</td>
 <td style="text-align: center;"></td>
 </tr>
 </tbody>
 </table>
-<h2 id="drift-levels">Drift levels<a class="headerlink" href="#drift-levels" title="Permanent link">&para;</a></h2>
-<p>Shown after Analyze drift, and by Live monitor on Claude Code sessions. Live monitor's level, labelled <strong>Live monitor · Haiku</strong>, is Haiku's read of where the latest turns are heading. Until its check returns, or while it is paused or capped, the page shows an estimate from checks and written files, which does not read what your intent says. The meanings below are that estimate's and the analysis's.</p>
+<h2 id="progress-levels">Progress levels<a class="headerlink" href="#progress-levels" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -1923,24 +1957,48 @@ spacedock compass --port 4581 --daemon --reach-url https://ntfy.sh/my-topic</cod
 </thead>
 <tbody>
 <tr>
-<td>None or low</td>
-<td>No recorded signal against your intent.</td>
+<td><strong>On track</strong></td>
+<td>No departure found in what Compass read.</td>
 </tr>
 <tr>
-<td>Medium</td>
-<td>A check passed and files were written after it, a failed check was followed by writes, or the agent made a claim the record contradicts. For the live estimate, some writes outside the folders your intent names also contribute Medium.</td>
+<td><strong>Slightly off course</strong></td>
+<td>Some work wandered from the goal.</td>
 </tr>
 <tr>
-<td>High</td>
-<td>A check still fails after your last message with no later write. For the live estimate, most writes outside the folders your intent names also count as High.</td>
+<td><strong>Off course</strong></td>
+<td>The work no longer serves the goal.</td>
 </tr>
 <tr>
-<td>Extreme</td>
-<td>Both High conditions hold. An analysis never reads Extreme.</td>
+<td><strong>Way off course</strong></td>
+<td>The work has gone far from the goal. Both <strong>Live estimate</strong> and <strong>Live monitor</strong> can show this level. A progress check you start shows at most <strong>Off course</strong>.</td>
+</tr>
+</tbody>
+</table>
+<p>A saved progress check shows a level only while the evidence it used still matches. Lost history, an expired direction, a truncated transcript or a changed project key can remove the level. Checks saved before v3.0.0 need <strong>Check progress again</strong> before they can show a level.</p>
+<p>Sessions rows can show <strong>Slightly off course</strong> or <strong>Off course</strong> from that same saved evidence. A row says <strong>Not checked yet</strong> only if Compass can check the goal and has no record of a check or attempt. Codex leaves the progress cell blank and shows any findings on the session page.</p>
+<table>
+<thead>
+<tr>
+<th>Other progress text</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Too early to tell</strong></td>
+<td>The session has recorded too little to check its progress.</td>
 </tr>
 <tr>
-<td>Not enough recorded yet</td>
-<td>Too little in the record to estimate, or a goal too vague to read the work against.</td>
+<td><strong>Can't tell</strong></td>
+<td>Compass could not establish progress. The card gives the reason.</td>
+</tr>
+<tr>
+<td><strong>Goal too vague to check</strong></td>
+<td>The goal needs a clearer end state.</td>
+</tr>
+<tr>
+<td><strong>Out of date</strong></td>
+<td>The previous check no longer describes the evidence Compass can use.</td>
 </tr>
 </tbody>
 </table>
@@ -1955,26 +2013,55 @@ spacedock compass --port 4581 --daemon --reach-url https://ntfy.sh/my-topic</cod
 <tbody>
 <tr>
 <td><kbd>s</kbd></td>
-<td>Opens Sessions</td>
+<td>Opens Sessions.</td>
 </tr>
 <tr>
 <td><kbd>p</kbd></td>
-<td>Opens Projects</td>
+<td>Opens Projects.</td>
 </tr>
 <tr>
-<td><kbd>a</kbd></td>
-<td>Opens Attention</td>
+<td><kbd>n</kbd></td>
+<td>Opens Needs you.</td>
 </tr>
 <tr>
 <td><kbd>/</kbd></td>
-<td>Focuses session search on the Sessions screen</td>
+<td>Focuses search on Sessions.</td>
 </tr>
 <tr>
 <td><kbd>Escape</kbd></td>
-<td>Returns from a session to where you opened it, and from any other view to Sessions</td>
+<td>Returns from a session to where you opened it, and from other pages to Sessions.</td>
 </tr>
 </tbody>
 </table>
+<h2 id="upgrading-to-v300">Upgrading to v3.0.0<a class="headerlink" href="#upgrading-to-v300" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Contract</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Observation routes</td>
+<td>Require an admitted browser <code>Origin</code> or same-origin fetch metadata.</td>
+</tr>
+<tr>
+<td>Compass state files</td>
+<td>State files covered by the strict state policy must be regular files you own. Symlinks are refused.</td>
+</tr>
+<tr>
+<td>Scripts matching output</td>
+<td>Match <code>AI use paused</code> from <code>--footer</code>, <code>Right now</code> from <code>--sessions</code> and <code>Check progress</code> in progress messages. The <code>--drift</code> flag keeps its name.</td>
+</tr>
+</tbody>
+</table>
+<p>See the <a href="https://github.com/spacedock-dev/compass/releases/tag/v3.0.0#why-this-is-a-major-release">v3.0.0 release notes</a> and the <a href="https://github.com/spacedock-dev/compass/blob/main/SECURITY.md#scope">Compass security policy</a> for the full contracts.</p>
+<p><strong>Related guides</strong></p>
+<ul>
+<li><a href="../">Understand what Compass reads and shows</a>.</li>
+<li><a href="../use/#check-a-sessions-progress">Check a session's progress on the board</a>.</li>
+</ul>
 
 
 
@@ -1995,7 +2082,7 @@ spacedock compass --port 4581 --daemon --reach-url https://ntfy.sh/my-topic</cod
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="November 24, 2026 09:48:04 UTC">2026-11-24 09:48:04</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="November 25, 2026 02:35:10 UTC">2026-11-25 02:35:10</span>
   </span>
 
     

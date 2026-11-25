@@ -71,7 +71,7 @@
         "headline": "Overview",
         "description": "Your agents are waiting on you. Spacedock brings you the calls that need you, keeps your agents on the goal, and lets you decide in one place.",
         "url": "https://spacedock.md/docs/compass/",
-        "dateModified": "2026-11-24 09:48:04",
+        "dateModified": "2026-11-25 02:35:10",
         "isPartOf": { "@type": "WebSite", "name": "Spacedock", "url": "https://spacedock.md/docs/" }
       },
       {
@@ -683,15 +683,6 @@
   <a href="#when-to-use-it" class="md-nav__link">
     <span class="md-ellipsis">
       When to use it
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next" class="md-nav__link">
-    <span class="md-ellipsis">
-      Next
     </span>
   </a>
   
@@ -1553,26 +1544,25 @@
 
 
 <h1 id="what-is-spacedock-compass">What is Spacedock Compass<a class="headerlink" href="#what-is-spacedock-compass" title="Permanent link">&para;</a></h1>
-<p>You give an agent a goal and go do something else. Twenty turns later it is rewriting a file you never mentioned, or it has declared the work done and it isn't. With several sessions running, you find out when you read the result. <strong>Compass keeps the goal you set beside what each session is doing, so the session that has left it stands out while it is still running.</strong></p>
+<p>When several agents are working, Spacedock Compass shows which sessions need you and where the work has moved away from the goal you set.</p>
 <h2 id="how-it-works">How it works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h2>
-<p>Compass is a screen on your own machine that lists every agent session you have running, across Claude Code, Codex and eight other agent tools. For each active session it shows where the work is, what the agent is doing now, what it does next, and whether it is blocked.</p>
-<p><img alt="Active now on the Sessions screen: a session marked Drift Medium sits above two working sessions, each with its goal beside what the agent is doing" src="img/sessions-active-now-drift.png" /></p>
-<p><em>Each active session shows its goal beside what the agent is doing. Sessions with a recorded departure carry a Drift mark and sit above ordinary working sessions, below sessions waiting on you or holding a question.</em></p>
-<p>This is <strong>Intent and drift</strong>. You state your intent for a session as a goal. A <code>/goal</code> you set in Claude Code, Codex or Antigravity becomes the goal on its own. When you ask, Compass <a href="use/#check-a-session-for-drift">checks the session against that intent</a> and says where the agent departed, citing the exact entries in the session record. When Claude Code or Codex says a goal is met, Compass displays the claim; Analyze drift checks it against what the session recorded. You decide what to do about a departure: tell the agent, adjust the intent, or leave it. Treat a drift level as an account of the evidence, not a measurement.</p>
-<p>Compass reads your agents' session files and never writes to them. It never types into a session or chooses an answer for you; when a session asks through Compass, it returns the option you select. It keeps its own notes, your intent and a short history of what it observed, on your machine. With Compass on its default local address, session content leaves your machine only through model calls: <a href="use/#check-a-session-for-drift">Analyze drift</a>, session summaries, <a href="use/#watch-a-session-live">Live monitor</a>, and <a href="use/#let-compass-check-while-you-are-away">checks Compass runs on its own</a>. Calls run when you press a control or enable a feature. Opening a finished Claude Code session can start a missing summary, with summaries enabled and within its limits. The first of each kind tells you what it sends and where. <strong>Pause model calls</strong> stops all of them, and <code>--no-observer-model</code> refuses them for a whole run. Compass also reads your Claude Code and Cursor quota, which sends no session content; turn it off on the Sessions screen or with <code>--no-usage</code>.</p>
+<p>Compass reads the session records your agents already write and shows them on a local board. Sessions opens with counts for <strong>Waiting on you</strong>, <strong>Working now</strong> and <strong>Worth a look</strong>. Each row pairs the session's state and current work with its goal. The light board uses plain words, with exact times, identifiers and byte sizes under <strong>Show technical details</strong>.</p>
+<p><img alt="Right now lists three Working sessions. The row for Update the install guide shows Slightly off course." src="img/sessions-right-now-off-course.png" /></p>
+<p><em>In <strong>Right now</strong>, the <strong>Slightly off course</strong> pill comes from a saved progress check whose evidence still matches.</em></p>
+<p>A session's page puts <strong>Goal</strong> and <strong>Is it on track?</strong> ahead of the evidence. When you <a href="use/#check-a-sessions-progress">check progress</a>, Compass compares the goal with the session's recorded work and cites the entries behind any finding. The level describes what the check could support from that record. You decide whether to send the agent a correction or change the goal.</p>
+<p>Compass reads session files without changing them and keeps its own records on your machine. Model features, including progress checks and summaries, can send session content through your signed-in Claude Code or Codex. <strong>Pause all AI use</strong> stops those calls. Quota reads, release lookups, pull request status reads and optional webhook nudges have their own controls. See <a href="https://github.com/spacedock-dev/compass/blob/main/docs/how-it-works.md#what-can-leave-your-machine">what can leave your machine</a>.</p>
 <h2 id="with-workflow">With Workflow<a class="headerlink" href="#with-workflow" title="Permanent link">&para;</a></h2>
-<p>If you run work through <a href="../workflow/">Spacedock Workflow</a>, Compass also shows which step each work item is in and the decisions Workflow recorded for it. It can <a href="use/#get-alerted-when-work-reaches-a-step">alert you once</a> when an item reaches a step you pick.</p>
+<p>If you run work through <a href="../workflow/">Spacedock Workflow</a>, Compass also shows where each work item is and the decisions Workflow recorded for it. Compass can <a href="use/#get-alerted-when-work-reaches-a-step">alert you once</a> when an item reaches a step you pick.</p>
 <h2 id="when-to-use-it">When to use it<a class="headerlink" href="#when-to-use-it" title="Permanent link">&para;</a></h2>
 <ul>
-<li>You run more than one agent session and cannot watch them all.</li>
-<li>You step away during long runs and want to know, on return, which sessions need you.</li>
-<li>Your review comments keep saying "this isn't what we agreed".</li>
+<li>You run several agent sessions and want to see which ones need input.</li>
+<li>You step away during a long run and want to see what happened while you were gone.</li>
+<li>You want to review whether an agent followed your goal while there is still time to steer it.</li>
 </ul>
-<h2 id="next">Next<a class="headerlink" href="#next" title="Permanent link">&para;</a></h2>
+<p><strong>Related guides</strong></p>
 <ul>
-<li><strong>Set your first intent.</strong> <a href="../#install">Install Spacedock</a>, then <a href="use/#set-the-goal">state an intent for a session and check it for drift</a>.</li>
-<li><strong>Then Workflow.</strong> If drift keeps coming from work that was never pinned down, <a href="../workflow/">Spacedock Workflow</a> lets you write down once what good looks like at each step.</li>
-<li><a href="reference/">Compass reference</a>: commands, options and keys.</li>
+<li><a href="use/#set-the-goal">Set a goal and check a session's progress</a>.</li>
+<li><a href="reference/">Look up Compass commands, options and keys</a>.</li>
 </ul>
 
 
@@ -1594,7 +1584,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="November 24, 2026 09:48:04 UTC">2026-11-24 09:48:04</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="November 25, 2026 02:35:10 UTC">2026-11-25 02:35:10</span>
   </span>
 
     
