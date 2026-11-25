@@ -45,6 +45,19 @@ gates:
                 id: briefing:301s961pr7b2cnywnkz88jec:ideation:attempt-1:revision-1
                 digest: sha256:cb1eca5184d7bacf397ec2473b0caf78d11e238b2c52d76d3ce2a0cf7fd3381e
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:301s961pr7b2cnywnkz88jec:ideation:1
+                briefing: briefing:301s961pr7b2cnywnkz88jec:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-11-25T06:34:33.678138Z"
+                decision: approve
+                reason: |-
+                    Approve: CL approved the group A ideation design for briefing:301s961pr7b2cnywnkz88jec:ideation:attempt-1:revision-1 (sha256:cb1eca5184d7bacf397ec2473b0caf78d11e238b2c52d76d3ce2a0cf7fd3381e) with the words 'yes to all'; the line CL saw was 'The Ready Room pane depends on it.' The design's listed decisions apply with the first officer's recommendations.
+                    Via: MetaFO, relaying CL's answer of 2026-11-24 22:33 PT.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 A captain can decide a gate from a pane, a Spacedock Review page or another agent's message. The decision lands only on the Briefing content the captain read, the stored review is the text the captain read, and the record says how the decision arrived.
