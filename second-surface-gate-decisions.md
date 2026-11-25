@@ -8,7 +8,7 @@ started: 2026-11-25T01:34:10Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-second-surface-gate-decisions
 issue:
 pr:
 mod-block:
