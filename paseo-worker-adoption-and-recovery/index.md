@@ -10,7 +10,7 @@ score: 0.70
 sprint: paseo-backend
 worktree: .worktrees/spacedock-ensign-paseo-worker-adoption-and-recovery
 issue:
-pr:
+pr: pr-merge:895
 mod-block: merge:pr-merge
 sprint-readiness: ready
 gates:
@@ -118,6 +118,8 @@ gates:
               application:
                 target-stage: done
                 state: pending
+merge-commit: 67b35f4514e81269c1fffa7f22aa2ef7d52668fd
+merge-authority: captain via MetaFO (2026-11-24 ~21:00 PT)
 ---
 
 Reconcile Paseo worker state purely from the three pre-existing sources of truth — entity + `.spacedock-state` Git history, code worktree Git state, and Paseo daemon labels (`spacedock.worker`, `spacedock.epoch`) + `paseo inspect` — with zero sidecar/lease files and zero entity-markdown pollution, so a restarted or compacted first officer adopts a live worker instead of double-dispatching and handles wait timeouts, lost create receipts, dead workers, and duplicate completion events with deterministic single-retry-then-hold recovery isolated per entity.
