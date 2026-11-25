@@ -1,16 +1,16 @@
 ---
 id: kdpzm9pckwj4pm1djvaf01ce
 title: "Paseo stack Layer 3: dev build SHA in --version, collision-free immutable dispatch files, and --dispatch-dir"
-status: validation
+status: done
 source: "CL via MetaFO (2026-11-23, Studfleet VM dogfooding /tmp/paseo-frictions-studfleet-vm-2026-11-24.md)"
 started: 2026-11-24T06:53:43Z
-completed:
-verdict:
+completed: 2026-11-25T05:04:14Z
+verdict: PASSED
 score: 0.90
 worktree: .worktrees/spacedock-ensign-paseo-vm-dispatch-and-version-frictions
 issue:
 pr: pr-merge:899
-mod-block: merge:pr-merge
+mod-block:
 gates:
     version: 1
     records:
@@ -79,9 +79,10 @@ gates:
                     source: CL via MetaFO message to driver 846d9a2 (2026-11-23 22:47 PT)
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 merge-commit: b7ef2a885ed4cb4f07f7841b529331fac6f9ca72
 merge-authority: captain via MetaFO (2026-11-24 ~21:00 PT)
+archived: 2026-11-25T05:04:14Z
 ---
 
 Identify the running source build and preserve each dispatch assignment. Let first officers select a directory that their workers can read.
