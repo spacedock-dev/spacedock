@@ -23,6 +23,20 @@ gates:
                 id: briefing:301s961pr7b2cnywnkz88jec:backlog:attempt-1:revision-1
                 digest: sha256:52a3c58a278bc4f991b7cffcae827ada3f87f1b68dfcc51e81e09a86a3d605a7
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:301s961pr7b2cnywnkz88jec:backlog:1
+                briefing: briefing:301s961pr7b2cnywnkz88jec:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-11-25T01:33:48.095174Z"
+                decision: approve
+                reason: 'MetaFO decision for CL: approve the backlog seed for briefing:301s961pr7b2cnywnkz88jec:backlog:attempt-1:revision-1; dispatch ideation, whose design returns to CL at the ideation gate.'
+                conn:
+                    quote: 'MetaFO decides your backlog gate for the task "A gate that a second surface can read and decide safely", under the approval rule that CL gave MetaFO for a gate that only moves a task to its next stage: approve, for the briefing briefing:301s961pr7b2cnywnkz88jec:backlog:attempt-1:revision-1.'
+                    source: MetaFO message to the spacedock-v1 manager, 2026-11-24, under CL's approval rule for gates that only move a task to its next stage
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 A captain can decide a gate from a pane, a Spacedock Review page or another agent's message, and the decision lands on the briefing the captain read, with its full text and its origin recorded.
