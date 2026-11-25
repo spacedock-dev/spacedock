@@ -103,7 +103,7 @@ The board lists sessions from the ten supported agent tools when it can find the
 | **On track** | No departure found in what Compass read. |
 | **Slightly off course** | Some work wandered from the goal. |
 | **Off course** | The work no longer serves the goal. |
-| **Way off course** | The work has gone far from the goal. Only a **Live estimate** can show this level. A progress check you start shows at most **Off course**. |
+| **Way off course** | The work has gone far from the goal. Both **Live estimate** and **Live monitor** can show this level. A progress check you start shows at most **Off course**. |
 
 A saved progress check shows a level only while the evidence it used still matches. Lost history, an expired direction, a truncated transcript or a changed project key can remove the level. Checks saved before v3.0.0 need **Check progress again** before they can show a level.
 
