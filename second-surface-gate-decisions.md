@@ -4,7 +4,7 @@ title: A gate that a second surface can read and decide safely
 status: ideation
 source: "MetaFO friction list 2026-11-24, sent on the word of CL, /tmp/spacedock-frictions-2026-11-24.md, group A items 1-5"
 group: A-second-surface-gate
-started:
+started: 2026-11-25T01:34:10Z
 completed:
 verdict:
 score:
