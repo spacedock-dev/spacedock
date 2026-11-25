@@ -1,7 +1,7 @@
 ---
 id: 301s961pr7b2cnywnkz88jec
 title: A gate that a second surface can read and decide safely
-status: ideation
+status: implementation
 source: "MetaFO friction list 2026-11-24, sent on the word of CL, /tmp/spacedock-frictions-2026-11-24.md, group A items 1-5"
 group: A-second-surface-gate
 started: 2026-11-25T01:34:10Z
@@ -57,7 +57,7 @@ gates:
                     Via: MetaFO, relaying CL's answer of 2026-11-24 22:33 PT.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 A captain can decide a gate from a pane, a Spacedock Review page or another agent's message. The decision lands only on the Briefing content the captain read, the stored review is the text the captain read, and the record says how the decision arrived.
