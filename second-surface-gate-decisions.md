@@ -58,6 +58,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:301s961pr7b2cnywnkz88jec:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:301s961pr7b2cnywnkz88jec-validation-1
+              briefing:
+                id: briefing:301s961pr7b2cnywnkz88jec:validation:attempt-1:revision-1
+                digest: sha256:ba49a8c969508c24678feee886051383b98d0171cac1162e7713e25d22bac73d
+                room-ref: '@review/validation/briefing-1'
 ---
 
 A captain can decide a gate from a pane, a Spacedock Review page or another agent's message. The decision lands only on the Briefing content the captain read, the stored review is the text the captain read, and the record says how the decision arrived.

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:301s961pr7b2cnywnkz88jec:validation:attempt-1:revision-1",
+  "question": "Validation of the group A implementation (task branch 0482563e1, skill half on side branch 2913ce0b1): send back to implementation with a new size tolerance, as recommended?",
+  "artifacts": [
+    {
+      "id": "artifact:301s961pr7b2cnywnkz88jec:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/12c4c4cc323514e83a306791b41ad89ce9efb544/second-surface-gate-decisions.md",
+      "rev": "sha256:44488814d3ca041bacf5d8f5c07730c36bec3a2a80ff266e9141f95b7f865215",
+      "mediaType": "text/markdown",
+      "summary": "Validation recommends REJECTED on three narrow Material findings: gate read --current drops an active task under any _archive-named ancestor (confirmed); the live oracle is weaker than AC-5/AC-7 (substring match, id only, top-level command order); the side-branch skill test greps prose, which the proof policy bans. AC-1 to AC-4 proven (fail-before on b7ef2a885, pass-after, a falsifier each); old-binary checks for AC-2(c) and AC-6 proven; live AC-5 to AC-7 blocked (no login). Detached audit (/tmp/audit-second-surface-gate-decisions.md): 17 adversarial edits, 9 holes, 7 Material, overlapping. Size net +1158 across 18 files vs approved +520..+830; fo-gate-lifecycle byte-cap raise 7700-\u003e9100 on the side branch awaits CL; required Claude, Codex and Pi CI lanes not run (no push)."
+    }
+  ]
+}
