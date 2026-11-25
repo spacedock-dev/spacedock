@@ -3,7 +3,6 @@ package cli
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,7 +10,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -40,21 +38,26 @@ func TestBrewRepairSelectsOneStableExtensionEntry(t *testing.T) {
 	}
 }
 
-func TestBrewRepairRejectsAnExpandedOrUnknownPlan(t *testing.T) {
-	good := "==> Would upgrade 1 requested outdated package\nspacedock-dev/tap/compass 2.13.0 -> 3.0.1\n"
-	for _, tc := range []struct {
-		output string
-		ok     bool
-	}{
-		{good, true},
-		{good + "==> Would upgrade 1 dependent\nother 1.0.0 -> 1.0.1\n", false},
-		{good + "==> Installing 1 dependency\nother\n", false},
-		{"", false},
-		{strings.ReplaceAll(good, "3.0.1", "3.1.0"), false},
-	} {
-		if got := singleBrewUpgrade(tc.output, "spacedock-dev/tap/compass", "3.0.1"); got != tc.ok {
-			t.Errorf("accepted %q = %v, want %v", tc.output, got, tc.ok)
+func TestBrewRepairUsesNamedHomebrewOperations(t *testing.T) {
+	root := stageBrewRepair(t, "spacedock", "3.0.1", "3.0.1", "")
+	runBrewRepairFixture(t, root, 0)
+
+	calls, err := os.ReadFile(filepath.Join(root, "brew-calls"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var operations []string
+	for _, call := range strings.Split(strings.TrimSpace(string(calls)), "\n") {
+		name, _, _ := strings.Cut(call, " ")
+		switch name {
+		case "info", "--repo", "--cellar":
+			continue
 		}
+		operations = append(operations, call)
+	}
+	want := []string{"fetch --formula " + compassFormula, "upgrade --formula " + compassFormula}
+	if !slices.Equal(operations, want) {
+		t.Fatalf("Homebrew operations = %q, want %q", operations, want)
 	}
 }
 
@@ -66,9 +69,10 @@ func TestBrewRepairUpdate(t *testing.T) {
 		{"already mixed", "spacedock", "3.0.1", "3.0.1", "", "compass 3.0.1 verified", "brew", 0},
 		{"edge cask", "spacedock@next", "2.13.0", "2.13.0", "", "compass 3.0.1 verified", "brew\nclaude\ncodex", 0},
 		{"archive unavailable", "spacedock", "2.13.0", "2.13.0", "missing-archive", "Kept compass (program 2.13.0, Claude Code plugin 2.13.0, Codex plugin 2.13.0)", "", 1},
-		{"corrupt archive", "spacedock", "2.13.0", "2.13.0", "bad-archive", "failed its SHA-256 check", "", 1},
+		{"corrupt archive", "spacedock", "2.13.0", "2.13.0", "bad-archive", "checksum mismatch", "", 1},
 		{"stale host snapshot", "spacedock", "2.13.0", "2.13.0", "stale-codex", "Codex plugin 2.13.0). codex's spacedock snapshot cannot select compass 3.0.1", "", 1},
-		{"expanded Brew plan", "spacedock", "2.13.0", "2.13.0", "extra-upgrade", "did not preview only", "", 1},
+		{"formula adds a dependency", "spacedock", "2.13.0", "2.13.0", "dependency", "cannot scope spacedock-dev/tap/compass to one package", "", 1},
+		{"formula changes after fetch", "spacedock", "2.13.0", "2.13.0", "recipe-change", "does not match the prepared", "", 1},
 		{"host failure and retry", "spacedock", "2.13.0", "2.13.0", "fail-codex", "program 3.0.1, Claude Code plugin 3.0.1, Codex plugin 2.13.0). Codex:", "brew\nclaude", 1},
 		{"Brew failure after active link", "spacedock", "2.13.0", "2.13.0", "fail-brew", "program 3.0.1, Claude Code plugin 2.13.0, Codex plugin 2.13.0). brew upgrade", "brew", 1},
 		{"shadowed executable", "spacedock", "2.13.0", "2.13.0", "unlinked", "does not resolve to the linked", "", 1},
@@ -309,15 +313,8 @@ func stageBrewRepair(t *testing.T, cask, claude, codex, failure string) string {
 		writeFileWithDirs(t, filepath.Join(market, ".agents", "plugins", "marketplace.json"),
 			`{"name":"spacedock","plugins":[{"name":"compass","version":"2.13.0","source":"./compass"}]}`)
 	}
-	archive := "a synthetic Compass archive"
-	digest := fmt.Sprintf("%x", sha256.Sum256([]byte(archive)))
-	if failure == "bad-archive" {
-		archive += " (corrupted)"
-	}
-	mustWrite(t, filepath.Join(root, "archive"), archive)
-	recipe := strings.NewReplacer("{version}", "3.0.1", "{sha256}", digest).Replace(compassRecipeTemplate)
 	tap := filepath.Join(root, "tap")
-	writeFileWithDirs(t, filepath.Join(tap, "Formula", "compass.rb"), recipe)
+	writeFileWithDirs(t, filepath.Join(tap, "Formula", "compass.rb"), "# Fixture formula metadata comes from brew info.\n")
 	testgit.InitRepo(t, tap, "-q", "-b", "main")
 	for _, args := range [][]string{
 		{"add", "Formula/compass.rb"}, {"commit", "-qm", "formula"},
@@ -342,11 +339,14 @@ func stageBrewRepair(t *testing.T, cask, claude, codex, failure string) string {
 		"name": "compass", "tap": spacedockTap, "full_name": spacedockTap + "/compass",
 		"linked_keg": "KEG", "installed": []any{map[string]string{"version": "KEG"}},
 		"pinned": failure == "pinned", "outdated": true, "versions": map[string]string{"stable": "3.0.1"},
-		"ruby_source_path": "Formula/compass.rb", "ruby_source_checksum": map[string]string{"sha256": fmt.Sprintf("%x", sha256.Sum256([]byte(recipe)))},
-		"urls": map[string]any{"stable": map[string]string{"url": compassAsset("3.0.1", runtime.GOOS, runtime.GOARCH), "checksum": digest}},
+		"ruby_source_path": "Formula/compass.rb", "ruby_source_checksum": map[string]string{"sha256": "PREPARED-RECIPE"},
+		"urls": map[string]any{"stable": map[string]string{"checksum": strings.Repeat("a", 64)}},
 	}
 	for _, key := range []string{"dependencies", "build_dependencies", "test_dependencies", "recommended_dependencies", "optional_dependencies", "uses_from_macos", "requirements", "conflicts_with", "link_overwrite"} {
 		info[key] = []string{}
+	}
+	if failure == "dependency" {
+		info["dependencies"] = []string{"unrelated"}
 	}
 	data, err := json.Marshal(map[string]any{"formulae": []any{info}, "casks": []string{}})
 	if err != nil {
@@ -368,15 +368,18 @@ const brewRepairFixtureBrew = `#!/bin/sh
 set -eu
 test "$HOMEBREW_NO_AUTO_UPDATE/$HOMEBREW_NO_INSTALL_CLEANUP/$HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK" = 1/1/1
 cd "$FIXTURE"
+printf '%s\n' "$*" >> brew-calls
 case "$*" in
 '--repo spacedock-dev/tap') printf '%s/tap\n' "$PWD" ;;
 '--cellar spacedock-dev/tap/compass') printf '%s/Cellar/compass\n' "$PWD" ;;
 'info --json=v2 --formula spacedock-dev/tap/compass') sed "s/KEG/$(cat keg)/g" info ;;
-'fetch --formula spacedock-dev/tap/compass') test ! -f missing-archive || { echo 'archive unavailable' >&2; exit 1; } ;;
-'--cache --formula spacedock-dev/tap/compass') printf '%s/archive\n' "$PWD" ;;
-'upgrade --dry-run --formula spacedock-dev/tap/compass')
-	printf '==> Would upgrade 1 requested outdated package\nspacedock-dev/tap/compass 2.13.0 -> 3.0.1\n'
-	if test -f extra-upgrade; then printf '==> Would upgrade 1 dependent\nother 1.0.0 -> 1.0.1\n'; fi ;;
+'fetch --formula spacedock-dev/tap/compass')
+	test ! -f missing-archive || { echo 'archive unavailable' >&2; exit 1; }
+	test ! -f bad-archive || { echo 'checksum mismatch' >&2; exit 1; }
+	if test -f recipe-change; then
+		sed 's/PREPARED-RECIPE/DIFFERENT-RECIPE/' info > info.new
+		mv info.new info
+	fi ;;
 'upgrade --formula spacedock-dev/tap/compass')
 	test -f tap/.git/index.lock
 	echo brew >> changes

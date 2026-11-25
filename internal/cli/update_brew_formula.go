@@ -2,15 +2,11 @@ package cli
 
 import (
 	"bufio"
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
-	"runtime"
 	"strconv"
 	"strings"
 )
@@ -26,7 +22,7 @@ type brewFormulaInfo struct {
 	Installed []struct{ Version string }
 	Versions  struct{ Stable string }
 	URLs      struct {
-		Stable struct{ URL, Checksum string }
+		Stable struct{ Checksum string }
 	}
 	Bottle                                 map[string]json.RawMessage
 	Pinned, Disabled, Deprecated, Outdated bool
@@ -112,7 +108,7 @@ func unrevisionedKeg(version string) string {
 }
 
 type brewFormulaPlan struct {
-	tapDir, head, recipe, digest, asset, oldVersion, linked string
+	tapDir, head, recipeHash, archiveSHA, oldVersion, linked string
 }
 
 func (r brewRepair) prepareBrewFormula(ext extension, program, target string) (brewFormulaPlan, error) {
@@ -131,26 +127,6 @@ func (r brewRepair) prepareBrewFormula(ext extension, program, target string) (b
 	if err != nil {
 		return brewFormulaPlan{}, err
 	}
-	const recipe = "Formula/compass.rb"
-	data, err := r.git(tap, "show", current+":"+recipe)
-	if err != nil {
-		return brewFormulaPlan{}, err
-	}
-	localVersion, _, err := compassRecipe(data)
-	if err != nil {
-		return brewFormulaPlan{}, err
-	}
-	if localVersion != target {
-		current, data, err = r.advanceBrewTap(tap, branch, current, recipe, target)
-		if err != nil {
-			return brewFormulaPlan{}, err
-		}
-	}
-	_, assets, err := compassRecipe(data)
-	if err != nil {
-		return brewFormulaPlan{}, err
-	}
-	asset := assets[runtime.GOOS+"_"+runtime.GOARCH]
 	info, err := r.formulaInfo(ext.homebrewFormula)
 	if err != nil {
 		return brewFormulaPlan{}, err
@@ -159,15 +135,29 @@ func (r brewRepair) prepareBrewFormula(ext extension, program, target string) (b
 	if err != nil {
 		return brewFormulaPlan{}, err
 	}
-	plan := brewFormulaPlan{tap, current, recipe, fmt.Sprintf("%x", sha256.Sum256([]byte(data))), asset, oldVersion, info.LinkedKeg}
+	linked := info.LinkedKeg
+	if info.Versions.Stable != target {
+		if err := repairCanAdvance("the Homebrew Compass catalog", info.Versions.Stable, target); err != nil {
+			return brewFormulaPlan{}, err
+		}
+		current, err = r.advanceBrewTap(tap, branch, current)
+		if err != nil {
+			return brewFormulaPlan{}, err
+		}
+		info, err = r.formulaInfo(ext.homebrewFormula)
+		if err != nil {
+			return brewFormulaPlan{}, err
+		}
+	}
+	plan := brewFormulaPlan{
+		tapDir: tap, head: current, recipeHash: info.RecipeHash.SHA256,
+		archiveSHA: info.URLs.Stable.Checksum, oldVersion: oldVersion, linked: linked,
+	}
 	if err := plan.checkInfo(info, target); err != nil {
 		return brewFormulaPlan{}, err
 	}
 	if _, err := r.brew("fetch", "--formula", ext.homebrewFormula); err != nil {
 		return brewFormulaPlan{}, fmt.Errorf("could not fetch the %s %s archive: %w", ext.name, target, err)
-	}
-	if err := r.checkBrewAsset(ext.homebrewFormula, asset); err != nil {
-		return brewFormulaPlan{}, err
 	}
 	return plan, nil
 }
@@ -179,39 +169,14 @@ func (p brewFormulaPlan) checkInfo(info brewFormulaInfo, target string) error {
 	if info.Pinned || info.Disabled || info.Deprecated {
 		return fmt.Errorf("%s is pinned, disabled or deprecated in Homebrew. Check its formula before retrying", info.FullName)
 	}
-	if info.Versions.Stable != target || info.RecipePath != p.recipe || info.RecipeHash.SHA256 != p.digest ||
+	if info.Versions.Stable != target {
+		return fmt.Errorf("Homebrew offers %s %s. Retry after it offers %s", info.FullName, info.Versions.Stable, target)
+	}
+	if info.RecipePath != "Formula/compass.rb" ||
+		p.recipeHash == "" || info.RecipeHash.SHA256 != p.recipeHash ||
 		info.LinkedKeg != p.linked || !info.Outdated || len(info.Bottle) != 0 ||
-		p.asset == "" || info.URLs.Stable.Checksum != p.asset ||
-		info.URLs.Stable.URL != compassAsset(target, runtime.GOOS, runtime.GOARCH) {
-		return fmt.Errorf("Homebrew's selected formula or archive does not match the reviewed %s %s upgrade", info.FullName, target)
-	}
-	return nil
-}
-
-func (r brewRepair) checkBrewAsset(formula, expected string) error {
-	cache, err := r.brew("--cache", "--formula", formula)
-	if err != nil {
-		return err
-	}
-	cache = strings.TrimSpace(cache)
-	if !filepath.IsAbs(cache) || strings.Contains(cache, "\n") {
-		return fmt.Errorf("Homebrew did not report one archive for %s", formula)
-	}
-	f, err := os.Open(cache)
-	if err != nil {
-		return fmt.Errorf("could not read the prefetched %s archive: %w", formula, err)
-	}
-	defer f.Close()
-	info, err := f.Stat()
-	if err != nil || !info.Mode().IsRegular() {
-		return fmt.Errorf("Homebrew did not fetch a regular archive for %s", formula)
-	}
-	hash := sha256.New()
-	if _, err := io.Copy(hash, f); err != nil {
-		return err
-	}
-	if fmt.Sprintf("%x", hash.Sum(nil)) != expected {
-		return fmt.Errorf("the prefetched %s archive failed its SHA-256 check", formula)
+		p.archiveSHA == "" || info.URLs.Stable.Checksum != p.archiveSHA {
+		return fmt.Errorf("Homebrew's selected formula or archive does not match the prepared %s %s upgrade", info.FullName, target)
 	}
 	return nil
 }
@@ -225,6 +190,7 @@ func (r brewRepair) applyBrewFormula(ext extension, program, target string, plan
 	if !filepath.IsAbs(lock) {
 		return fmt.Errorf("could not locate the tap index to protect the reviewed formula")
 	}
+	// Keep Git from switching the tap before Homebrew loads the checked recipe.
 	unlock, err := holdTapIndex(lock)
 	if err != nil {
 		return fmt.Errorf("could not lock the tap against another Git update: %w", err)
@@ -232,8 +198,7 @@ func (r brewRepair) applyBrewFormula(ext extension, program, target string, plan
 	defer unlock()
 
 	head, _, err := r.cleanBrewTap(plan.tapDir)
-	data, readErr := os.ReadFile(filepath.Join(plan.tapDir, plan.recipe))
-	if err != nil || readErr != nil || head != plan.head || fmt.Sprintf("%x", sha256.Sum256(data)) != plan.digest {
+	if err != nil || head != plan.head {
 		return fmt.Errorf("the tap or formula changed after preflight. Finish the tap update first")
 	}
 	info, err := r.formulaInfo(ext.homebrewFormula)
@@ -245,20 +210,6 @@ func (r brewRepair) applyBrewFormula(ext extension, program, target string, plan
 	}
 	if version, err := r.ownedBrewProgram(ext, info, program); err != nil || version != plan.oldVersion {
 		return fmt.Errorf("the active %s program changed after preflight", ext.name)
-	}
-	output, err := r.brew("upgrade", "--dry-run", "--formula", ext.homebrewFormula)
-	if err != nil {
-		return err
-	}
-	if !singleBrewUpgrade(output, ext.homebrewFormula, target) {
-		return fmt.Errorf("Homebrew did not preview only the %s upgrade to %s", ext.homebrewFormula, target)
-	}
-	if err := r.checkBrewAsset(ext.homebrewFormula, plan.asset); err != nil {
-		return err
-	}
-	data, err = os.ReadFile(filepath.Join(plan.tapDir, plan.recipe))
-	if err != nil || fmt.Sprintf("%x", sha256.Sum256(data)) != plan.digest {
-		return fmt.Errorf("the tap recipe changed while checking the upgrade")
 	}
 	if _, err := r.brew("upgrade", "--formula", ext.homebrewFormula); err != nil {
 		return err
@@ -310,20 +261,4 @@ printf 'locked\n'
 		return nil, fmt.Errorf("the Git index is busy or the tap is unwritable")
 	}
 	return unlock, nil
-}
-
-var brewPlanItem = regexp.MustCompile(`^([a-zA-Z0-9_./@+-]+)\s+([^ ]+)\s+->\s+([^ ]+)$`)
-
-func singleBrewUpgrade(output, formula, target string) bool {
-	lines := strings.Split(strings.TrimSpace(output), "\n")
-	if len(lines) != 2 {
-		return false
-	}
-	header := strings.TrimSpace(lines[0])
-	if header != "==> Would upgrade 1 requested outdated package" && header != "==> Would upgrade 1 outdated package:" &&
-		header != "==> Would upgrade 1 outdated formula:" {
-		return false
-	}
-	item := brewPlanItem.FindStringSubmatch(strings.TrimSpace(lines[1]))
-	return len(item) == 4 && (item[1] == formula || item[1] == filepath.Base(formula)) && unrevisionedKeg(item[3]) == target
 }

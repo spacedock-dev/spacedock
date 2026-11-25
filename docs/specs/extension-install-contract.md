@@ -296,12 +296,13 @@ command when its program is missing. The intentional program opt-outs still appl
 Both channels select extension releases from the stable `spacedock` marketplace.
 For an installed, linked Compass program with eligible plugins, update checks
 their installed versions and what each manager can select before changing the
-installation. It can fetch the Compass archive and upgrade the Compass formula
-alone after it verifies the recipe, payload checksum, and Homebrew's upgrade
-plan. If the official tap is stale, update can fast-forward its clean tracked
-default branch. A host that cannot select the matching release or safely
-preserve its settings can hold the Compass repair. A Compass plugin already
-at the target is skipped.
+installation. If the catalog is behind the target, update can fast-forward the
+clean tracked default branch of the official Spacedock tap. This refresh
+touches only that tap. Homebrew fetches and verifies the Compass archive.
+After a final version, dependency and link check, update asks Homebrew to
+upgrade only `spacedock-dev/tap/compass` with automatic refreshes disabled.
+A host that cannot select the matching release or safely preserve its settings
+can hold the Compass repair. A Compass plugin already at the target is skipped.
 
 On eligible hosts, update refreshes the enabled Spacedock plugin from its
 configured source, including when a Git branch advances under the same
