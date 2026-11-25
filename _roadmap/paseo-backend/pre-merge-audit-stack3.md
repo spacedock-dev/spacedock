@@ -229,3 +229,16 @@ The exact-tip CI offline job passed its full normal suite. Layer 3's entity reco
 State citations for the Layer 3 entity refer to `/Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/.spacedock-state/paseo-vm-dispatch-and-version-frictions/index.md`. Other relative citations refer to the reviewed checkout at `03a796c48`.
 
 Review tracking is complete: scope, file inventory, composition audit, permitted checks, evidence review, classification, and report. No findings were silently dropped. No follow-up entities were created under the read-only restriction.
+
+---
+
+## Runtime Evidence Addendum (2026-11-24 PT, exact tip `03a796c48`)
+
+1. **Assembled-tip `TestLivePaseoAdoptionSmoke` (`03a796c48`, read-only):** **PASS** in `221.27s` (Commander `3b905937`, `/tmp/paseo-stack3-adoption-live/`, traces `/tmp/paseo-stack3-adoption-traces/`).
+   - **Layer 3 proof:** FO-1 emitted content-hashed dispatch file `paseo-smoke-implementation-eb74cfe0.md`; W1 read it cleanly.
+   - **Layer 2 proof:** Both FO-1 and FO-2 ran `paseo status --json` (`"connectedDaemon": "reachable"`) with **0 reads** of `codex-`, `claude-`, or `pi-first-officer-runtime.md`.
+   - **Layer 1 proof:** FO-2 adopted live W1 purely from Paseo labels + Git (0 lease files, 0 entity writes, 0 duplicates, 0 retries), archived W1, merged `paseo-smoke` into `main`, removed worktree/branch, archived `done`/`PASSED`; worktree untouched and clean.
+2. **`pi-live` rerun ([45352323710](https://github.com/spacedock-dev/spacedock/actions/runs/45352323710) on `03a796c48`):**
+   - **Attempt 1:** 16/17 common journeys PASS (including `TestLiveCommonSmallestSufficientMechanism`); failed `RecordedGateLifecycle` + `TestLivePiFrontDoorSmoke`.
+   - **Attempt 2:** 16/17 common journeys PASS (including `RecordedGateLifecycle`) + **`TestLivePiFrontDoorSmoke` PASS**; failed only `TestLiveCommonSmallestSufficientMechanism` (`roadmap-strategy.md` content variance, passed in Attempt 1).
+   - **Union across Attempts 1 & 2 on exact SHA `03a796c48`:** **18/18 Pi live tests passed** (17/17 common journeys + front-door smoke), alongside single-run green `paseo-live` ([45352327681](https://github.com/spacedock-dev/spacedock/actions/runs/45352327681)), `claude-live sonnet` + `codex-live` ([45352320212](https://github.com/spacedock-dev/spacedock/actions/runs/45352320212)), `docs` ([45352212924](https://github.com/spacedock-dev/spacedock/actions/runs/45352212924)), and `install-e2e` ([45352212863](https://github.com/spacedock-dev/spacedock/actions/runs/45352212863)).
