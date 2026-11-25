@@ -37,6 +37,14 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:301s961pr7b2cnywnkz88jec:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:301s961pr7b2cnywnkz88jec-ideation-1
+              briefing:
+                id: briefing:301s961pr7b2cnywnkz88jec:ideation:attempt-1:revision-1
+                digest: sha256:cb1eca5184d7bacf397ec2473b0caf78d11e238b2c52d76d3ce2a0cf7fd3381e
+                room-ref: '@review/ideation/briefing-1'
 ---
 
 A captain can decide a gate from a pane, a Spacedock Review page or another agent's message. The decision lands only on the Briefing content the captain read, the stored review is the text the captain read, and the record says how the decision arrived.

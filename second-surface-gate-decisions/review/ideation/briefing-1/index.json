@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:301s961pr7b2cnywnkz88jec:ideation:attempt-1:revision-1",
+  "question": "Approve the group A design: gate record binds each decision to the Briefing id and digest it answers, gate read --current returns the verified review, the first officer stores and presents the full review from the room, relayed origin goes in a Via: line of the reason, with a matched skill/binary rollout?",
+  "artifacts": [
+    {
+      "id": "artifact:301s961pr7b2cnywnkz88jec:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/4bb60891f65541e0d139c28bd43365fff9b0614d/second-surface-gate-decisions.md",
+      "rev": "sha256:dc151879e5f8560923f4a7686caae9ab03dc84268bca1383fc1f18c2bfab7b91",
+      "mediaType": "text/markdown",
+      "summary": "Cycle 2 after an independent staff review (6 Material). Spike on origin/main: a missing room or a legacy binding lets re-prepare keep the id with new content, and a late approval consumes it; an id+digest prototype refuses it with no write. No stored-format change; gate read --json unchanged; new --current mode. +675 net across 19 files; AC-1..AC-7; Claude, Codex and Pi lanes required."
+    }
+  ]
+}
