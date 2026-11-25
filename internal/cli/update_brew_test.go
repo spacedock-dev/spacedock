@@ -180,7 +180,7 @@ func TestBrewRepairUpdatesSubspaceHostsIndependentlyOfPi(t *testing.T) {
 			}
 			t.Setenv("SPACEDOCK_EXTENSION_MARKETPLACE_SOURCE", filepath.Join(root, "market"))
 			mustWrite(t, filepath.Join(root, "market", ".claude-plugin", "marketplace.json"),
-				fmt.Sprintf(`{"name":"spacedock","plugins":[{"name":"subspace","version":"1.1.0","source":{"source":"url","url":"https://github.com/example-fixture/subspace.git","ref":%q}}]}`, ref))
+				fmt.Sprintf(`{"name":"spacedock","plugins":[{"name":"subspace","version":"1.1.0","source":{"source":"url","url":"https://github.com/example-fixture/subspace.git","ref":%q}},{"name":"unrelated","source":"./unrelated"}]}`, ref))
 			t.Setenv("PI_CODING_AGENT_DIR", root)
 			mustWrite(t, filepath.Join(root, "settings.json"),
 				`{"packages":["git:github.com/spacedock-dev/spacedock@stable","git:github.com/example-fixture/subspace@stable","git:github.com/example-fixture/unrelated@keep"]}`)
