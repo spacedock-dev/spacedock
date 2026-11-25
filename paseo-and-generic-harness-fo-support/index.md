@@ -9,7 +9,7 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-paseo-and-generic-harness-fo-support
 issue:
-pr: "#897"
+pr: pr-merge:897
 mod-block: merge:pr-merge
 gates:
     version: 1
@@ -71,6 +71,8 @@ gates:
               application:
                 target-stage: done
                 state: pending
+merge-commit: 1e1a17f4094fe28ff5a418f9457a07f6f7646019
+merge-authority: captain via MetaFO (2026-11-24 ~21:00 PT)
 ---
 
 Make any Paseo-hosted first officer boot and run cleanly regardless of inner harness (fixing `F4` and Paseo-vs-native dispatch selection), eliminate unnecessary or contradictory operating-contract loads on the Paseo FO & ensign path while preserving the 23,500-byte shared-core cap, and give unsupported harnesses clear fallback guidance to map Spacedock's worker capabilities onto their own Claude/Codex-like native features.
