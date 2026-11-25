@@ -12,6 +12,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 func TestBrewRepairSelectsOneStableExtensionEntry(t *testing.T) {
@@ -66,7 +68,7 @@ func TestBrewRepairUpdate(t *testing.T) {
 		{"expanded Brew plan", "spacedock", "2.13.0", "2.13.0", "extra-upgrade", "did not preview only", "", 1},
 		{"host failure and retry", "spacedock", "2.13.0", "2.13.0", "fail-codex", "program 3.0.1, Claude Code plugin 3.0.1, Codex plugin 2.13.0). Codex:", "brew\nclaude", 1},
 		{"Brew failure after active link", "spacedock", "2.13.0", "2.13.0", "fail-brew", "program 3.0.1, Claude Code plugin 2.13.0, Codex plugin 2.13.0). brew upgrade", "brew", 1},
-		{"unlinked active keg", "spacedock", "2.13.0", "2.13.0", "unlinked", "does not resolve to the linked", "", 1},
+		{"shadowed executable", "spacedock", "2.13.0", "2.13.0", "unlinked", "does not resolve to the linked", "", 1},
 		{"tap already locked", "spacedock", "2.13.0", "2.13.0", "tap-busy", "could not lock the tap", "", 1},
 		{"pinned formula", "spacedock", "2.13.0", "2.13.0", "pinned", "pinned, disabled or deprecated", "", 1},
 	} {
@@ -215,9 +217,9 @@ func stageBrewRepair(t *testing.T, cask, claude, codex, failure string) string {
 	recipe := strings.NewReplacer("{version}", "3.0.1", "{sha256}", digest).Replace(compassRecipeTemplate)
 	tap := filepath.Join(root, "tap")
 	writeFileWithDirs(t, filepath.Join(tap, "Formula", "compass.rb"), recipe)
+	testgit.InitRepo(t, tap, "-q", "-b", "main")
 	for _, args := range [][]string{
-		{"init", "-q", "-b", "main"}, {"add", "Formula/compass.rb"},
-		{"-c", "user.name=fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", "formula"},
+		{"add", "Formula/compass.rb"}, {"commit", "-qm", "formula"},
 		{"remote", "add", "origin", spacedockTapRemote}, {"update-ref", "refs/remotes/origin/main", "HEAD"},
 		{"symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main"}, {"branch", "--set-upstream-to=origin/main"},
 	} {
