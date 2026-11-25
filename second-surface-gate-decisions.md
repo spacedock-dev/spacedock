@@ -12,6 +12,17 @@ worktree:
 issue:
 pr:
 mod-block:
+gates:
+    version: 1
+    records:
+        - id: gate:301s961pr7b2cnywnkz88jec:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:301s961pr7b2cnywnkz88jec-backlog-1
+              briefing:
+                id: briefing:301s961pr7b2cnywnkz88jec:backlog:attempt-1:revision-1
+                digest: sha256:52a3c58a278bc4f991b7cffcae827ada3f87f1b68dfcc51e81e09a86a3d605a7
+                room-ref: '@review/backlog/briefing-1'
 ---
 
 A captain can decide a gate from a pane, a Spacedock Review page or another agent's message, and the decision lands on the briefing the captain read, with its full text and its origin recorded.

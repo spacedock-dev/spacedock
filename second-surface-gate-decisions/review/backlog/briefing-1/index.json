@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:301s961pr7b2cnywnkz88jec:backlog:attempt-1:revision-1",
+  "question": "Start ideation on a gate that a second surface can read and decide safely (group A items 1-5)?",
+  "artifacts": [
+    {
+      "id": "artifact:301s961pr7b2cnywnkz88jec:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/239f3ea90faf38a8b6ffadf1ca874804e239a6db/second-surface-gate-decisions.md",
+      "rev": "sha256:0db116e95c2e834fbdb12cc6bc935de02b2151be9ef4bf243e74c72d095ac1bb",
+      "mediaType": "text/markdown",
+      "summary": "Group A of the 2026-11-24 friction list, checked against origin/main a85a26a35. A chat decision binds to whatever attempt is current (no expected briefing id or digest); gate read --json returns only the gates block (no entity path and status, attempt states, current attempt, room); the rendered gate review is not stored with the gate (--summary has no length limit, but nothing holds the presentation); a captain Resolution has no origin field; a gate presentation can miss the captain's chat when another agent starts the turn. Ideation designs one change set and brings it to CL at the ideation gate."
+    }
+  ]
+}
