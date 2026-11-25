@@ -71,7 +71,7 @@
         "headline": "Command reference",
         "description": "Your agents are waiting on you. Spacedock brings you the calls that need you, keeps your agents on the goal, and lets you decide in one place.",
         "url": "https://spacedock.md/docs/reference/command-reference/",
-        "dateModified": "2026-11-25 05:02:06",
+        "dateModified": "2026-11-25 05:02:58",
         "isPartOf": { "@type": "WebSite", "name": "Spacedock", "url": "https://spacedock.md/docs/" }
       },
       {
@@ -1559,7 +1559,9 @@
 <h1 id="command-reference">Command reference<a class="headerlink" href="#command-reference" title="Permanent link">&para;</a></h1>
 <p>Run <code>spacedock &lt;command&gt; --help</code> for the full options. Run <code>spacedock</code> for the command list.</p>
 <h2 id="version">Version<a class="headerlink" href="#version" title="Permanent link">&para;</a></h2>
-<p><code>spacedock --version</code> reports the version, platform and release channel. Inside an agent session, it also reports the runtime and sandbox.</p>
+<p><code>spacedock --version</code> reports the version, platform, and release channel. Inside a supported or Paseo-hosted agent session, it also reports the runtime, sandbox, and contract level.</p>
+<p>An unstamped source build includes a seven-character commit ID when Go provides VCS information: <code>0.29.0-pre0+dev.5210d36</code>.
+A modified checkout adds <code>.dirty</code>. Without VCS information, the version ends in <code>+dev</code>. Linker-stamped versions stay unchanged.</p>
 <h2 id="launch">Launch<a class="headerlink" href="#launch" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1659,6 +1661,10 @@ A slow or failed check stays silent and does not hold up the launch.</p>
 </tr>
 </tbody>
 </table>
+<p><code>spacedock dispatch build --dispatch-dir DIR</code> selects the assignment directory. The flag takes precedence over <code>SPACEDOCK_DISPATCH_DIR</code>.
+The default is <code>/tmp/spacedock-dispatch</code>. Relative paths resolve from the current directory. Empty or invalid values cause an error.
+Assignment filenames include an eight-character content hash. Equal assignments reuse the file. Conflicting content causes an error without replacement.
+If workers use a private <code>/tmp</code>, select a directory that both processes can read.</p>
 <p><code>spacedock gate read &lt;ref-or-path&gt; --json</code> returns the stored <code>gates</code> object, including every attempt and its application state.
 References and paths use the same resolution as <code>status --read</code>, including archived entities. The command changes no files.
 Records and attempts retain their stored order. Scalar values retain their stored values.
@@ -1689,7 +1695,7 @@ spacedock gate read archive:finished-task --json --workflow-dir docs/dev</code><
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="November 25, 2026 05:02:06 UTC">2026-11-25 05:02:06</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="November 25, 2026 05:02:58 UTC">2026-11-25 05:02:58</span>
   </span>
 
     

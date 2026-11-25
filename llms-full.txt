@@ -811,7 +811,9 @@ Run `spacedock <command> --help` for the full options. Run `spacedock` for the c
 
 ## Version
 
-`spacedock --version` reports the version, platform and release channel. Inside an agent session, it also reports the runtime and sandbox.
+`spacedock --version` reports the version, platform, and release channel. Inside a supported or Paseo-hosted agent session, it also reports the runtime, sandbox, and contract level.
+
+An unstamped source build includes a seven-character commit ID when Go provides VCS information: `0.29.0-pre0+dev.5210d36`. A modified checkout adds `.dirty`. Without VCS information, the version ends in `+dev`. Linker-stamped versions stay unchanged.
 
 ## Launch
 
@@ -860,6 +862,8 @@ Your agent uses these commands to operate the workflow.
 | `spacedock merge guard` | Complete delivery and record the outcome                |
 | `spacedock state`       | Manage the workflow state checkout                      |
 | `spacedock completion`  | Generate shell completions                              |
+
+`spacedock dispatch build --dispatch-dir DIR` selects the assignment directory. The flag takes precedence over `SPACEDOCK_DISPATCH_DIR`. The default is `/tmp/spacedock-dispatch`. Relative paths resolve from the current directory. Empty or invalid values cause an error. Assignment filenames include an eight-character content hash. Equal assignments reuse the file. Conflicting content causes an error without replacement. If workers use a private `/tmp`, select a directory that both processes can read.
 
 `spacedock gate read <ref-or-path> --json` returns the stored `gates` object, including every attempt and its application state. References and paths use the same resolution as `status --read`, including archived entities. The command changes no files. Records and attempts retain their stored order. Scalar values retain their stored values. An entity without gate history returns `{"records":[],"version":1}`. Invalid gate data exits nonzero without JSON output.
 
