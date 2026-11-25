@@ -1,7 +1,7 @@
 ---
 id: 301s961pr7b2cnywnkz88jec
 title: A gate that a second surface can read and decide safely
-status: backlog
+status: ideation
 source: "MetaFO friction list 2026-11-24, sent on the word of CL, /tmp/spacedock-frictions-2026-11-24.md, group A items 1-5"
 group: A-second-surface-gate
 started:
@@ -36,7 +36,7 @@ gates:
                     source: MetaFO message to the spacedock-v1 manager, 2026-11-24, under CL's approval rule for gates that only move a task to its next stage
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 A captain can decide a gate from a pane, a Spacedock Review page or another agent's message, and the decision lands on the briefing the captain read, with its full text and its origin recorded.
