@@ -98,14 +98,22 @@ func (r brewRepair) marketplaceByName(host, name string) (repairMarketplace, err
 	return selected, nil
 }
 
-func (m repairMarketplace) readListing(host string) ([]byte, error) {
+func marketplaceListingPaths(host string) []string {
+	const fallback = ".claude-plugin/marketplace.json"
 	if host == "codex" {
-		data, err := readRepairFile(m.Root, ".agents/plugins/marketplace.json")
+		return []string{".agents/plugins/marketplace.json", fallback}
+	}
+	return []string{fallback}
+}
+
+func (m repairMarketplace) readListing(host string) ([]byte, error) {
+	for _, file := range marketplaceListingPaths(host) {
+		data, err := readRepairFile(m.Root, file)
 		if !errors.Is(err, os.ErrNotExist) {
 			return data, err
 		}
 	}
-	return readRepairFile(m.Root, ".claude-plugin/marketplace.json")
+	return nil, os.ErrNotExist
 }
 
 func (m repairMarketplace) matches(source string) bool {
@@ -260,6 +268,11 @@ func (r brewRepair) refreshExtensionPlugin(host, name string) error {
 	}
 	if piece.Installed && (host == "claude" && piece.Scope != "user" || host == "codex" && !piece.Enabled) {
 		return nil
+	}
+	if name == "subspace" && piece.Installed {
+		if handled, err := r.refreshRegisteredSubspace(host, piece); handled {
+			return err
+		}
 	}
 	return r.changeHostPiece(host, id, piece)
 }

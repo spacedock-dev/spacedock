@@ -307,7 +307,10 @@ On eligible hosts, update refreshes the enabled Spacedock plugin from its
 configured source, including when a Git branch advances under the same
 marketplace entry. It refreshes the plugins of an installed Subspace program
 separately and checks their reported versions against the program. Homebrew
-still owns Subspace program upgrades. The Pi package follows its own listing
+still owns Subspace program upgrades. When a matching Git registration caches
+an older Subspace release tag, update can fast-forward its clean managed
+catalog to the published listing before updating the named plugin. Other
+installed plugins keep their versions. The Pi package follows its own listing
 ref without gating the Claude Code or Codex updates. A version-tagged Pi
 package is compared with the program and a branch registration is reported
 as described under [Plugins](#plugins). All these host operations select one

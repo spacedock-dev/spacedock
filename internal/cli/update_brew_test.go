@@ -411,14 +411,26 @@ case "$*" in
 	fi ;;
 'plugin marketplace list --json')
 	case "$host" in
-	claude) printf '[{"name":"spacedock","source":"directory","installLocation":"%s"}]\n' "$market" ;;
+	claude)
+		if test -f claude-registered; then
+			printf '[{"name":"spacedock","source":"github","repo":"example-fixture/market","installLocation":"%s"}]\n' "$(cat claude-registered)"
+		else
+			printf '[{"name":"spacedock","source":"directory","installLocation":"%s"}]\n' "$market"
+		fi ;;
 	codex)
-		printf '{"marketplaces":[{"name":"spacedock","root":"%s","marketplaceSource":{"sourceType":"local","source":"%s"}}]}\n' "$market" "$market" ;;
+		if test -f codex-registered; then
+			printf '{"marketplaces":[{"name":"spacedock","root":"%s","marketplaceSource":{"sourceType":"git","source":"https://github.com/example-fixture/market.git"}}]}\n' "$(cat codex-registered)"
+		else
+			printf '{"marketplaces":[{"name":"spacedock","root":"%s","marketplaceSource":{"sourceType":"local","source":"%s"}}]}\n' "$market" "$market"
+		fi ;;
 	esac ;;
 'plugin update spacedock@spacedock --scope user'|'plugin add spacedock@spacedock')
 	echo "$host core" >> changes
 	cp core-release "$host-core" ;;
 'plugin update subspace@spacedock --scope user'|'plugin add subspace@spacedock')
+	if test -f "$host-registered"; then
+		grep -q '"ref":"v1.1.0"' "$(cat "$host-registered")/.claude-plugin/marketplace.json" || exit 0
+	fi
 	echo "$host subspace" >> changes
 	printf 1.1.0 > "$host-subspace" ;;
 'plugin update compass@spacedock --scope user'|'plugin add compass@spacedock')
