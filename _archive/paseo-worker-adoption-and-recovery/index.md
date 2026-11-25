@@ -1,17 +1,17 @@
 ---
 id: x9mfvnkqtbwgm4tba7dy41tw
 title: Paseo worker record, FO restart adoption, and dispatch recovery
-status: validation
+status: done
 source: captain (2026-11-21)
 started: 2026-11-22T17:09:25Z
-completed:
-verdict:
+completed: 2026-11-25T05:03:59Z
+verdict: PASSED
 score: 0.70
 sprint: paseo-backend
 worktree: .worktrees/spacedock-ensign-paseo-worker-adoption-and-recovery
 issue:
 pr: pr-merge:895
-mod-block: merge:pr-merge
+mod-block:
 sprint-readiness: ready
 gates:
     version: 1
@@ -117,9 +117,10 @@ gates:
                 reason: 'Captain directive: Approve both for pr stack and tip ci'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 merge-commit: 67b35f4514e81269c1fffa7f22aa2ef7d52668fd
 merge-authority: captain via MetaFO (2026-11-24 ~21:00 PT)
+archived: 2026-11-25T05:04:00Z
 ---
 
 Reconcile Paseo worker state purely from the three pre-existing sources of truth — entity + `.spacedock-state` Git history, code worktree Git state, and Paseo daemon labels (`spacedock.worker`, `spacedock.epoch`) + `paseo inspect` — with zero sidecar/lease files and zero entity-markdown pollution, so a restarted or compacted first officer adopts a live worker instead of double-dispatching and handles wait timeouts, lost create receipts, dead workers, and duplicate completion events with deterministic single-retry-then-hold recovery isolated per entity.
