@@ -92,12 +92,11 @@ type brewExtensionPlan struct {
 	program   string
 	entry     repairEntry
 	hosts     []brewHostPiece
-	pi        *brewPiPiece
 	formula   *brewFormulaPlan
 	preflight error
 }
 
-func (r brewRepair) planExtensions(before versionReport, pi *piUpdate) (string, []brewExtensionPlan) {
+func (r brewRepair) planExtensions(before versionReport) (string, []brewExtensionPlan) {
 	source := r.releaseSource()
 	if info, err := os.Stat(source); err == nil && info.IsDir() {
 		source, _ = filepath.Abs(source)
@@ -107,7 +106,7 @@ func (r brewRepair) planExtensions(before versionReport, pi *piUpdate) (string, 
 	listingRead := false
 	var plans []brewExtensionPlan
 	for _, ext := range extensions {
-		if ext.homebrewFormula == "" {
+		if ext.homebrewFormula != compassFormula {
 			continue
 		}
 		p := brewExtensionPlan{ext: ext}
@@ -130,11 +129,7 @@ func (r brewRepair) planExtensions(before versionReport, pi *piUpdate) (string, 
 			}
 			p.hosts = append(p.hosts, brewHostPiece{host: host.name, title: host.title, before: piece})
 		}
-		if ext.piTitle != "" && pi.refresh {
-			p.pi = &brewPiPiece{agentDir: pi.agentDir, home: pi.home, name: ext.name}
-			p.pi.before = p.pi.version()
-		}
-		if len(p.hosts) == 0 && p.pi == nil {
+		if len(p.hosts) == 0 {
 			continue
 		}
 		if p.preflight == nil {
@@ -191,11 +186,6 @@ func (r brewRepair) prepareExtension(p *brewExtensionPlan, listing []byte, listi
 			return err
 		}
 	}
-	if p.pi != nil {
-		if err := p.pi.prepare(r, p.entry); err != nil {
-			return err
-		}
-	}
 	if p.program == target {
 		info, err := r.formulaInfo(p.ext.homebrewFormula)
 		if err != nil {
@@ -234,7 +224,7 @@ func repairCanAdvance(piece, installed, target string) error {
 	return nil
 }
 
-func (r brewRepair) applyExtension(p brewExtensionPlan, source string, piOps piRuntimeOps, progress *updateProgress) error {
+func (r brewRepair) applyExtension(p brewExtensionPlan, source string, progress *updateProgress) error {
 	if p.preflight != nil {
 		return p.preflight
 	}
@@ -276,12 +266,7 @@ func (r brewRepair) applyExtension(p brewExtensionPlan, source string, piOps piR
 			return fmt.Errorf("%s: %w", h.title, err)
 		}
 	}
-	if p.pi != nil && p.pi.pending {
-		end := progress.step("Repairing the " + p.ext.name + " package on Pi")
-		err := p.pi.apply(r, p.entry, piOps)
-		end()
-		return err
-	}
+
 	return nil
 }
 
@@ -298,12 +283,7 @@ func (r brewRepair) reportExtension(p brewExtensionPlan, stepErr error, stdout, 
 			(!h.before.Installed || h.before.Scope == piece.Scope && h.before.Enabled == piece.Enabled)
 		kept = kept && got == version && h.before.Version == got
 	}
-	if p.pi != nil {
-		got := p.pi.version()
-		pieces = append(pieces, "Pi package "+got)
-		matched = matched && got == p.entry.Version
-		kept = kept && got == version && got == p.pi.before
-	}
+
 	if stepErr == nil && matched {
 		info, err := r.formulaInfo(p.ext.homebrewFormula)
 		if err == nil {

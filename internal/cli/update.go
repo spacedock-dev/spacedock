@@ -134,12 +134,20 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 		pi = planPiUpdate(inputs)
 		endPi()
 		endPlan := progress.step("Checking release sources for Homebrew extension repairs")
-		source, plans := repair.planExtensions(before, pi)
+		source, plans := repair.planExtensions(before)
 		endPlan()
 		brewPlans = plans
 		for _, plan := range brewPlans {
 			handled[plan.ext.name] = true
-			brewErrors = append(brewErrors, repair.applyExtension(plan, source, d.piOps, progress))
+			brewErrors = append(brewErrors, repair.applyExtension(plan, source, progress))
+		}
+	}
+	var independentExtensions []extension
+	if brew {
+		for _, ext := range extensions {
+			if ext.homebrewFormula != "" && ext.homebrewFormula != compassFormula && before.version(ext.name+" program") != notInstalled {
+				independentExtensions = append(independentExtensions, ext)
+			}
 		}
 	}
 	addRefused := map[string]bool{}
@@ -159,6 +167,9 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 		endRefresh := progress.step("Refreshing " + h.title + " plugins")
 		if brew {
 			h.err = repair.refreshCorePlugin(h.name)
+			for _, ext := range independentExtensions {
+				h.err = errors.Join(h.err, repair.refreshExtensionPlugin(h.name, ext.name))
+			}
 		} else if d.runSelf == nil {
 			out, h.err = d.host.Install(h.name, channelMarketplaceSource(devBranch), devBranch)
 		} else {
@@ -183,6 +194,9 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 		if brew {
 			d.piOps.PiRemove(piSpacedockPackageSource)
 			out, pi.err = d.piOps.PiInstall(piSpacedockPackagePin(devBranch))
+			if pi.err == nil {
+				installPiExtensions(d.piOps, pi.agentDir, stdout, independentExtensions)
+			}
 		} else if d.runSelf == nil {
 			var buf bytes.Buffer
 			if code := runInitWithPi(context.Background(), []string{"--host", "pi"}, d.host, d.piOps, d.env, &buf, &buf); code != 0 {

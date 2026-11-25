@@ -16,6 +16,7 @@ import (
 )
 
 const spacedockTap = "spacedock-dev/tap"
+const compassFormula = spacedockTap + "/compass"
 const spacedockTapRemote = "https://github.com/spacedock-dev/homebrew-tap"
 
 type brewFormulaInfo struct {
@@ -115,7 +116,7 @@ type brewFormulaPlan struct {
 }
 
 func (r brewRepair) prepareBrewFormula(ext extension, program, target string) (brewFormulaPlan, error) {
-	if ext.homebrewFormula != spacedockTap+"/compass" {
+	if ext.homebrewFormula != compassFormula {
 		return brewFormulaPlan{}, fmt.Errorf("automatic formula upgrades are unavailable for %s. Verify the formula manually", ext.homebrewFormula)
 	}
 	tap, err := r.brew("--repo", spacedockTap)

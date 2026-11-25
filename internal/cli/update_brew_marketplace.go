@@ -129,7 +129,7 @@ func (r brewRepair) verifyRepairManifest(entry repairEntry, root, host, name str
 	var commit string
 	if entry.Local == "" {
 		var err error
-		commit, err = r.resolveRepairRef(entry.Repo, entry.Ref, false)
+		commit, err = r.resolveRepairRef(entry.Repo, entry.Ref)
 		if err != nil {
 			return "", err
 		}
@@ -151,8 +151,8 @@ func (r brewRepair) verifyRepairManifest(entry repairEntry, root, host, name str
 	return fmt.Sprintf("%s:%x", commit, sha256.Sum256(data)), nil
 }
 
-func (r brewRepair) resolveRepairRef(repo, ref string, tagOnly bool) (string, error) {
-	if !tagOnly && repairCommit.MatchString(ref) {
+func (r brewRepair) resolveRepairRef(repo, ref string) (string, error) {
+	if repairCommit.MatchString(ref) {
 		return ref, nil
 	}
 	remote := "https://github.com/" + repo + ".git"
@@ -170,7 +170,7 @@ func (r brewRepair) resolveRepairRef(repo, ref string, tagOnly bool) (string, er
 	}
 	head, tag := refs["refs/heads/"+ref], refs["refs/tags/"+ref]
 	switch {
-	case !tagOnly && head != "" && tag == "":
+	case head != "" && tag == "":
 		return head, nil
 	case head == "" && tag != "":
 		if peeled := refs["refs/tags/"+ref+"^{}"]; peeled != "" {
@@ -178,6 +178,6 @@ func (r brewRepair) resolveRepairRef(repo, ref string, tagOnly bool) (string, er
 		}
 		return tag, nil
 	default:
-		return "", fmt.Errorf("Git ref %q for %s is ambiguous or has the wrong ref type", ref, repo)
+		return "", fmt.Errorf("Git ref %q for %s is ambiguous", ref, repo)
 	}
 }

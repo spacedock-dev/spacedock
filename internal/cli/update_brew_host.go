@@ -207,19 +207,59 @@ func (r brewRepair) refreshCorePlugin(host string) error {
 	if !piece.Installed || host == "claude" && piece.Scope != "user" || !piece.Enabled {
 		return nil
 	}
+	if r.localCoreIsCurrent(host, piece.Version) {
+		return nil
+	}
+	return r.changeHostPiece(host, id, piece)
+}
+
+func (r brewRepair) localCoreIsCurrent(host, installedVersion string) bool {
 	market, err := r.marketplaceByName(host, channelMarketplace(devBranch))
-	if err == nil && market.Root != "" {
-		data, err := market.readListing(host)
-		var listing struct {
-			Plugins []struct{ Name, Version string }
+	if err != nil || market.Root == "" || (market.Source != "directory" && market.MarketplaceSource.SourceType != "local") {
+		return false
+	}
+	data, err := market.readListing(host)
+	var listing struct {
+		Plugins []struct {
+			Name   string
+			Source json.RawMessage
 		}
-		if err == nil && json.Unmarshal(data, &listing) == nil {
-			for _, candidate := range listing.Plugins {
-				if candidate.Name == channelEntry(devBranch) && candidate.Version == piece.Version {
-					return nil
-				}
-			}
+	}
+	if err != nil || json.Unmarshal(data, &listing) != nil {
+		return false
+	}
+	name := channelEntry(devBranch)
+	for _, plugin := range listing.Plugins {
+		if plugin.Name != name {
+			continue
 		}
+		var source string
+		if json.Unmarshal(plugin.Source, &source) != nil || !strings.HasPrefix(source, "./") {
+			return false
+		}
+		dir := strings.TrimPrefix(source, "./")
+		if !safeRepairSourcePath(dir) {
+			return false
+		}
+		data, err := readRepairFile(market.Root, filepath.Join(dir, manifestSubpath(host)))
+		if host == "codex" && errors.Is(err, os.ErrNotExist) {
+			data, err = readRepairFile(market.Root, filepath.Join(dir, manifestSubpath("claude")))
+		}
+		var manifest struct{ Name, Version string }
+		return err == nil && json.Unmarshal(data, &manifest) == nil &&
+			manifest.Name == name && manifest.Version != "" && manifest.Version == installedVersion
+	}
+	return false
+}
+
+func (r brewRepair) refreshExtensionPlugin(host, name string) error {
+	id := extensionPluginID(name)
+	piece, err := r.readHostPiece(host, id)
+	if err != nil {
+		return err
+	}
+	if piece.Installed && (host == "claude" && piece.Scope != "user" || host == "codex" && !piece.Enabled) {
+		return nil
 	}
 	return r.changeHostPiece(host, id, piece)
 }

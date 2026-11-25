@@ -49,7 +49,7 @@ func piExtensionSource(listing []byte, name string) (pinned, bare string, err er
 // installPiExtensions installs each extension that has a Pi package. A failure prints
 // a `spacedock install:` line and leaves the exit code alone, as for a Claude Code
 // companion, so `update` can show it.
-func installPiExtensions(piOps piRuntimeOps, agentDir string, stdout io.Writer) {
+func installPiExtensions(piOps piRuntimeOps, agentDir string, stdout io.Writer, extensions []extension) {
 	var wanted []extension
 	for _, ext := range extensions {
 		if ext.piTitle != "" {

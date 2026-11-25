@@ -6,10 +6,13 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 
@@ -121,6 +124,101 @@ func TestBrewRepairMissingProgram(t *testing.T) {
 	}
 }
 
+func TestBrewRepairRefreshesCoreWhenListingVersionStaysBehind(t *testing.T) {
+	root := stageBrewRepair(t, "spacedock", "3.0.1", "3.0.1", "")
+	if err := os.Remove(filepath.Join(root, "bin", "spacedock-compass")); err != nil {
+		t.Fatal(err)
+	}
+	mustWrite(t, filepath.Join(root, "market", ".claude-plugin", "marketplace.json"),
+		`{"name":"spacedock","plugins":[{"name":"spacedock","version":"1.0.0","source":{"source":"url","url":"https://github.com/example-fixture/core.git","ref":"stable"}}]}`)
+	for _, host := range []string{"claude", "codex"} {
+		mustWrite(t, filepath.Join(root, host+"-core"), "1.0.0")
+	}
+	mustWrite(t, filepath.Join(root, "core-release"), "1.1.0")
+
+	runBrewRepairFixture(t, root, 0)
+	assertBrewRepairWrites(t, root, "claude core\ncodex core")
+	for _, host := range []string{"claude", "codex"} {
+		if got, err := os.ReadFile(filepath.Join(root, host+"-core")); err != nil || string(got) != "1.1.0" {
+			t.Errorf("%s core = %q, %v", host, got, err)
+		}
+	}
+}
+
+func TestBrewRepairUpdatesSubspaceHostsIndependentlyOfPi(t *testing.T) {
+	for _, ref := range []string{"stable", "v1.1.0"} {
+		t.Run(ref, func(t *testing.T) {
+			root := stageBrewRepair(t, "spacedock", "3.0.1", "3.0.1", "")
+			if err := os.Remove(filepath.Join(root, "bin", "spacedock-compass")); err != nil {
+				t.Fatal(err)
+			}
+			writeProgram(t, filepath.Join(root, "bin", "spacedock-review"), "1.1.0")
+			tap := filepath.Join(root, "tap")
+			for _, args := range [][]string{{"branch", "stable"}, {"tag", "v1.1.0"}} {
+				cmd := exec.Command("git", args...)
+				cmd.Dir = tap
+				if output, err := cmd.CombinedOutput(); err != nil {
+					t.Fatalf("git %v: %s (%v)", args, output, err)
+				}
+			}
+			t.Setenv("GIT_ALLOW_PROTOCOL", "file")
+			t.Setenv("GIT_CONFIG_COUNT", "1")
+			t.Setenv("GIT_CONFIG_KEY_0", "url.file://"+tap+".insteadOf")
+			t.Setenv("GIT_CONFIG_VALUE_0", "https://github.com/example-fixture/subspace.git")
+			transport := http.DefaultTransport
+			t.Cleanup(func() { http.DefaultTransport = transport })
+			http.DefaultTransport = suiteRoundTrip(func(req *http.Request) (*http.Response, error) {
+				if req.URL.Host != "raw.githubusercontent.com" || !strings.HasPrefix(req.URL.Path, "/example-fixture/subspace/") {
+					return nil, fmt.Errorf("unexpected fixture request %s", req.URL)
+				}
+				manifest := `{"name":"subspace","version":"1.1.0"}`
+				return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(manifest))}, nil
+			})
+
+			for _, host := range []string{"claude", "codex"} {
+				mustWrite(t, filepath.Join(root, host+"-subspace"), "1.0.0")
+			}
+			t.Setenv("SPACEDOCK_EXTENSION_MARKETPLACE_SOURCE", filepath.Join(root, "market"))
+			mustWrite(t, filepath.Join(root, "market", ".claude-plugin", "marketplace.json"),
+				fmt.Sprintf(`{"name":"spacedock","plugins":[{"name":"subspace","version":"1.1.0","source":{"source":"url","url":"https://github.com/example-fixture/subspace.git","ref":%q}}]}`, ref))
+			t.Setenv("PI_CODING_AGENT_DIR", root)
+			mustWrite(t, filepath.Join(root, "settings.json"),
+				`{"packages":["git:github.com/spacedock-dev/spacedock@stable","git:github.com/example-fixture/subspace@stable","git:github.com/example-fixture/unrelated@keep"]}`)
+			pi := filepath.Join(root, "bin", "pi")
+			mustWrite(t, pi, `#!/bin/sh
+set -eu
+cd "$FIXTURE"
+case "$*" in
+'remove git:github.com/spacedock-dev/spacedock'|'install git:github.com/spacedock-dev/spacedock@stable') ;;
+'remove git:github.com/example-fixture/subspace') echo 'pi remove subspace' >> changes ;;
+'install git:github.com/example-fixture/subspace@v1.1.0')
+	sed 's/subspace@stable/subspace@v1.1.0/' settings.json > settings.new
+	mv settings.new settings.json
+	echo 'pi install subspace' >> changes ;;
+*) printf 'unexpected Pi command: %s\n' "$*" >&2; exit 1 ;;
+esac
+`)
+			if err := os.Chmod(pi, 0755); err != nil {
+				t.Fatal(err)
+			}
+
+			out := runBrewRepairFixture(t, root, 0)
+			if strings.Count(out, "1.0.0 -> 1.1.0") != 2 || strings.Contains(out, "still MIXED on Pi") {
+				t.Fatalf("unexpected host or Pi result:\n%s", out)
+			}
+			want := "claude subspace\ncodex subspace"
+			if ref != "stable" {
+				want += "\npi remove subspace\npi install subspace"
+			}
+			assertBrewRepairWrites(t, root, want)
+			if sources := piSettingsSources(root); !slices.Contains(sources, "git:github.com/example-fixture/subspace@"+ref) ||
+				!slices.Contains(sources, "git:github.com/example-fixture/unrelated@keep") {
+				t.Errorf("unexpected Pi registrations: %v", sources)
+			}
+		})
+	}
+}
+
 func assertBrewRepairWrites(t *testing.T, root, want string) {
 	t.Helper()
 	got, err := os.ReadFile(filepath.Join(root, "changes"))
@@ -181,6 +279,9 @@ func stageBrewRepair(t *testing.T, cask, claude, codex, failure string) string {
 	mustWrite(t, filepath.Join(root, "must-not-run.sh"), "echo Homebrew invoked install.sh >&2; exit 3\n")
 	t.Setenv("FIXTURE", root)
 	t.Setenv("HOME", root)
+	t.Setenv("GIT_CONFIG_GLOBAL", os.DevNull)
+	t.Setenv("GIT_CONFIG_NOSYSTEM", "1")
+	t.Setenv("PI_CODING_AGENT_DIR", filepath.Join(root, "pi-profile"))
 	mustWrite(t, filepath.Join(root, "channel"), cask)
 	mustWrite(t, filepath.Join(root, "claude"), claude)
 	mustWrite(t, filepath.Join(root, "codex"), codex)
@@ -296,16 +397,30 @@ core=spacedock
 if test "$(cat channel)" = spacedock@next; then core=spacedock-edge; fi
 case "$*" in
 'plugin list --json')
-	case "$host" in
-	claude) printf '[{"id":"spacedock@%s","version":"1.0.0","scope":"user","installPath":"/core"},{"id":"compass@spacedock","version":"%s","scope":"user","enabled":true,"installPath":"/compass"}]\n' "$core" "$v" ;;
-	codex) printf '{"installed":[{"pluginId":"spacedock@%s","version":"1.0.0","installed":true},{"pluginId":"compass@spacedock","version":"%s","installed":true,"enabled":true}]}\n' "$core" "$v" ;;
-	esac ;;
+	core_version=1.0.0
+	core_enabled=false
+	if test -f "$host-core"; then core_version=$(cat "$host-core"); core_enabled=true; fi
+	if test "$host" = claude; then
+		printf '[{"id":"spacedock@%s","version":"%s","scope":"user","enabled":%s,"installPath":"/core"},{"id":"compass@spacedock","version":"%s","scope":"user","enabled":true,"installPath":"/compass"}' "$core" "$core_version" "$core_enabled" "$v"
+		if test -f "$host-subspace"; then printf ',{"id":"subspace@spacedock","version":"%s","scope":"user","enabled":true,"installPath":"/subspace"}' "$(cat "$host-subspace")"; fi
+		printf ',{"id":"unrelated@spacedock","version":"1.0.0","scope":"user","enabled":true,"installPath":"/unrelated"}]\n'
+	else
+		printf '{"installed":[{"pluginId":"spacedock@%s","version":"%s","enabled":%s,"installed":true},{"pluginId":"compass@spacedock","version":"%s","installed":true,"enabled":true}' "$core" "$core_version" "$core_enabled" "$v"
+		if test -f "$host-subspace"; then printf ',{"pluginId":"subspace@spacedock","version":"%s","installed":true,"enabled":true}' "$(cat "$host-subspace")"; fi
+		printf ',{"pluginId":"unrelated@spacedock","version":"1.0.0","installed":true,"enabled":true}]}\n'
+	fi ;;
 'plugin marketplace list --json')
 	case "$host" in
 	claude) printf '[{"name":"spacedock","source":"directory","installLocation":"%s"}]\n' "$market" ;;
 	codex)
 		printf '{"marketplaces":[{"name":"spacedock","root":"%s","marketplaceSource":{"sourceType":"local","source":"%s"}}]}\n' "$market" "$market" ;;
 	esac ;;
+'plugin update spacedock@spacedock --scope user'|'plugin add spacedock@spacedock')
+	echo "$host core" >> changes
+	cp core-release "$host-core" ;;
+'plugin update subspace@spacedock --scope user'|'plugin add subspace@spacedock')
+	echo "$host subspace" >> changes
+	printf 1.1.0 > "$host-subspace" ;;
 'plugin update compass@spacedock --scope user'|'plugin add compass@spacedock')
 	test ! -f "fail-$host" || { echo 'fixture host failed' >&2; exit 1; }
 	echo "$host" >> changes

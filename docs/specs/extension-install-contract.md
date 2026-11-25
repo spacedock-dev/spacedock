@@ -294,18 +294,26 @@ or `brew upgrade --cask spacedock@next`. `doctor` names the formula's `brew inst
 command when its program is missing. The intentional program opt-outs still apply.
 
 Both channels select extension releases from the stable `spacedock` marketplace.
-For an installed, linked Homebrew program with eligible companions, update checks
+For an installed, linked Compass program with eligible plugins, update checks
 their installed versions and what each manager can select before changing the
 installation. It can fetch the Compass archive and upgrade the Compass formula
 alone after it verifies the recipe, payload checksum, and Homebrew's upgrade
 plan. If the official tap is stale, update can fast-forward its clean tracked
-default branch. Other formulas can require a manual upgrade. Update uses
-single-plugin operations against each host's existing marketplace registration.
-A host that cannot select the matching release or safely preserve its settings
-can hold the repair. An existing stable companion already at the release is
-skipped.
+default branch. A host that cannot select the matching release or safely
+preserve its settings can hold the Compass repair. A Compass plugin already
+at the target is skipped.
 
-If a prerequisite is missing during preflight, update keeps a working pair and
+On eligible hosts, update refreshes the enabled Spacedock plugin from its
+configured source, including when a Git branch advances under the same
+marketplace entry. It refreshes the plugins of an installed Subspace program
+separately and checks their reported versions against the program. Homebrew
+still owns Subspace program upgrades. The Pi package follows its own listing
+ref without gating the Claude Code or Codex updates. A version-tagged Pi
+package is compared with the program and a branch registration is reported
+as described under [Plugins](#plugins). All these host operations select one
+plugin or package at a time.
+
+If a Compass prerequisite is missing during preflight, update keeps a working pair and
 reports what held it, with a nonzero exit. A failure after a write can leave a
 mixed installation. Update reads the installed versions again and names the
 failed step. After correcting that problem, rerun `spacedock update` to repair
