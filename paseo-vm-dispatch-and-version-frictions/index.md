@@ -9,7 +9,7 @@ verdict:
 score: 0.90
 worktree: .worktrees/spacedock-ensign-paseo-vm-dispatch-and-version-frictions
 issue:
-pr: "#899"
+pr: pr-merge:899
 mod-block: merge:pr-merge
 gates:
     version: 1
@@ -80,6 +80,8 @@ gates:
               application:
                 target-stage: done
                 state: pending
+merge-commit: b7ef2a885ed4cb4f07f7841b529331fac6f9ca72
+merge-authority: captain via MetaFO (2026-11-24 ~21:00 PT)
 ---
 
 Identify the running source build and preserve each dispatch assignment. Let first officers select a directory that their workers can read.
