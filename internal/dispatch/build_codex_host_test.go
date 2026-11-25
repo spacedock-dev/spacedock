@@ -71,9 +71,8 @@ func TestBuildCodexHostRejectsBareModeBeforeArtifactCreation(t *testing.T) {
 	entityPath := filepath.Join(root, "f02codexbare.md")
 	writeFile(t, entityPath, entityFM("Codex Bare", "implementation", ""))
 	gitInit(t, root)
-	artifactPath := filepath.Join(dispatchFileDir, "f02codexbare-implementation.md")
-	_ = os.Remove(artifactPath)
-	t.Cleanup(func() { _ = os.Remove(artifactPath) })
+	dir := t.TempDir()
+	t.Setenv("SPACEDOCK_DISPATCH_DIR", dir)
 	args := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-", "--host", "codex"}
 	bare := runNative("- prove Codex host shape", append(args, "--bare-mode")...)
 	if bare.exit != 2 {
@@ -83,9 +82,7 @@ func TestBuildCodexHostRejectsBareModeBeforeArtifactCreation(t *testing.T) {
 	if !strings.Contains(bare.stderr, diagnostic) {
 		t.Fatalf("bare Codex diagnostic=%q, want %q", bare.stderr, diagnostic)
 	}
-	if _, err := os.Stat(artifactPath); !os.IsNotExist(err) {
-		t.Fatalf("bare Codex created dispatch artifact %s; stat err=%v", artifactPath, err)
-	}
+	assertEmptyArtifacts(t, dir)
 	named := runNative("- prove Codex host shape", args...)
 	if named.exit != 0 {
 		t.Fatalf("named Codex build exit=%d, want 0; stderr=%q", named.exit, named.stderr)

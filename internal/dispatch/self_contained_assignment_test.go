@@ -83,17 +83,13 @@ func TestBuildWithoutResolvedLauncherFailsBeforeWritingArtifact(t *testing.T) {
 	writeFile(t, entityPath, entityFM("Unique", "implementation", ""))
 	gitInit(t, root)
 	checklist := "- fail closed"
-	path := filepath.Join(dispatchFileDir, "unique-no-launcher-implementation.md")
-	if _, err := os.Stat(path); !os.IsNotExist(err) {
-		t.Fatalf("test artifact already exists: %s", path)
-	}
+	dir := t.TempDir()
+	t.Setenv("SPACEDOCK_DISPATCH_DIR", dir)
 	result := runNativeWithLauncher(checklist, "", "build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-", "--host", "codex")
 	if result.exit != 1 || result.stdout != "" {
 		t.Fatalf("exit=%d stdout=%q stderr=%q", result.exit, result.stdout, result.stderr)
 	}
-	if _, err := os.Stat(path); !os.IsNotExist(err) {
-		t.Fatalf("unresolved launcher wrote artifact: %s", path)
-	}
+	assertEmptyArtifacts(t, dir)
 }
 
 func environWithoutSpacedockBin() []string {

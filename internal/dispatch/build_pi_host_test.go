@@ -134,7 +134,7 @@ func TestBuildPiHostArtifactCarriesCanonicalStageFactsThroughPiWrapper(t *testin
 	if out.Description != "Canonical Stage: implementation" {
 		t.Fatalf("description = %q", out.Description)
 	}
-	if !strings.Contains(out.DispatchFile, "canonical-stage-implementation.md") {
+	if !strings.Contains(normalizedArtifactBase(out.DispatchFile), "canonical-stage-implementation-<HASH8>.md") {
 		t.Fatalf("dispatch file path does not carry builder-derived slug/stage: %q", out.DispatchFile)
 	}
 

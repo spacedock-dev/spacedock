@@ -3,6 +3,8 @@
 package dispatch
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -24,7 +26,7 @@ const (
 	modelEnumList   = "must be one of: sonnet, opus, haiku, fable"
 	dispatchFileDir = "/tmp/spacedock-dispatch"
 	// dispatchFileNameMaxLen caps the dispatch filename stem (the merged-mode
-	// session token + derived name) so the on-disk file with its .md suffix
+	// parent token + derived name + content hash) so the file with its .md suffix
 	// stays under the common 255-byte filesystem name limit.
 	dispatchFileNameMaxLen = 251
 	// nameAgentMaxLen is the Agent-tool name ceiling (^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$
@@ -116,6 +118,11 @@ func buildError(stderr io.Writer, code int, format string, a ...any) int {
 // dispatch-file body written to a deterministic path.
 func runBuild(probe claudeteam.TeamStateProbe, workflowLauncher string, opts buildOptions, stdin io.Reader, stdout, stderr io.Writer) int {
 	fields, code := fieldsFromBuildFlags(opts, stdin, stderr)
+	if code != 0 {
+		return code
+	}
+
+	opts.DispatchDir, code = resolveDispatchDir(opts, stderr)
 	if code != 0 {
 		return code
 	}
@@ -612,18 +619,7 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 
 	dispatchBody := strings.Join(parts, "\n")
 
-	// v2 file-pointer: write the body to a collision-free path under the shared
-	// dispatch dir; emit a tiny prompt the ensign Reads on first action. A bare
-	// {derivedName}.md is identical across every dispatch of one slug+stage, so two
-	// concurrent FOs — or back-to-back runs of one fixture — alias the same file
-	// and an ensign can Read a STALE prior dispatch's entity pointer. On the
-	// merged floor there is no team registry name, so the per-session auto-team
-	// id ($CLAUDE_CODE_SESSION_ID) is the disambiguator instead — two concurrent
-	// merged FOs run distinct sessions, so it separates their dispatch files. On
-	// host=paseo, $PASEO_AGENT_ID serves the same role for concurrent Paseo FOs.
-	// Dispatches with neither (bare, or a dispatch with no session/agent id in
-	// env) keep the plain derived name. derivedName stays the readable
-	// team-member name; only the on-disk path is keyed.
+	// Keep parent and worker identity readable; the body digest distinguishes briefs.
 	dispatchFileName := derivedName
 	if mergedMode {
 		if sessionToken := pathSafeSessionToken(os.Getenv("CLAUDE_CODE_SESSION_ID")); sessionToken != "" {
@@ -640,16 +636,12 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 		// otherwise collide with the stale advance body at the bare derivedName path.
 		dispatchFileName += "-advance"
 	}
-	if len(dispatchFileName) > dispatchFileNameMaxLen {
-		return buildError(stderr, 1,
-			"dispatch filename '%s' exceeds %d characters", dispatchFileName, dispatchFileNameMaxLen)
+	name, err := dispatchArtifactName(dispatchFileName, []byte(dispatchBody))
+	if err != nil {
+		return buildError(stderr, 1, "%s", err)
 	}
-	dispatchFilePath := filepath.Join(dispatchFileDir, dispatchFileName+".md")
-	if err := os.MkdirAll(dispatchFileDir, 0o755); err != nil {
-		fmt.Fprintf(stderr, "dispatch_file_write_failed: %s: %s\n", dispatchFilePath, err)
-		return 1
-	}
-	if err := os.WriteFile(dispatchFilePath, []byte(dispatchBody), 0o644); err != nil {
+	dispatchFilePath := filepath.Join(opts.DispatchDir, name)
+	if err := publishDispatch(dispatchFilePath, []byte(dispatchBody)); err != nil {
 		fmt.Fprintf(stderr, "dispatch_file_write_failed: %s: %s\n", dispatchFilePath, err)
 		return 1
 	}
@@ -971,4 +963,75 @@ func stateCommitGuidance(stateCheckout, entityPath, stateBranch string, hasOrigi
 // out is buildOutput for a spawn envelope or buildAdvanceOutput for --advance.
 func emitBuildJSON(stdout io.Writer, out any) int {
 	return claudeteam.EmitPythonJSON(stdout, out)
+}
+
+// resolveDispatchDir validates the selected source before any state mutation.
+func resolveDispatchDir(opts buildOptions, stderr io.Writer) (string, int) {
+	dir := opts.DispatchDir
+	if !opts.DispatchDirSet {
+		var present bool
+		dir, present = os.LookupEnv("SPACEDOCK_DISPATCH_DIR")
+		if !present {
+			dir = dispatchFileDir
+		}
+	}
+	if strings.TrimSpace(dir) == "" || strings.ContainsAny(dir, "\x00\r\n") {
+		return "", buildError(stderr, 2, "invalid dispatch directory %q", dir)
+	}
+	absolute, err := filepath.Abs(dir)
+	if err != nil {
+		return "", buildError(stderr, 1, "%s", err)
+	}
+	if err := os.MkdirAll(absolute, 0755); err != nil {
+		return "", buildError(stderr, 1, "%s", err)
+	}
+	return absolute, 0
+}
+
+func dispatchArtifactName(stem string, body []byte) (string, error) {
+	digest := sha256.Sum256(body)
+	stem += fmt.Sprintf("-%x", digest[:4])
+	if len(stem) > dispatchFileNameMaxLen {
+		return "", fmt.Errorf("dispatch filename '%s' exceeds %d characters", stem, dispatchFileNameMaxLen)
+	}
+	return stem + ".md", nil
+}
+
+// publishDispatch exposes complete bytes atomically and never replaces a brief.
+func publishDispatch(path string, body []byte) error {
+	temp, err := os.CreateTemp(filepath.Dir(path), ".dispatch-*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(temp.Name())
+	defer temp.Close()
+	if _, err := temp.Write(body); err != nil {
+		return err
+	}
+	if err := temp.Chmod(0644); err != nil {
+		return err
+	}
+	if err := temp.Close(); err != nil {
+		return err
+	}
+	if err := os.Link(temp.Name(), path); err == nil {
+		return nil
+	} else if !os.IsExist(err) {
+		return err
+	}
+	info, err := os.Lstat(path)
+	if err != nil {
+		return err
+	}
+	if !info.Mode().IsRegular() {
+		return fmt.Errorf("existing destination is not a regular file")
+	}
+	existing, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	if !bytes.Equal(existing, body) {
+		return fmt.Errorf("existing destination has different content")
+	}
+	return nil
 }

@@ -114,8 +114,8 @@ func TestBuildAdvanceFilenameSuffix(t *testing.T) {
 		t.Fatalf("advance build exit=%d stderr=%s", native.exit, native.stderr)
 	}
 	path := dispatchFilePathFromStdout(t, native.stdout)
-	base := filepath.Base(path)
-	if base != "sessionaaa-thing-validation-advance.md" {
+	base := normalizedArtifactBase(path)
+	if base != "sessionaaa-thing-validation-advance-<HASH8>.md" {
 		t.Fatalf("unexpected advance dispatch filename: %s", base)
 	}
 
@@ -131,7 +131,7 @@ func TestBuildAdvanceFilenameSuffix(t *testing.T) {
 	if freshPath == path {
 		t.Fatalf("fresh dispatch file collided with advance dispatch file: %s", freshPath)
 	}
-	if filepath.Base(freshPath) != "sessionaaa-thing-validation.md" {
+	if normalizedArtifactBase(freshPath) != "sessionaaa-thing-validation-<HASH8>.md" {
 		t.Fatalf("unexpected fresh dispatch filename: %s", filepath.Base(freshPath))
 	}
 }

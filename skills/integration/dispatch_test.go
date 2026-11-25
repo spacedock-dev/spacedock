@@ -4,7 +4,9 @@ package integration
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -20,6 +22,7 @@ import (
 type buildResult struct {
 	Name             string `json:"name"`
 	DispatchFilePath string `json:"dispatch_file_path"`
+	Prompt           string `json:"prompt"`
 	body             string
 }
 
@@ -30,7 +33,7 @@ type buildResult struct {
 // root is reachable through the absolute entity_path/workflow_dir in the input,
 // not the process working directory. It fails the test on a non-zero exit so
 // callers can assert on a known-good build.
-func runBuild(t *testing.T, workflowDir, entityPath, stage string) buildResult {
+func runBuild(t *testing.T, workflowDir, entityPath, stage string, extra ...string) buildResult {
 	t.Helper()
 	// A unique HOME keeps the build's bare-mode team-evidence probe from reading
 	// the developer's real ~/.claude/teams; the build path does not depend on it
@@ -41,7 +44,7 @@ func runBuild(t *testing.T, workflowDir, entityPath, stage string) buildResult {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	if exit := dispatch.RunWithLauncher(claudeteam.Probe, "/opt/spacedock/bin/spacedock", []string{"build", "--workflow-dir", workflowDir, "--entity-path", entityPath, "--stage", stage, "--checklist-file", "-", "--host", "claude"}, strings.NewReader("- do the work"), &stdout, &stderr); exit != 0 {
+	if exit := dispatch.RunWithLauncher(claudeteam.Probe, "/opt/spacedock/bin/spacedock", append([]string{"build", "--workflow-dir", workflowDir, "--entity-path", entityPath, "--stage", stage, "--checklist-file", "-", "--host", "claude"}, extra...), strings.NewReader("- do the work"), &stdout, &stderr); exit != 0 {
 		t.Fatalf("dispatch build exited %d\nstdout: %s\nstderr: %s", exit, stdout.String(), stderr.String())
 	}
 	var res buildResult
@@ -217,12 +220,26 @@ Body.
 
 	res := runBuild(t, stateDir, entityPath, "implementation")
 
+	shared := filepath.Join(t.TempDir(), "shared assignments")
+	paseo := runBuild(t, stateDir, entityPath, "implementation", "--host", "paseo", "--dispatch-dir", shared)
+	if filepath.Dir(paseo.DispatchFilePath) != shared || !filepath.IsAbs(paseo.DispatchFilePath) || !strings.Contains(paseo.Prompt, "Read "+paseo.DispatchFilePath+" and treat") {
+		t.Fatalf("wrong shared pointer: %+v", paseo)
+	}
+	read, err := exec.Command("cat", paseo.DispatchFilePath).Output()
+	if err != nil || string(read) != paseo.body {
+		t.Fatalf("fresh reader: %v %s", err, read)
+	}
+	if !strings.Contains(lineContaining(string(read), "Read the entity file at"), entityPath) || !strings.Contains(lineContaining(string(read), "Report written to"), entityPath) || !strings.Contains(string(read), worktreePath) {
+		t.Fatal("Paseo assignment lost state or code path")
+	}
+
 	// AC-4: name and dispatch file use the folder slug, never `index`.
 	wantName := "skill-launcher-implementation"
 	if res.Name != wantName {
 		t.Errorf("name = %q, want %q (folder slug, not index)", res.Name, wantName)
 	}
-	if !strings.HasSuffix(res.DispatchFilePath, wantName+".md") {
+	digest := sha256.Sum256([]byte(res.body))
+	if !strings.HasSuffix(res.DispatchFilePath, fmt.Sprintf("%s-%x.md", wantName, digest[:4])) {
 		t.Errorf("dispatch_file_path = %q, want suffix %q.md", res.DispatchFilePath, wantName)
 	}
 	if strings.Contains(res.Name, "index") || strings.Contains(res.DispatchFilePath, "/index") {
@@ -346,8 +363,8 @@ func TestFirstOutageCanonicalName(t *testing.T) {
 		t.Fatal(err)
 	}
 	headBefore, _ := exec.Command("git", "-C", root, "rev-parse", "HEAD").Output()
-	artifact := "/tmp/spacedock-dispatch/uncached-recovery-backlog.md"
-	artifactBefore, artifactErr := os.ReadFile(artifact)
+	artifacts := t.TempDir()
+	t.Setenv("SPACEDOCK_DISPATCH_DIR", artifacts)
 	for _, command := range []string{"build", "name", "build"} {
 		args := []string{"dispatch", command, "--workflow-dir", root, "--entity-path", ep, "--stage", "backlog"}
 		cmd := exec.Command(shim, args...)
@@ -362,9 +379,9 @@ func TestFirstOutageCanonicalName(t *testing.T) {
 			t.Fatalf("identity query: %v %s", err, out)
 		}
 	}
-	artifactAfter, afterErr := os.ReadFile(artifact)
+	artifactAfter, afterErr := os.ReadDir(artifacts)
 	headAfter, _ := exec.Command("git", "-C", root, "rev-parse", "HEAD").Output()
-	if !bytes.Equal(headBefore, headAfter) || !bytes.Equal(artifactBefore, artifactAfter) || (artifactErr == nil) != (afterErr == nil) {
+	if !bytes.Equal(headBefore, headAfter) || len(artifactAfter) != 0 || afterErr != nil {
 		t.Fatal("query changed commit or dispatch artifact")
 	}
 	after, _ := os.ReadFile(ep)

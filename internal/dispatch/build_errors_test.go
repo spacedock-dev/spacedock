@@ -194,19 +194,19 @@ func TestBuildStrEErrors(t *testing.T) {
 		ep := writeFlatEntity(t, wd, "backlog", "")
 		stdin := "- a"
 
-		// Force the write to fail: make the dispatch-file path a directory so
-		// open()/WriteFile cannot write a regular file there. Clear any leftover
-		// regular file other fixtures wrote at this same path first. No team_name
-		// or session id in this stdin, so the path is the bare derived name.
-		derived := "thing-backlog"
-		target := filepath.Join(dispatchFileDir, derived+".md")
-		if err := os.RemoveAll(target); err != nil {
+		// Obtain the content-addressed destination, then replace it with a directory.
+		t.Setenv("SPACEDOCK_DISPATCH_DIR", t.TempDir())
+		first := runNative(stdin, "build", "--workflow-dir", wd, "--entity-path", ep, "--stage", "backlog", "--checklist-file", "-")
+		if first.exit != 0 {
+			t.Fatal(first)
+		}
+		target := dispatchFilePathFromStdout(t, first.stdout)
+		if err := os.Remove(target); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.MkdirAll(target, 0o755); err != nil {
+		if err := os.Mkdir(target, 0755); err != nil {
 			t.Fatal(err)
 		}
-		defer os.RemoveAll(target)
 
 		native := runNative(stdin, "build", "--workflow-dir", wd, "--entity-path", ep, "--stage", "backlog", "--checklist-file", "-")
 
