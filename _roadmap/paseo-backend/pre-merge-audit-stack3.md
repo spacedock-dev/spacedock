@@ -242,3 +242,14 @@ Review tracking is complete: scope, file inventory, composition audit, permitted
    - **Attempt 1:** 16/17 common journeys PASS (including `TestLiveCommonSmallestSufficientMechanism`); failed `RecordedGateLifecycle` + `TestLivePiFrontDoorSmoke`.
    - **Attempt 2:** 16/17 common journeys PASS (including `RecordedGateLifecycle`) + **`TestLivePiFrontDoorSmoke` PASS**; failed only `TestLiveCommonSmallestSufficientMechanism` (`roadmap-strategy.md` content variance, passed in Attempt 1).
    - **Union across Attempts 1 & 2 on exact SHA `03a796c48`:** **18/18 Pi live tests passed** (17/17 common journeys + front-door smoke), alongside single-run green `paseo-live` ([45352327681](https://github.com/spacedock-dev/spacedock/actions/runs/45352327681)), `claude-live sonnet` + `codex-live` ([45352320212](https://github.com/spacedock-dev/spacedock/actions/runs/45352320212)), `docs` ([45352212924](https://github.com/spacedock-dev/spacedock/actions/runs/45352212924)), and `install-e2e` ([45352212863](https://github.com/spacedock-dev/spacedock/actions/runs/45352212863)).
+
+---
+
+## Merge Record (2026-11-24 PT)
+
+- **Captain decision (relayed via MetaFO, 2026-11-24 ~21:00 PT):** `"get the paseo-backend related things on spacedock-v1 merged"` — authorizing merge of PRs `#895` → `#897` → `#899` into `main` at reviewed tip `03a796c48`. Excludes any release, tag, version bump, Homebrew/npm publish, installed-binary change, or other PRs.
+- **`pi-live` known variance:** CL merges with `pi-live` ([45352323710](https://github.com/spacedock-dev/spacedock/actions/runs/45352323710)) known: 18/18 union pass across attempts on `03a796c48` (`TestLiveCommonSmallestSufficientMechanism` passed in Attempt 1 and failed in Attempt 3; `TestLivePiFrontDoorSmoke` passed). No extra rerun was started because `pi-live` took ~49 minutes (> 15-minute threshold).
+- **Merged commits on `main` (in order, via `gh stack merge --merge`, each layer retargeted to `main` after its parent; final `#899` tree verified byte-identical `DIFF_LEN=0` to reviewed `03a796c48` merged with `0569709f9`):**
+  1. PR `#895` (`x9m`, `paseo-worker-adoption-and-recovery`): `67b35f4514e81269c1fffa7f22aa2ef7d52668fd`
+  2. PR `#897` (`xdh`, `paseo-and-generic-harness-fo-support`): `1e1a17f4094fe28ff5a418f9457a07f6f7646019`
+  3. PR `#899` (`kdp`, `paseo-vm-dispatch-and-version-frictions`): `b7ef2a885ed4cb4f07f7841b529331fac6f9ca72`
