@@ -42,6 +42,18 @@ func (execHost) PluginInventory(host string) ([]pluginInventoryEntry, error) {
 }
 
 func parsePluginInventory(host string, data []byte) ([]pluginInventoryEntry, error) {
+	entries, err := parseHostPluginList(host, data)
+	if err != nil {
+		return nil, err
+	}
+	inventory := make([]pluginInventoryEntry, 0, len(entries))
+	for _, entry := range entries {
+		inventory = append(inventory, pluginInventoryEntry{entry.ID, entry.Version, entry.Installed, entry.Enabled})
+	}
+	return inventory, nil
+}
+
+func parseHostPluginList(host string, data []byte) ([]pluginListEntry, error) {
 	var raw []pluginListEntry
 	switch host {
 	case "claude":
@@ -62,16 +74,15 @@ func parsePluginInventory(host string, data []byte) ([]pluginInventoryEntry, err
 	default:
 		return nil, fmt.Errorf("plugin inventory is unsupported for host %q", host)
 	}
-	inventory := make([]pluginInventoryEntry, 0, len(raw))
-	for _, entry := range raw {
+	for i := range raw {
+		entry := &raw[i]
 		if host == "claude" {
 			entry.Installed = entry.InstallPath != ""
 		} else {
 			entry.ID = entry.PluginID
 		}
-		inventory = append(inventory, pluginInventoryEntry{entry.ID, entry.Version, entry.Installed, entry.Enabled})
 	}
-	return inventory, nil
+	return raw, nil
 }
 
 // ResolveManifest returns the installed spacedock@spacedock plugin manifest path
