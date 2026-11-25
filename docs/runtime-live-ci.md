@@ -102,13 +102,15 @@ Without auth, the respective live suite skips locally (Claude/Codex/Pi), except 
 
 ### Paseo live smoke
 
-Run the isolated-daemon Paseo smoke locally with the `codex.exec` model from `internal/release/live_models.txt`:
+Run the isolated-daemon Paseo smoke tests locally with the `codex.exec` model from `internal/release/live_models.txt`:
 
 ```bash
-go test -tags live -count=1 -timeout 15m -run '^TestLivePaseoDispatchSmoke$' ./internal/ensigncycle -v
+go test -tags live -count=1 -timeout 15m -run '^TestLivePaseo(Dispatch|Adoption)Smoke$' ./internal/ensigncycle -v
 ```
 
-Override the binary, provider, or thinking level with `SPACEDOCK_PASEO_BIN`, `SPACEDOCK_PASEO_LIVE_PROVIDER`, and `SPACEDOCK_PASEO_LIVE_THINKING`.
+`TestLivePaseoAdoptionSmoke` stops the first officer mid-stage with `paseo stop`. Then it verifies that a fresh first officer adopts the live worker, advances state, and archives the worker.
+
+Override the binary, provider, first-officer provider, or thinking level with `SPACEDOCK_PASEO_BIN`, `SPACEDOCK_PASEO_LIVE_PROVIDER`, `SPACEDOCK_PASEO_LIVE_FO_PROVIDER`, and `SPACEDOCK_PASEO_LIVE_THINKING`.
 
 In CI, `.github/workflows/paseo-live-e2e.yml` runs `TestLivePaseoDispatchSmoke` under `CI-E2E-CODEX` with `CODEX_AUTH_JSON` or `OPENAI_API_KEY`. This job is optional (`continue-on-error: true`) and does not block merges.
 
