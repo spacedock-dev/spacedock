@@ -376,3 +376,52 @@ The binary binds each gate decision to the Briefing id and digest it answers and
 On b7ef2a885, the task-branch tests fail where they should for AC-1, AC-2, AC-4 and the resume cases. AC-3's history cases pass, which matches its unchanged baseline. A disk emergency (free space down to 1535 MiB) stopped all testing before the pass-after runs, the falsifiers, the side-branch tests and the old-binary one-offs, so those ACs are unproven or blocked. The recommendation is REJECTED-pending-reruns. A read-only review of 8ac8f459e found a stale Pi `«gate.lifecycle»` binding, proposed as Material for the skill half. Scratch was removed: the base worktree with `git worktree remove`, plus the private GOCACHE and the binaries.
 
 Validation-findings note (FO disposition: fix both, side branch only): commit 2913ce0b1 on `second-surface-gate-decisions-skill-cap` (parent 8ac8f459e). It rewrites `pi-first-officer-runtime.md` line 15 to the steps 1-6 order, and it moves the pre-change resume sentences out of fo-gate-lifecycle's route list. fo-gate-lifecycle now measures 8880 bytes, which is under the proposed 9100 cap; that cap still awaits CL. `go test ./internal/contractlint/ -run 'TestGateSkillsRecordTheAnsweredBindingFromTheStoredReview|TestFOInstructionComponentCaps' -count=1`: ok, with 3.3 GiB free before the run. The task branch is unchanged at 0482563e1.
+
+## Stage Report: validation (cycle 1, completed)
+
+- DONE: Each acceptance criterion's cited evidence is reproduced independently on throwaway exports, not taken from the report: AC-1 to AC-4 and the AC-5 resume support fail on origin/main b7ef2a885 and pass on the task branch head 0482563e1, and at least one named falsifying edit per AC makes its test fail; AC-5 to AC-7 and AC-2 (c) are checked on the side branch `second-surface-gate-decisions-skill-cap` (8ac8f459e) as far as possible without a live login, and each is marked proven, unproven, or blocked with the reason.
+  The fail-before results are in the section above. Pass-after: on 0482563e1 (implementation worktree, read only, tree still clean afterwards), the AC-1 to AC-4 tests, the help golden, the `AC7ResumeMatrix`, `AC5RefusalMatrix` and `KeepMovingPreparedGate` tests all PASS. Falsifiers, each applied in one scratch worktree and reverted before the next:
+  1. Removing the pair compare (`operation.go:259-261`) fails all 5 AC-1 subtests.
+  2. Dropping the CLI's binding-required check fails the 3 AC-2 shape subtests: the bare shapes exit 0.
+  3. Returning the room, question and summary for every attempt, not just an open one, fails AC-4's withdrawn and closed subtests.
+  4. Truncating the summary to its first line in `ReadCurrent` fails the AC-5 interrupted-prepare and re-composed-review cases.
+  To avoid repeating them, I cite the audit's caught edits: id-only compare (AC-1), resolving the path before the grammar check (AC-2), history routed through the current read (AC-3), and both a skipped digest check and selecting the first attempt (AC-4).
+  Side branch, now at 2913ce0b1: `TestFOInstructionComponentCaps`, `TestGateSkillsRecordTheAnsweredBindingFromTheStoredReview` and `TestSecondSurfaceGateOracle` (7 subtests) PASS. The skills test FAILS on the 0482563e1 skills ("lacks \"compose the gate review\""). The cap test passes only because the cap is raised to 9100: fo-gate-lifecycle is now 8880 bytes. That raise awaits CL and is not approved.
+  AC status:
+  - AC-1, AC-3 and AC-4: proven.
+  - AC-2 (a) and (b): proven. AC-2 (c): the old-binary half is proven (see the next item), and the live Claude run is blocked.
+  - AC-5: the deterministic support is proven. The live phase 1 is blocked: no benchmark token or `ANTHROPIC_API_KEY` against an empty HOME.
+  - AC-6: the old-reader half is proven on a fixture, and the live phase 2 is blocked.
+  - AC-7: blocked, live only.
+  - Finding 3 below means the live oracle could not validly prove AC-5 or AC-7 even with a login.
+- DONE: The one-off checks against the released 0.29.0-pre0 binary in AC-2 (c) and AC-6 are run where possible and recorded with commands and exit codes; `go test ./...`, `go test ./... -race`, `gofmt -l` and contractlint results are recorded for the task branch.
+  The fixture is split-root under /tmp and has been removed. With `/opt/homebrew/bin/spacedock` (0.29.0-pre0):
+  - `gate prepare` with the full review exits 0, and `state commit` exits 0. The entity sha changes from 5465c9ec to 18515b0c, and the commit count from 1 to 2.
+  - `gate read task --current --json` exits 2 with `unknown gate read flag: --current`.
+  - `gate record task … --briefing-id … --briefing-digest … --consume` exits 2 with `unknown gate flag: --briefing-id`, also for `nosuch`.
+  - After each of those two commands, the sha and commit count are unchanged.
+  With the 0482563e1 binary on the same entity:
+  - `gate read --current` exits 0 and returns that old-prepared attempt with its full review.
+  - The bare old-skill shape exits 2 with the update diagnostic, and the entity is unchanged.
+  - A `person:captain` approve with the pair, `--consume`, and a reason ending `Via: Ready Room pane, relayed by MetaFO.` exits 0 and consumes.
+  Then, with 0.29.0-pre0 again, `gate read --json` exits 0 and returns `by: person:captain`, the reason byte-exact and `application: consumed`. `status --validate` exits 0 with `VALID`.
+  On the coordinator's order I did not run the full suite or `-race`. The implementation report's results are cited: full exit 0, race exit 0, contractlint ok, and `gofmt -l` listing only `internal/release/runtime_live_evidence_workflow_test.go`, the same as on b7ef2a885. The contractlint package passed in full on 2913ce0b1 as part of the targeted run.
+- DONE: PASSED or REJECTED recommendation with findings classified per Review-finding disposition (material vs deferred), stating separately: the net size against the approved tolerance (+1158 vs +520..+830), the cap change awaiting CL, the unavailable live run, and the required Claude, Codex and Pi CI lanes that cannot run without a push.
+  Recommendation: **REJECTED**. The candidate has narrow defects, not a failed mechanism. Proposals for FO authorization, audit findings included (the audit report is `/tmp/audit-second-surface-gate-decisions.md`):
+  1. Material, outcome, value-ac[AC-4]: an active task returns `attempt:null`. I confirmed audit finding 7 on the unmodified candidate. Under a `…/_archive/proj/…` checkout, prepare exits 0 with `state=open`, and `gate read --current` exits 0 with `{"stage":"validation","attempt":null}`. A record with prepare's pair still closes that attempt. `current.go:44` scans every ancestor of the entity. Other code checks only `<state root>/_archive`. Any checkout path is supported. The effect fails closed: the new skills stop at every gate. Fix: check relative to the state root.
+  2. Material, evidence, value-ac[AC-5] and value-ac[AC-7]: the oracle is weaker than the ACs (audit findings 3 and 4). `assertSecondSurfacePresentation` matches the stored summary as a contiguous run inside the event, so extra or contradictory text and a second copy in the same event pass. It checks only the id, not the digest. Its order check reads only top-level command text and is not correlated with the shim's command log. I confirmed this by reading the code. Fix: narrow, in the oracle and its unit tests.
+  3. Material, contract[docs/dev/README.md#proof-policy]: the side-branch test `TestGateSkillsRecordTheAnsweredBindingFromTheStoredReview` greps skill prose, which the policy bans ("No prose-grep", "Instruction-file read quarantine"). It cannot count as evidence. Fix: delete it; the live scenario owns the proof.
+  4. Deferred risk, evidence, AC-1 (audit finding 2, edits 2, 11 and 12): the refusal tests also pass under a digest-only compare and under sync or consume added on refusal. By reading, the candidate compares both values and returns exit 1 before sync and consume (`cli.go:423-427`). No observed harm. Promote to Material if the record path gains any effect between the compare and the return.
+  5. Deferred risk (audit finding 1): with an old binary, the new skills detect the mismatch only after the old binary's own valid prepare and commit (confirmed above). No decision lands, and the new binary resumes that attempt. AC-2's title "before any write" should say "before any decision write"; that wording is CL's to change. Promote to Material if an old binary's prepare writes a binding that the matched pair refuses or presents differently.
+  6. Deferred risk (audit finding 5): the skill rule "never take a missing value from a later read" has no behavioral proof. The binary refuses a stale pair (AC-1). Promote with the existing rendering risk, when a pane or Review page becomes a supported decision surface.
+  7. Polish (audit finding 6, confirmed): an empty `--briefing-id ""` with `--round` exits 0 and publishes the round, the same as with no flag. `--briefing-id x` is refused. No value AC is harmed.
+  8. Audit deferred and polish items, accepted as the audit classified them: grammar precedence for checks inside `gates`, the full current digest in the refusal message, and the legacy no-summary key.
+  Resolved on 2913ce0b1, by reading: my earlier findings 1 and 2. The Pi `«gate.lifecycle»` line now follows steps 1-6, and the resume rule is its own paragraph.
+  Size: 0482563e1 has net +1158 across 18 files, and 2913ce0b1 has net +1228 across 23 files. Both are past the approved +520..+830 tolerance. The size needs CL's design-reset decision before any fix pass.
+  Cap: the 7700 -> 9100 raise awaits CL.
+  Live: unavailable, with no login. AC-5 to AC-7 and the AC-2 (c) live run have no live evidence.
+  CI: the required Claude, Codex and Pi live lanes cannot run without a push. They are not run.
+
+### Summary
+
+On b7ef2a885 the binary-half tests fail, and on 0482563e1 they pass. A falsifier fails each AC's owner test, either my own or the audit's. The old-binary checks confirm both compatibility halves of AC-2 (c) and AC-6 on a fixture. The live ACs stay blocked. I recommend REJECTED on three narrow Material findings: the `_archive` ancestor in `gate read --current`, an oracle weaker than AC-5 and AC-7, and the side branch's prose-grep test. The size overage and the cap raise go to CL. All scratch (the worktree and the fixtures) has been removed, and the implementation worktree is untouched.
