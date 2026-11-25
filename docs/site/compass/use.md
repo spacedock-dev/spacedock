@@ -78,7 +78,7 @@ Use **Turn off summaries** to stop session summaries. **Delete summary** removes
 Before you check, **What is sent** explains what goes to the model and where. Find it under **Show technical details** on the **AI use and privacy** tab.
 
 1. **Press Check progress** in the session header or in **Is it on track?** Both controls wait for the same result.
-2. **Read Is it on track?** It shows what the check found and a [progress level](reference.md#progress-levels) when the evidence supports one. Follow the quotes link to **Evidence**, then open a citation to jump to its entry in the **Activity log**.
+2. **Read Is it on track?** It shows what the check found and a [progress level](reference.md#progress-levels) when the evidence supports one. Follow the quotes link to **Evidence**, then open a citation to preview it. In the preview, select **See in context of the session** to jump to its entry in the **Activity log**.
 
 ![Is it on track? shows Slightly off course and links to three quotes behind the finding.](img/sample-session-progress.png)
 
@@ -111,9 +111,10 @@ If the check looks wrong, press **This reading looks wrong**. Compass sets aside
 
 ## Let Compass check while you are away
 
-1. **Start Compass with unasked checks enabled.** This lets Compass spend model capacity on eligible sessions while you are away.
+1. **Start Compass with unasked checks enabled.** This lets Compass spend model capacity on eligible sessions while you are away. If Compass is already running on this port, stop it first. A second start on the same port exits and leaves the running settings unchanged.
 
     ```bash
+    spacedock compass --stop
     spacedock compass --daemon --unasked-readings
     ```
 

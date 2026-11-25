@@ -15,7 +15,7 @@ Look up Spacedock Compass commands, options and board labels.
 | `spacedock compass --forget` | Deletes observation history, recorded ends, launcher parent declarations, stored summaries and copied-correction records. Keeps the goals and group labels you typed and the current model-use budget. Pauses AI use and turns summaries off. Requires proof that all dashboards using that Compass home have stopped. | Port 4553 |
 | `spacedock compass --version` | Prints the installed Compass version. | |
 | `spacedock compass --sessions [waiting]` | Lists sessions from a running board, starting with **Right now** when that group has entries. Add `waiting` to list only sessions waiting on you. Excludes the calling session when Compass can identify it. | All listed sessions |
-| `spacedock compass --drift [again]` | Prints a session's progress check. Reads a saved check for free. With no saved check or with `again`, asks the model and waits. | Session from `--session` or `CLAUDE_CODE_SESSION_ID` |
+| `spacedock compass --drift [again]` | Prints a session's progress check. Reads a saved check for free. With no saved check or with `again`, asks the model and waits. | Session from `--session`. Otherwise `CLAUDE_CODE_SESSION_ID` or `CODEX_THREAD_ID`, whichever is set. Requires `--session` when both are set. |
 | `spacedock compass --pause-model-calls` | Pauses model use on a running board. Use **Resume AI use** on the board. | Port 4553 |
 | `spacedock compass --footer` | Prints a Claude Code status line segment from its input and Compass's saved state, including `AI use paused` when applicable. Sends no request. Accepts `--session`. | Silent when nothing can be reported |
 | `spacedock compass --forward-usage` | Reads Claude Code's status line JSON on standard input and sends only the five-hour and seven-day usage percentages and reset times to a running local board. Reads no credential, prints nothing and starts nothing. | Off |
@@ -38,7 +38,7 @@ Options are optional and must be spelled in full. Server options apply to the ru
 | `--port PORT` | Port to serve on. Also selects the instance for `--status`, `--stop` and `--forget`. | `4553` |
 | `--window-hours HOURS` | Hides sessions with no activity in this window. | `24` |
 | `--unasked-readings` | Checks eligible sessions with a goal you wrote and raises departures only. Claude Code and Codex sessions use their own provider. Other eligible sessions prefer Claude Code. If the preferred CLI is unavailable, the other can check. Codex needs permission for the destination shown in **Is it on track?** At most three checks per session and twelve per day. | Off |
-| `--session HARNESS:SESSION_ID` | Selects a session for `--footer`, `--drift`, `--goal`, `--project`, `--summary`, `--monitor` or `--set-group`. Example value: `claude:SESSION_ID`. | For `--footer`, stdin session ID then `CLAUDE_CODE_SESSION_ID`. Other session reads and monitoring use `CLAUDE_CODE_SESSION_ID`. Required for `--set-group`. |
+| `--session HARNESS:SESSION_ID` | Selects a session for `--footer`, `--drift`, `--goal`, `--project`, `--summary`, `--monitor` or `--set-group`. Example value: `claude:SESSION_ID`. | For `--footer`, stdin session ID then `CLAUDE_CODE_SESSION_ID`. Other session reads and monitoring use `CLAUDE_CODE_SESSION_ID`. `--drift` also uses `CODEX_THREAD_ID` when it is the only one set, and requires `--session` when both are set. Required for `--set-group`. |
 | `--claude-reading-model MODEL` | Model Claude Code uses for **Check progress**. Takes an explicit Sonnet or Opus ID of generation 5 or later. | `claude-sonnet-5-5` |
 | `--claude-monitor-model MODEL` | Model Claude Code uses for **Live monitor**. Takes an explicit Haiku ID of generation 4 or later. | `claude-haiku-5-5` |
 | `--no-observer-model`, `--no-harness-usage` | Refuse all model calls for the run, including **Check progress**, **Find goal**, summaries, **Live monitor** and unasked checks. | Off |
@@ -103,7 +103,7 @@ The board lists sessions from the ten supported agent tools when it can find the
 | **On track** | No departure found in what Compass read. |
 | **Slightly off course** | Some work wandered from the goal. |
 | **Off course** | The work no longer serves the goal. |
-| **Way off course** | The work has gone far from the goal. |
+| **Way off course** | The work has gone far from the goal. Only a **Live estimate** can show this level. A progress check you start shows at most **Off course**. |
 
 A saved progress check shows a level only while the evidence it used still matches. Lost history, an expired direction, a truncated transcript or a changed project key can remove the level. Checks saved before v3.0.0 need **Check progress again** before they can show a level.
 
