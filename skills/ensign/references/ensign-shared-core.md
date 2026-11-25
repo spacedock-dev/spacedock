@@ -109,6 +109,10 @@ Codex:
 
     $spacedock:ensign; then Read /tmp/spacedock-dispatch/{name}.md and treat its content as your assignment.
 
+Paseo / host-neutral:
+
+    Load the Spacedock ensign skill (with references/ensign-shared-core.md and references/paseo-ensign-runtime.md); then Read /tmp/spacedock-dispatch/{name}.md and treat its content as your assignment.
+
 The Codex `$spacedock:ensign` marker belongs in the outer fresh-worker prompt,
 not inside the dispatch artifact. It loads this shared contract before the
 worker reads the pointer; the artifact supplies the standard stage-specific assignment.
@@ -117,7 +121,7 @@ artifact first, then carry out the assignment together with those supplemental
 instructions. The artifact need not contain all context: appended notes live in
 the worker conversation and do not replace the pointer, transport identity, model
 or lifecycle authority.
-When the initial prompt begins with either host-specific pattern, including when notes follow it, the first action
+When the initial prompt begins with any host-specific pattern above, including when notes follow it, the first action
 after the bootstrap MUST be `Read /tmp/spacedock-dispatch/{name}.md` and treat
 the file's content as the inline assignment. Pi keeps its native pointer
 bootstrap and receives the already-bound contract from its runtime adapter.

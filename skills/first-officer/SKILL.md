@@ -30,11 +30,19 @@ The skill loader supplies the absolute base directory for this `first-officer` s
 
 ## Runtime adapter
 
-Load the runtime adapter for your platform:
-- Claude Code (`CLAUDECODE` env var is set): read exactly `{first_officer_base}/references/claude-first-officer-runtime.md`; do not list or search the references directory.
-- Codex (`CODEX_THREAD_ID` env var is set): read `references/codex-first-officer-runtime.md`
-- Pi (`PI_CODING_AGENT_DIR` is set, or this session is running under Pi without the Claude/Codex markers above): read `references/pi-first-officer-runtime.md`
+Select the first matching runtime below (load only one transport; never mix native subagent tools with Paseo):
 
-**Paseo dispatch backend:** When `PASEO_AGENT_ID` is set in the environment or the captain explicitly selects Paseo dispatch, load `{first_officer_base}/references/paseo-fo-dispatch.md` alongside `{first_officer_base}/references/fo-dispatch-core.md` (instead of the host's native subagent transport) whenever `fo-dispatch-core.md` loads — at first dispatch or on resume before `«dispatch.next-action»()` / `«roster-reconcile»()` (on hosts without a dedicated adapter above, communicate with the captain via direct conversation text).
+1. **Paseo (priority when `PASEO_AGENT_ID` is set or captain explicitly selects Paseo):** Skip this check (run no `paseo` command) when `PASEO_AGENT_ID` is unset and Paseo was not requested. Otherwise verify daemon reachability with `command -v paseo >/dev/null && paseo status --json` and require exit `0` with `"connectedDaemon": "reachable"`.
+   - **Reachable:** Paseo is the active runtime. Do NOT read `claude-first-officer-runtime.md`, `codex-first-officer-runtime.md`, or `pi-first-officer-runtime.md` at boot. Communicate with the captain in direct conversation text. Defer `{first_officer_base}/references/paseo-fo-dispatch.md` alongside `{first_officer_base}/references/fo-dispatch-core.md` until the dispatch/resume boundary (before resume reconciliation, `«dispatch.next-action»()`, worker dispatch, or terminal teardown — not on a greet-and-stop boot). Paseo owns all worker lifecycle bindings (`spawn`, `wait`, `roster-reconcile`, `shutdown`).
+   - **Unreachable:** If the captain explicitly requested Paseo dispatch, report the unreachable daemon and stop. If only ambient `PASEO_AGENT_ID` was set (for example a sandboxed `paseo-access=workspace` session), fall through to step 2.
+2. **Dedicated host adapter (when Paseo is not active):**
+   - Claude Code (`CLAUDECODE` env var is set): read exactly `{first_officer_base}/references/claude-first-officer-runtime.md`; do not list or search the references directory.
+   - Codex (`CODEX_THREAD_ID` env var is set): read `references/codex-first-officer-runtime.md`
+   - Pi (`PI_CODING_AGENT_DIR` is set, or this session is running under Pi without the Claude/Codex markers above): read `references/pi-first-officer-runtime.md`
+3. **Unsupported-harness fallback (neither reachable Paseo nor Claude/Codex/Pi):** Communicate with the captain in direct conversation text.
+   - **Dispatch boundary:** Read `{first_officer_base}/references/fo-dispatch-core.md` and build host-neutral assignments with `spacedock dispatch build --host paseo`. Map worker capabilities onto this harness's native features resembling Claude (`Agent` / background subagent) or Codex (`spawn_agent` / `wait_agent` / `list_agents`).
+   - **Capability bindings:** Launch fresh isolated workers with the intact pointer (`«worker.spawn»`). Wait or observe asynchronously when supported (`«async-dispatch»`). Treat `«addressable-worker»` as ABSENT unless a live follow-up handle exists, and treat `«context-budget»` as ABSENT unless the harness exposes a real context-usage/limit probe. Use native list and close tools when available (`«roster-reconcile»` / `«worker.shutdown»`). Treat committed Git state plus `## Stage Report` as the authoritative completion gate.
+
+**Marker-free Startup step 1 version check (applies regardless of selected transport, including explicit reachable Paseo):** When `CLAUDECODE`, `CODEX_THREAD_ID`, `PI_CODING_AGENT`, `PI_CODING_AGENT_DIR`, and `PASEO_AGENT_ID` are all unset, `${SPACEDOCK_BIN:-spacedock} --version` prints only 3 lines (`spacedock <version>`, `OS:`, `Channel:`) without `Runtime:` or `contract 3`. Accept that 3-line output ONLY when line 1 matches Startup step 1's required binary minor; still abort on a wrong minor or an explicitly incompatible `contract` token.
 
 Then begin the Startup procedure from the shared core.

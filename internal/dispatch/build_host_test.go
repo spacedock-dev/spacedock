@@ -27,6 +27,20 @@ func TestResolveBuildHostFromMarkers(t *testing.T) {
 		{"codex", map[string]string{"CODEX_THREAD_ID": "t1"}, "codex", ""},
 		{"claude", map[string]string{"CLAUDECODE": "1"}, "claude", ""},
 		{
+			"claude-inside-paseo-no-ambiguity",
+			map[string]string{
+				"CLAUDECODE":     "1",
+				"PASEO_AGENT_ID": "b1c2d3e4-5678-90ab-cdef-1234567890ab",
+			},
+			"claude", "",
+		},
+		{
+			"paseo-agent-id-only-requires-explicit-host",
+			map[string]string{"PASEO_AGENT_ID": "b1c2d3e4-5678-90ab-cdef-1234567890ab"},
+			"",
+			"missing host source: pass --host or run under CODEX_THREAD_ID, CLAUDECODE, PI_CODING_AGENT, or PI_CODING_AGENT_DIR",
+		},
+		{
 			"pi-two-markers-resolve-not-ambiguous",
 			map[string]string{"PI_CODING_AGENT": "1", "PI_CODING_AGENT_DIR": "/home/u/.pi/agent"},
 			"pi", "",
