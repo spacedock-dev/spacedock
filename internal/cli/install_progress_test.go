@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"path/filepath"
 	"reflect"
 	"slices"
 	"strings"
@@ -76,5 +77,54 @@ func TestInstallVerboseUsesCommandClock(t *testing.T) {
 		"[+0.375s] Done: Resolve Claude Code plugin manifest (0.125s)\n"
 	if !strings.HasPrefix(stderr.String(), want) {
 		t.Errorf("trace did not use the command clock for offsets and durations:\n%s", &stderr)
+	}
+}
+
+func TestFinalVersionProbeTracesChildOutcome(t *testing.T) {
+	for _, inventory := range []struct {
+		name   string
+		report func(versionInputs) versionReport
+	}{
+		{"installed versions", collectVersions},
+		{"Pi versions", func(in versionInputs) versionReport {
+			report, _ := piVersionReport(in)
+			return report
+		}},
+	} {
+		for _, tc := range []struct {
+			name, child, version, trace string
+		}{
+			{"exit", "echo 0.17.0; echo private >&2; exit 37", "unknown", "Warning: Check subspace program version (0.125s; child exit 37; continuing)"},
+			{"signal", `kill -TERM "$$"`, "unknown", "Interrupted: Check subspace program version (0.125s; child ended by signal; continuing)"},
+			{"empty", "exit 0", "unknown", "Warning: Check subspace program version (0.125s; version unavailable; continuing)"},
+			{"version", "echo 0.17.0; echo private >&2", "0.17.0", "Done: Check subspace program version (0.125s)"},
+		} {
+			t.Run(inventory.name+"/"+tc.name, func(t *testing.T) {
+				dir := t.TempDir()
+				program := filepath.Join(dir, "spacedock-review")
+				if err := os.WriteFile(program, []byte("#!/bin/sh\n[ \"$*\" = --version ] || exit 99\n"+tc.child+"\n"), 0o755); err != nil {
+					t.Fatal(err)
+				}
+				var stderr bytes.Buffer
+				now := time.Unix(0, 0)
+				in := versionInputs{
+					env:      []string{"HOME=" + dir, "PATH=" + dir},
+					lookPath: func(string) (string, error) { return "", os.ErrNotExist },
+					installProgress: &installProgress{newElapsedTrace(&stderr, func() time.Time {
+						now = now.Add(125 * time.Millisecond)
+						return now
+					})},
+				}
+				verbose := inventory.report(in)
+				in.installProgress = nil
+				ordinary := inventory.report(in)
+				if !reflect.DeepEqual(verbose, ordinary) || ordinary.version("subspace program") != tc.version {
+					t.Errorf("inventory changed or returned the wrong version: verbose %q, ordinary %q, want %q", verbose.version("subspace program"), ordinary.version("subspace program"), tc.version)
+				}
+				if trace := stderr.String(); !strings.Contains(trace, tc.trace) || strings.Contains(trace, "private") {
+					t.Errorf("wanted %q and no child output, got:\n%s", tc.trace, trace)
+				}
+			})
+		}
 	}
 }

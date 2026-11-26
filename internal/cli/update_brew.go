@@ -274,7 +274,7 @@ func (r brewRepair) applyExtension(p brewExtensionPlan, source string, progress 
 }
 
 func (r brewRepair) reportExtension(p brewExtensionPlan, stepErr error, stdout, stderr io.Writer) bool {
-	path, version := extensionProgram(p.ext, r.env, envMap(r.env)["PATH"])
+	path, version := extensionProgram(p.ext, r.env, envMap(r.env)["PATH"], nil)
 	pieces := []string{"program " + version}
 	matched := version == p.entry.Version
 	kept := p.program == version && stableRepairVersion.MatchString(version)

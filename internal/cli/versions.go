@@ -191,16 +191,7 @@ func collectVersions(in versionInputs) versionReport {
 	}
 
 	for _, ext := range extensions {
-		probe := in.installProgress.start("Check " + ext.name + " program version")
-		programPath, programVersion := extensionProgram(ext, in.env, pathEnv)
-		switch programVersion {
-		case notInstalled:
-			probe.outcome("Warning", "; program unavailable; continuing")
-		case "unknown":
-			probe.outcome("Warning", "; version unavailable; continuing")
-		default:
-			probe.end(nil, false)
-		}
+		programPath, programVersion := extensionProgram(ext, in.env, pathEnv, in.installProgress)
 		add(ext.name+" program", programVersion, programPath)
 		id := extensionPluginID(ext.name)
 		if programVersion == notInstalled {
@@ -328,16 +319,7 @@ func piVersionReport(in versionInputs) (versionReport, bool) {
 		if ext.piTitle == "" {
 			continue
 		}
-		probe := in.installProgress.start("Check " + ext.name + " program version")
-		programPath, programVersion := extensionProgram(ext, in.env, pathEnv)
-		switch programVersion {
-		case notInstalled:
-			probe.outcome("Warning", "; program unavailable; continuing")
-		case "unknown":
-			probe.outcome("Warning", "; version unavailable; continuing")
-		default:
-			probe.end(nil, false)
-		}
+		programPath, programVersion := extensionProgram(ext, in.env, pathEnv, in.installProgress)
 		report.rows = append(report.rows, pieceRow{ext.name + " program", programVersion, programPath})
 		if programVersion == notInstalled {
 			report.missingProgram(ext)
@@ -397,14 +379,26 @@ func printVersionReport(w io.Writer, report versionReport) {
 	fmt.Fprintln(w)
 }
 
-func extensionProgram(ext extension, env []string, pathEnv string) (path, version string) {
+func extensionProgram(ext extension, env []string, pathEnv string, progress *installProgress) (path, version string) {
+	probe := progress.start("Check " + ext.name + " program version")
 	found := pathCopies(pathEnv, ext.program)
 	if len(found) == 0 {
+		probe.outcome("Warning", "; program unavailable; continuing")
 		return "", notInstalled
 	}
-	version = programReportedVersion(found[0], env, "")
+	version, err := readProgramVersion(found[0], env, "")
 	if ext.tree && version == "unknown" {
 		version = treeVersion(found[0], ext.name, env)
+	}
+	switch {
+	case err != nil:
+		probe.end(err, true)
+	case version == notInstalled:
+		probe.outcome("Warning", "; program unavailable; continuing")
+	case version == "unknown":
+		probe.outcome("Warning", "; version unavailable; continuing")
+	default:
+		probe.end(nil, false)
 	}
 	return found[0], version
 }
@@ -431,20 +425,25 @@ func treeVersion(link, name string, env []string) string {
 }
 
 func programReportedVersion(path string, env []string, prefix string) string {
+	version, _ := readProgramVersion(path, env, prefix)
+	return version
+}
+
+func readProgramVersion(path string, env []string, prefix string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, path, "--version")
 	cmd.Env = env
 	out, err := cmd.Output()
 	if err != nil {
-		return "unknown"
+		return "unknown", err
 	}
 	line, _, _ := strings.Cut(strings.TrimSpace(string(out)), "\n")
 	line = strings.TrimSpace(strings.TrimPrefix(line, prefix))
 	if line == "" {
-		return "unknown"
+		return "unknown", nil
 	}
-	return line
+	return line, nil
 }
 
 func pathCopies(pathEnv, name string) []string {
