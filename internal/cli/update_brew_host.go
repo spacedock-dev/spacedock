@@ -133,6 +133,23 @@ func (m repairMarketplace) matches(source string) bool {
 	}
 }
 
+// isGit reports a registration the host keeps as a managed Git snapshot of a remote.
+func (m repairMarketplace) isGit() bool {
+	return m.Source == "github" || m.Source == "git" || m.MarketplaceSource.SourceType == "git"
+}
+
+// snapshotRefreshAdvice names the host command that refreshes a lagging catalog.
+func snapshotRefreshAdvice(host string, market repairMarketplace) string {
+	if !market.isGit() {
+		return "Make the matching listing available in this host"
+	}
+	verb := "update"
+	if host == "codex" {
+		verb = "upgrade"
+	}
+	return fmt.Sprintf("Refresh it with: %s plugin marketplace %s %s", host, verb, extensionMarketplace)
+}
+
 func repairMarketplaceRepo(remote string) string {
 	return strings.TrimSuffix(strings.TrimPrefix(remote, "https://github.com/"), ".git")
 }
@@ -148,7 +165,7 @@ func (r brewRepair) checkHostSource(host, name, source string, entry repairEntry
 	}
 	actual, err := resolveRepairEntry(data, name)
 	if err != nil || actual != entry {
-		return "", fmt.Errorf("%s's %s snapshot cannot select %s %s. Make the matching listing available in this host", host, extensionMarketplace, name, entry.Version)
+		return "", fmt.Errorf("%s's %s snapshot cannot select %s %s. %s", host, extensionMarketplace, name, entry.Version, snapshotRefreshAdvice(host, market))
 	}
 	if entry.Local != "" && !filepath.IsAbs(source) {
 		return "", fmt.Errorf("%s resolves %s from a local path in a remote marketplace", host, name)

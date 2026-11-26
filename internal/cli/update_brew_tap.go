@@ -6,7 +6,9 @@ import (
 )
 
 func (r brewRepair) cleanBrewTap(tap string) (head, branch string, err error) {
-	remote, err := r.git(tap, "remote", "get-url", "--all", "origin")
+	// Read the configured URL. get-url expands insteadOf rewrites, such as a user's
+	// https-to-SSH GitHub rule, and would refuse an official tap.
+	remote, err := r.git(tap, "config", "--local", "--get-all", "remote.origin.url")
 	if err != nil || (strings.TrimSpace(remote) != spacedockTapRemote && strings.TrimSpace(remote) != spacedockTapRemote+".git") {
 		return "", "", fmt.Errorf("the installed tap does not track the official Spacedock source. Verify its origin")
 	}

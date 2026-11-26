@@ -14,8 +14,7 @@ func (r brewRepair) refreshRegisteredSubspace(host string, before pluginListEntr
 		return false, nil
 	}
 	market, err := r.marketplaceByName(host, extensionMarketplace)
-	if err != nil || !market.matches(source) ||
-		(market.Source != "github" && market.Source != "git" && market.MarketplaceSource.SourceType != "git") {
+	if err != nil || !market.matches(source) || !market.isGit() {
 		return false, nil
 	}
 	const name = "subspace"
@@ -59,66 +58,27 @@ func isTaggedRepairEntry(entry repairEntry) bool {
 }
 
 func (r brewRepair) refreshRegisteredSnapshot(host, source string, market repairMarketplace, name string, cached repairEntry, installed string) (repairEntry, error) {
-	root, err := r.managedMarketplaceRoot(host, market)
-	if err != nil {
-		return repairEntry{}, err
-	}
-	for _, key := range []string{"GIT_DIR", "GIT_COMMON_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY"} {
-		r.env = withoutEnv(r.env, key)
-	}
-	origin := "https://github.com/" + source
-	remote, err := r.git(root, "config", "--local", "--get-all", "remote.origin.url")
-	registrations := []string{origin, origin + ".git", "git@github.com:" + source + ".git", "ssh://git@github.com/" + source + ".git"}
-	if err != nil || !slices.Contains(registrations, strings.TrimSpace(remote)) {
-		return repairEntry{}, fmt.Errorf("%s's marketplace checkout does not track its registered GitHub source", host)
-	}
-	head, err := r.cleanMarketplaceHead(root)
-	if err != nil {
-		return repairEntry{}, err
-	}
-	ref, err := r.git(root, "ls-remote", "--exit-code", origin+".git", "HEAD")
-	fields := strings.Fields(ref)
-	if err != nil || len(fields) != 2 || fields[1] != "HEAD" || !repairCommit.MatchString(fields[0]) {
-		return repairEntry{}, fmt.Errorf("could not resolve the published %s marketplace HEAD for %s", extensionMarketplace, host)
-	}
-	tip := fields[0]
 	target := cached
-	if tip != head {
-		if _, err := r.git(root, "fetch", "--no-tags", "--no-recurse-submodules", "--no-write-fetch-head", origin+".git", tip); err != nil {
-			return repairEntry{}, err
+	err := r.fastForwardRegisteredSnapshot(host, source, market, func(published []byte) (bool, error) {
+		if published != nil {
+			next, err := resolveRepairEntry(published, name)
+			if err != nil || !isTaggedRepairEntry(next) || next.Repo != cached.Repo || next.Path != cached.Path {
+				return false, fmt.Errorf("the published listing does not give %s a matching release tag from its registered plugin source", name)
+			}
+			if err := repairCanAdvance("the marketplace snapshot", cached.Version, next.Version); err != nil {
+				return false, err
+			}
+			target = next
 		}
-		if _, err := r.git(root, "merge-base", "--is-ancestor", head, tip); err != nil {
-			return repairEntry{}, fmt.Errorf("%s's marketplace snapshot cannot fast-forward to the published listing", host)
+		if err := repairCanAdvance("the installed plugin", installed, target.Version); err != nil {
+			return false, err
 		}
-		data, err := r.marketplaceListingAt(host, root, tip)
-		if err != nil {
-			return repairEntry{}, err
-		}
-		target, err = resolveRepairEntry(data, name)
-		if err != nil || !isTaggedRepairEntry(target) || target.Repo != cached.Repo || target.Path != cached.Path {
-			return repairEntry{}, fmt.Errorf("the published listing does not give %s a matching release tag from its registered plugin source", name)
-		}
-		if err := repairCanAdvance("the marketplace snapshot", cached.Version, target.Version); err != nil {
-			return repairEntry{}, err
-		}
-	}
-	if err := repairCanAdvance("the installed plugin", installed, target.Version); err != nil {
+		return cached != target, nil
+	})
+	if err != nil {
 		return repairEntry{}, err
 	}
-	if cached != target {
-		if current, err := r.cleanMarketplaceHead(root); err != nil || current != head {
-			return repairEntry{}, fmt.Errorf("%s's marketplace snapshot changed while preparing its refresh", host)
-		}
-		// Git refreshes the catalog. The host's single-plugin command runs only after readback.
-		if _, err := r.git(root, "-c", "submodule.recurse=false", "merge", "--ff-only", tip); err != nil {
-			return repairEntry{}, err
-		}
-	}
-	selected, err := r.marketplaceByName(host, extensionMarketplace)
-	if err != nil || selected != market {
-		return repairEntry{}, fmt.Errorf("%s's marketplace registration changed during the refresh", host)
-	}
-	data, err := selected.readListing(host)
+	data, err := market.readListing(host)
 	if err != nil {
 		return repairEntry{}, err
 	}
@@ -127,6 +87,97 @@ func (r brewRepair) refreshRegisteredSnapshot(host, source string, market repair
 		return repairEntry{}, fmt.Errorf("%s's marketplace snapshot did not select %s %s", host, name, target.Version)
 	}
 	return target, nil
+}
+
+// syncHostSnapshot fast-forwards a host's registered Git snapshot of the extension
+// marketplace when it cannot yet select entry, the release the published listing names.
+// Only the catalog moves, so installed plugins keep their versions until the repair
+// updates the one it selected. A directory registration is left to checkHostSource.
+func (r brewRepair) syncHostSnapshot(host, name, source string, entry repairEntry) error {
+	if !repairGitHubRepo.MatchString(source) {
+		return nil
+	}
+	market, err := r.hostMarketplace(host, source)
+	if err != nil || !market.isGit() {
+		return nil
+	}
+	if data, err := market.readListing(host); err == nil {
+		if actual, err := resolveRepairEntry(data, name); err == nil && actual == entry {
+			return nil
+		}
+	}
+	err = r.fastForwardRegisteredSnapshot(host, source, market, func(published []byte) (bool, error) {
+		if published == nil {
+			return false, nil
+		}
+		if next, err := resolveRepairEntry(published, name); err != nil || next != entry {
+			return false, fmt.Errorf("the published listing does not select %s %s yet. Retry after it does", name, entry.Version)
+		}
+		return true, nil
+	})
+	if err != nil {
+		return fmt.Errorf("could not refresh %s's %s snapshot: %w", host, extensionMarketplace, err)
+	}
+	return nil
+}
+
+// fastForwardRegisteredSnapshot moves a host's managed Git checkout of the extension
+// marketplace to the published HEAD. decide receives the listing at that commit, or nil
+// when the checkout is already there, and reports whether to merge. Git refreshes only
+// the catalog; the caller runs any single-plugin host command after its own readback.
+func (r brewRepair) fastForwardRegisteredSnapshot(host, source string, market repairMarketplace, decide func(published []byte) (bool, error)) error {
+	root, err := r.managedMarketplaceRoot(host, market)
+	if err != nil {
+		return err
+	}
+	for _, key := range []string{"GIT_DIR", "GIT_COMMON_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY"} {
+		r.env = withoutEnv(r.env, key)
+	}
+	origin := "https://github.com/" + source
+	remote, err := r.git(root, "config", "--local", "--get-all", "remote.origin.url")
+	registrations := []string{origin, origin + ".git", "git@github.com:" + source + ".git", "ssh://git@github.com/" + source + ".git"}
+	if err != nil || !slices.Contains(registrations, strings.TrimSpace(remote)) {
+		return fmt.Errorf("%s's marketplace checkout does not track its registered GitHub source", host)
+	}
+	head, err := r.cleanMarketplaceHead(root)
+	if err != nil {
+		return err
+	}
+	ref, err := r.git(root, "ls-remote", "--exit-code", origin+".git", "HEAD")
+	fields := strings.Fields(ref)
+	if err != nil || len(fields) != 2 || fields[1] != "HEAD" || !repairCommit.MatchString(fields[0]) {
+		return fmt.Errorf("could not resolve the published %s marketplace HEAD for %s", extensionMarketplace, host)
+	}
+	tip := fields[0]
+	var published []byte
+	if tip != head {
+		if _, err := r.git(root, "fetch", "--no-tags", "--no-recurse-submodules", "--no-write-fetch-head", origin+".git", tip); err != nil {
+			return err
+		}
+		if _, err := r.git(root, "merge-base", "--is-ancestor", head, tip); err != nil {
+			return fmt.Errorf("%s's marketplace snapshot cannot fast-forward to the published listing", host)
+		}
+		if published, err = r.marketplaceListingAt(host, root, tip); err != nil {
+			return err
+		}
+	}
+	merge, err := decide(published)
+	if err != nil {
+		return err
+	}
+	if merge && tip != head {
+		if current, err := r.cleanMarketplaceHead(root); err != nil || current != head {
+			return fmt.Errorf("%s's marketplace snapshot changed while preparing its refresh", host)
+		}
+		if _, err := r.git(root, "-c", "submodule.recurse=false", "merge", "--ff-only", tip); err != nil {
+			return err
+		}
+	}
+	selected, err := r.marketplaceByName(host, extensionMarketplace)
+	if err != nil || selected != market {
+		return fmt.Errorf("%s's marketplace registration changed during the refresh", host)
+	}
+	return nil
 }
 
 func (r brewRepair) managedMarketplaceRoot(host string, market repairMarketplace) (string, error) {

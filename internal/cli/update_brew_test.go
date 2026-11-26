@@ -314,7 +314,7 @@ func stageBrewRepair(t *testing.T, cask, claude, codex, failure string) string {
 			`{"name":"spacedock","plugins":[{"name":"compass","version":"2.13.0","source":"./compass"}]}`)
 	}
 	tap := filepath.Join(root, "tap")
-	writeFileWithDirs(t, filepath.Join(tap, "Formula", "compass.rb"), "# Fixture formula metadata comes from brew info.\n")
+	writeFileWithDirs(t, filepath.Join(tap, "Formula", "compass.rb"), "# Fixture formula metadata comes from brew info.\n# stable 3.0.1\n")
 	testgit.InitRepo(t, tap, "-q", "-b", "main")
 	for _, args := range [][]string{
 		{"add", "Formula/compass.rb"}, {"commit", "-qm", "formula"},
@@ -338,7 +338,7 @@ func stageBrewRepair(t *testing.T, cask, claude, codex, failure string) string {
 	info := map[string]any{
 		"name": "compass", "tap": spacedockTap, "full_name": spacedockTap + "/compass",
 		"linked_keg": "KEG", "installed": []any{map[string]string{"version": "KEG"}},
-		"pinned": failure == "pinned", "outdated": true, "versions": map[string]string{"stable": "3.0.1"},
+		"pinned": failure == "pinned", "outdated": true, "versions": map[string]string{"stable": "STABLE"},
 		"ruby_source_path": "Formula/compass.rb", "ruby_source_checksum": map[string]string{"sha256": "PREPARED-RECIPE"},
 		"urls": map[string]any{"stable": map[string]string{"checksum": strings.Repeat("a", 64)}},
 	}
@@ -372,7 +372,7 @@ printf '%s\n' "$*" >> brew-calls
 case "$*" in
 '--repo spacedock-dev/tap') printf '%s/tap\n' "$PWD" ;;
 '--cellar spacedock-dev/tap/compass') printf '%s/Cellar/compass\n' "$PWD" ;;
-'info --json=v2 --formula spacedock-dev/tap/compass') sed "s/KEG/$(cat keg)/g" info ;;
+'info --json=v2 --formula spacedock-dev/tap/compass') sed "s/KEG/$(cat keg)/g; s/STABLE/$(sed -n 's/^# stable //p' tap/Formula/compass.rb)/g" info ;;
 'fetch --formula spacedock-dev/tap/compass')
 	test ! -f missing-archive || { echo 'archive unavailable' >&2; exit 1; }
 	test ! -f bad-archive || { echo 'checksum mismatch' >&2; exit 1; }
@@ -438,6 +438,9 @@ case "$*" in
 	printf 1.1.0 > "$host-subspace" ;;
 'plugin update compass@spacedock --scope user'|'plugin add compass@spacedock')
 	test ! -f "fail-$host" || { echo 'fixture host failed' >&2; exit 1; }
+	if test -f "$host-registered"; then
+		grep -q '"name":"compass","version":"3.0.1"' "$(cat "$host-registered")/.claude-plugin/marketplace.json" || exit 0
+	fi
 	echo "$host" >> changes
 	printf 3.0.1 > "$host" ;;
 *) echo "unexpected host operation: $*" >&2; exit 1 ;;

@@ -181,6 +181,9 @@ func (r brewRepair) prepareExtension(p *brewExtensionPlan, listing []byte, listi
 		if version != target && piece.Installed && (host.host == "claude" && piece.Scope != "user" || host.host == "codex" && !piece.Enabled) {
 			return fmt.Errorf("%s cannot safely update the existing scope or disabled state for %s", host.title, p.ext.name)
 		}
+		if err := r.syncHostSnapshot(host.host, p.ext.name, source, p.entry); err != nil {
+			return err
+		}
 		host.manifest, err = r.checkHostSource(host.host, p.ext.name, source, p.entry)
 		if err != nil {
 			return err

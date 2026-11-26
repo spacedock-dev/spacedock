@@ -301,8 +301,13 @@ clean tracked default branch of the official Spacedock tap. This refresh
 touches only that tap. Homebrew fetches and verifies the Compass archive.
 After a final version, dependency and link check, update asks Homebrew to
 upgrade only `spacedock-dev/tap/compass` with automatic refreshes disabled.
-A host that cannot select the matching release or safely preserve its settings
-can hold the Compass repair. A Compass plugin already at the target is skipped.
+When a host's matching Git registration keeps a clean managed catalog that lags
+the published listing, update fast-forwards that catalog to the published commit
+before checking it. Only the catalog moves, so installed plugins keep their
+versions. A host that still cannot select the matching release or safely preserve
+its settings can hold the Compass repair; for a Git registration the hold names
+the host's marketplace refresh command. A Compass plugin already at the target is
+skipped.
 
 On eligible hosts, update refreshes the enabled Spacedock plugin from its
 configured source, including when a Git branch advances under the same
