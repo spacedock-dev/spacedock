@@ -1,6 +1,6 @@
 ---
 name: review
-description: "Get a person's review of an artifact you produced or were handed: a plan, spec, report or other Markdown file. Use when you have a file that someone should read and react to before work continues, or when the user asks to send something for review. Picks the Terminal (TUI) or the Web from this project's recorded choice and never uploads without it. With no argument it shows or changes that choice; tui or web records it; a file path is reviewed; any other text is a prompt to carry out first."
+description: "Get a person's review of an artifact you produced or were handed: a plan, spec, report or other Markdown file. Use when you have a file that someone should read and react to before work continues, or when the user asks to send something for review. Picks the Terminal (TUI) or the Web from this project's recorded choice and never uploads without it. With no argument it shows or changes that choice; tui or web records it; a file path is reviewed; any other text is a prompt to carry out first. When writing a plan for review, put the decisions immediately below the title; no background or rationale first. Ask each independent decision as a separate question and give your recommended answer with a one-line reason. After the decisions, show the choices or flow in one small fenced Mermaid diagram. Follow with only requested detail and decision-changing facts; cut extra steps, figures, and test lists."
 ---
 
 # Review an artifact
@@ -149,6 +149,8 @@ ask you to change. Then **Review the file** with the resulting file, and tell th
 file, say so and stop.
 
 ## Review the file
+
+If you wrote the plan in this conversation, check it against the plan format in this skill’s description before handing it off. Follow any format or length the user requested. If the plan already fits, hand it off as written.
 
 1. Read the choice:
 
