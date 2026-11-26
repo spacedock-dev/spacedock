@@ -428,6 +428,7 @@ type installStep struct {
 	tolerateExit bool
 	reportExit   bool
 	ifInstalled  string
+	afterFailure bool // run only if the preceding command failed
 }
 
 // retiredRouteAID is the retired route-A plugin id from round 1's collapse (the
@@ -453,13 +454,13 @@ const retiredRouteAID = "spacedock-edge@spacedock"
 // already-current source. No stable stderr shape separates those cases from a real
 // failure. An absent sibling alone gives two different non-zero shapes. The pinning
 // steps stay fail-fast, because they report a broken install.
-func installArgvSequence(source, devBranch string) []installStep {
+func installArgvSequence(source, devBranch string, fresh bool) []installStep {
 	id := channelPluginID(devBranch)
 	steps := []installStep{
 		uninstallStep("spacedock@" + otherChannelMarketplace(devBranch)),
 		uninstallStep(retiredRouteAID),
 		{argv: []string{"plugin", "marketplace", "add", source}},
-		{argv: []string{"plugin", "marketplace", "update", channelMarketplace(devBranch)}, tolerateExit: true},
+		{argv: []string{"plugin", "marketplace", "update", channelMarketplace(devBranch)}, tolerateExit: true, afterFailure: fresh},
 		uninstallStep(id),
 		{argv: []string{"plugin", "install", id}},
 	}
@@ -475,7 +476,7 @@ func installArgvSequence(source, devBranch string) []installStep {
 		steps = append(steps,
 			uninstallStep(edgeCopyID(ext.name)),
 			installStep{argv: []string{"plugin", "install", extID}, tolerateExit: true},
-			installStep{argv: []string{"plugin", "update", extID}, tolerateExit: true, reportExit: true},
+			installStep{argv: []string{"plugin", "update", extID}, tolerateExit: true, reportExit: true, afterFailure: fresh},
 		)
 	}
 	return steps
@@ -596,7 +597,10 @@ func (execHost) Install(host, source, devBranch string) (string, error) {
 	var steps []installStep
 	switch host {
 	case "claude":
-		steps = skipAbsentPlugins(installArgvSequence(source, devBranch), claudeUserPluginIDs(host))
+		installed, builtinsOnly := claudeUserPluginIDs(host)
+		// A previously registered catalog can be stale even when it has no installed plugins.
+		fresh := builtinsOnly && devBranch == "main" && source == defaultMarketplaceSource && claudeHasNoMarketplaces(host)
+		steps = skipAbsentPlugins(installArgvSequence(source, devBranch, fresh), installed)
 	case "codex":
 		steps = codexInstallArgvSequence(source, devBranch)
 	default:
@@ -607,23 +611,56 @@ func (execHost) Install(host, source, devBranch string) (string, error) {
 
 // claudeUserPluginIDs lists the ids installed at user scope, where `plugin uninstall`
 // acts. A plugin whose marketplace listing is gone is still listed, with an errors
-// field. It returns nil when the inventory cannot be read.
-func claudeUserPluginIDs(host string) map[string]bool {
+// field. The second result is true if every scope contains only bundled plugins.
+// An unreadable inventory returns nil, false.
+func claudeUserPluginIDs(host string) (map[string]bool, bool) {
 	out, err := exec.Command(host, "plugin", "list", "--json").Output()
 	if err != nil {
-		return nil
+		return nil, false
 	}
 	var entries []pluginListEntry
-	if json.Unmarshal(out, &entries) != nil {
-		return nil
+	if json.Unmarshal(out, &entries) != nil || entries == nil {
+		return nil, false
 	}
 	ids := map[string]bool{}
+	builtinsOnly := true
 	for _, e := range entries {
+		// Claude includes its bundled plugins even in a brand-new profile.
+		if !strings.HasSuffix(e.ID, "@builtin") || e.InstallPath != "" {
+			builtinsOnly = false
+		}
 		if e.Scope == "" || e.Scope == "user" {
 			ids[e.ID] = true
 		}
 	}
-	return ids
+	return ids, builtinsOnly
+}
+
+func claudeHasNoMarketplaces(host string) bool {
+	// An interrupted install may leave caches or a checkout without a registration.
+	if os.Getenv("CLAUDE_CODE_PLUGIN_CACHE_DIR") != "" || os.Getenv("CLAUDE_CODE_PLUGIN_SEED_DIR") != "" {
+		return false
+	}
+	config := os.Getenv("CLAUDE_CONFIG_DIR")
+	if config == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return false
+		}
+		config = filepath.Join(home, ".claude")
+	}
+	if !filepath.IsAbs(config) {
+		return false
+	}
+	if _, err := os.Lstat(filepath.Join(config, "plugins")); !os.IsNotExist(err) {
+		return false
+	}
+	out, err := exec.Command(host, "plugin", "marketplace", "list", "--json").Output()
+	if err != nil {
+		return false
+	}
+	var markets []json.RawMessage
+	return json.Unmarshal(out, &markets) == nil && markets != nil && len(markets) == 0
 }
 
 func skipAbsentPlugins(steps []installStep, installed map[string]bool) []installStep {
@@ -653,9 +690,14 @@ func (execHost) InstallCodexLocalPluginDir(source string) (string, error) {
 // Shared by Install and InstallCodexLocalPluginDir so the loop is written once.
 func runInstallSteps(host string, steps []installStep) (string, error) {
 	var sb strings.Builder
+	var previousErr error
 	for _, step := range steps {
+		if step.afterFailure && previousErr == nil {
+			continue
+		}
 		cmd := exec.Command(host, step.argv...)
 		out, err := cmd.CombinedOutput()
+		previousErr = err
 		sb.Write(out)
 		if err != nil {
 			if step.tolerateExit {

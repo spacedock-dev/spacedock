@@ -62,7 +62,7 @@ func TestUpgradeFromStaleMovesToGreen(t *testing.T) {
 	// targets the stable `spacedock` entry that was seeded above. The remove step
 	// is tolerated — runHostTolerant accepts a non-zero exit on it without
 	// failing the test, matching the production loop's behavior.
-	for _, step := range installArgvSequence(upgradedMarketplace, "main") {
+	for _, step := range installArgvSequence(upgradedMarketplace, "main", false) {
 		if step.tolerateExit {
 			runHostTolerant(t, claudeBin, env, step.argv...)
 		} else {
