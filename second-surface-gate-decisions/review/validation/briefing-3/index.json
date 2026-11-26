@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:301s961pr7b2cnywnkz88jec:validation:attempt-3:revision-1",
+  "question": "Validation, correction round 2 (candidate 13beec7b4): approve for delivery preparation, with the two holes of the third audit filed as a follow-up task, as recommended?",
+  "artifacts": [
+    {
+      "id": "artifact:301s961pr7b2cnywnkz88jec:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/d1be5a9a9c78eeaacb8f7b1b4c2ac5aba8cebe22/second-surface-gate-decisions.md",
+      "rev": "sha256:2a21ccbb65443f13ab0f5aeade423b44af5330a1b9427d549ddbc4e673316671",
+      "mediaType": "text/markdown",
+      "summary": "Fresh validation (cycle 3) recommends PASSED with no Material finding: the four round-2 changes verified with fail-before and falsifiers; go test ./... and -race exit 0 (22 packages). Third detached audit (Codex, /tmp/audit3-second-surface-gate-decisions.md) recommends REJECTED: 10 mutations, 7 caught; all earlier Material holes CAUGHT on retest (symlink spellings, two-line relay reason, extra text or a second pair on the snapshot line); two new Material holes reproduced on the unmodified candidate: a letter-case variant of an archived path on macOS returns the archived review as open (the validator classed it Deferred: no supported caller produces such a path); the oracle accepts a Markdown link that shows the id and hides the digest in the link target. Size net +1500 across 23 files vs accepted about +1300. Live AC-5 to AC-7 blocked (no login); CI lanes not run (no push). Third round on this task: the first officer does not start a fourth."
+    }
+  ]
+}

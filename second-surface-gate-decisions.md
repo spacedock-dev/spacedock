@@ -92,6 +92,11 @@ gates:
                 conn:
                     quote: You are operating as spacedock fo, you can finalize task and merge with delegation recorded
                     source: CL to MetaFO, 2026-11-25; applied by MetaFO (agent aec8a43c) to this send-back in its message of 2026-11-26
+            - id: gate-attempt:301s961pr7b2cnywnkz88jec-validation-3
+              briefing:
+                id: briefing:301s961pr7b2cnywnkz88jec:validation:attempt-3:revision-1
+                digest: sha256:bcf331ed688ff9a2eccd7c19ef936cef807704102dbb3a437dc9c6f26d859582
+                room-ref: '@review/validation/briefing-3'
 ---
 
 A captain can decide a gate from a pane, a Spacedock Review page or another agent's message. The decision lands only on the Briefing content the captain read, the stored review is the text the captain read, and the record says how the decision arrived.
