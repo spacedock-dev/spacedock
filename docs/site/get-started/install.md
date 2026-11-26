@@ -50,6 +50,11 @@ Set `SPACEDOCK_INTERNAL=1` to add `; internal`.
 
     Start a new session.
 
+Add `--verbose` to see which host operation is running and how long each operation took.
+The timing lines go to stderr. They cover host setup and its checks, starting after
+the Spacedock binary is available. For time from acquisition to first use, see the
+[developer benchmark protocol](https://github.com/spacedock-dev/spacedock/blob/main/scripts/README.md).
+
 <a id="3-confirm-setup"></a>
 
 ## Confirm setup

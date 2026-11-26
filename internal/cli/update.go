@@ -89,9 +89,9 @@ SPACEDOCK_INSTALL_SCRIPT=PATH runs that script in place of the downloaded one.
 func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 	progress := &updateProgress{plain: stderr}
 	if d.verbose {
-		zero := time.Now()
-		verboseOut := &updateLineWriter{out: stdout, zero: zero}
-		progress.trace = &updateLineWriter{out: stderr, zero: zero}
+		clock := newElapsedTrace(stderr, time.Now)
+		verboseOut := &updateLineWriter{out: stdout, clock: clock}
+		progress.trace = &updateLineWriter{out: stderr, clock: clock}
 		verboseOut.peer, progress.trace.peer = progress.trace, verboseOut
 		progress.last = []time.Time{{}}
 		stdout, stderr = verboseOut, progress.trace

@@ -48,6 +48,10 @@ func piExtensionSource(listing []byte, name string) (pinned, bare string, err er
 // a `spacedock install:` line and leaves the exit code alone, as for a Claude Code
 // companion, so `update` can show it.
 func installPiExtensions(piOps piRuntimeOps, agentDir string, stdout io.Writer, extensions []extension) {
+	installPiExtensionsWithProgress(piOps, agentDir, stdout, extensions, nil)
+}
+
+func installPiExtensionsWithProgress(piOps piRuntimeOps, agentDir string, stdout io.Writer, extensions []extension, progress *installProgress) {
 	var wanted []extension
 	for _, ext := range extensions {
 		if ext.piTitle != "" {
@@ -58,22 +62,32 @@ func installPiExtensions(piOps piRuntimeOps, agentDir string, stdout io.Writer, 
 		return
 	}
 	listingSource := extensionMarketplaceSource()
+	readListing := progress.start("Read Pi extension marketplace")
 	listing, err := piOps.ReadExtensionListing(listingSource)
+	readListing.end(err, true)
 	if err != nil {
+		progress.skip("Install Pi extension packages", "extension listing unavailable")
 		fmt.Fprintf(stdout, "spacedock install: could not read the extension listing %s, so the Pi packages were not installed: %v\n", listingSource, err)
 		return
 	}
 	for _, ext := range wanted {
+		label := ext.piTitle + " Pi package"
 		pinned, bare, err := piExtensionSource(listing, ext.name)
 		if err != nil {
+			progress.skip("Install "+label, "no usable package source")
 			fmt.Fprintf(stdout, "spacedock install: %v, so the %s Pi package was not installed\n", err, ext.name)
 			continue
 		}
 		if piSettingsHold(agentDir, pinned) {
+			progress.skip("Install "+label, "requested pin is already installed")
 			continue
 		}
-		piOps.PiRemove(bare)
+		remove := progress.start("Remove " + label)
+		_, err = piOps.PiRemove(bare)
+		remove.end(err, true)
+		install := progress.start("Install " + label)
 		out, err := piOps.PiInstall(pinned)
+		install.end(err, true)
 		if strings.TrimSpace(out) != "" {
 			fmt.Fprint(stdout, out)
 		}

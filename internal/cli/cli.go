@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/spf13/cobra"
@@ -507,14 +508,10 @@ func newPiCommand(ctx context.Context, env []string, dir string, stdout, stderr 
 	return cmd
 }
 
-// newInstallCommand wires `spacedock install` (the renamed `init`). Behavior is
-// unchanged from init: install the per-host plugin then run doctor (claude), or
-// emit the documented codex add prose. DisableFlagParsing keeps the post-subcommand
-// argv verbatim for the existing hand-parsed runInit (so `--host`/`--check` parse
-// exactly as before); `-h`/`--help` is intercepted here.
+// newInstallCommand leaves setup arguments to the shared install parser.
 func newInstallCommand(ctx context.Context, env []string, dir string, stdout, stderr io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:                "install [--host claude|codex|pi] [--check]",
+		Use:                "install [--host claude|codex|pi] [--check] [--verbose]",
 		Short:              "Install the Spacedock plugin for a host, then check it",
 		GroupID:            "setup",
 		DisableFlagParsing: true,
@@ -524,15 +521,15 @@ func newInstallCommand(ctx context.Context, env []string, dir string, stdout, st
 			}
 			applyDevBranchOverride(env)
 			applyMarketplaceSourceOverride(env)
-			if code := runInitWithPi(ctx, args, execHost{}, execPiRuntimeOps{}, env, stdout, stderr); code != 0 {
+			if code := runInstallCommand(ctx, args, env, dir, stdout, stderr, time.Now); code != 0 {
 				return exitCodeError{code}
 			}
-			reportVersions(args, env, dir, stdout)
 			return nil
 		},
 	}
 	cmd.Flags().String("host", "claude", "Host to install the plugin for (claude, codex, or pi)")
 	cmd.Flags().Bool("check", false, "Run the compatibility report without installing")
+	cmd.Flags().Bool("verbose", false, "Show install progress and elapsed time on stderr")
 	setSetupHelp(cmd, stdout, `
 Examples:
   spacedock install

@@ -5,7 +5,6 @@ package cli
 import (
 	"bytes"
 	"context"
-	"reflect"
 	"strings"
 	"testing"
 )
@@ -67,7 +66,7 @@ func TestClaudeChannelInstallArgvSequence(t *testing.T) {
 				{argv: []string{"plugin", "install", tc.wantID}},
 			}
 			got := installArgvSequence("spacedock-dev/marketplace", tc.devBranch)
-			if !reflect.DeepEqual(got, want) {
+			if !sameInstallSteps(got, want) {
 				t.Errorf("installArgvSequence(%q) =\n%v\nwant\n%v", tc.devBranch, got, want)
 			}
 			// No @<branch> shorthand leaked onto the marketplace add.
@@ -115,7 +114,7 @@ func TestCodexChannelInstallArgvSequence(t *testing.T) {
 				{argv: []string{"plugin", "add", tc.wantID}},
 			}
 			got := codexInstallArgvSequence("spacedock-dev/marketplace", tc.devBranch)
-			if !reflect.DeepEqual(got, want) {
+			if !sameInstallSteps(got, want) {
 				t.Errorf("codexInstallArgvSequence(%q) =\n%v\nwant\n%v", tc.devBranch, got, want)
 			}
 			for _, step := range got {
@@ -147,7 +146,7 @@ func TestCodexPluginDirInstallArgvSequence(t *testing.T) {
 		{argv: []string{"plugin", "add", "spacedock@spacedock-local"}},
 	}
 	got := codexPluginDirInstallArgvSequence("/some/local/marketplace/root")
-	if !reflect.DeepEqual(got, want) {
+	if !sameInstallSteps(got, want) {
 		t.Errorf("codexPluginDirInstallArgvSequence(...) =\n%v\nwant\n%v", got, want)
 	}
 	for _, step := range got {

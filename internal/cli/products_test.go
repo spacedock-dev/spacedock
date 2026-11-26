@@ -3,7 +3,6 @@ package cli
 import (
 	"os"
 	"path/filepath"
-	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -62,7 +61,7 @@ func testInstallSequencesEndWithSubspaceAndCompass(t *testing.T, source, branch 
 		if len(c.got) < len(c.want) {
 			t.Fatalf("%s sequence = %v, want the product steps at its end", host, c.got)
 		}
-		if got := c.got[len(c.got)-len(c.want):]; !reflect.DeepEqual(got, c.want) {
+		if got := c.got[len(c.got)-len(c.want):]; !sameInstallSteps(got, c.want) {
 			t.Errorf("%s product steps = %v, want %v", host, got, c.want)
 		}
 	}

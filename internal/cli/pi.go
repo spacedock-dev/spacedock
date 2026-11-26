@@ -434,10 +434,15 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 }
 
 func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps piRuntimeOps, env []string, stdout, stderr io.Writer) int {
-	host, checkOnly, pluginDir, code := parsePiSetupArgs("install", args, stderr)
+	setup, code := parsePiSetupArgs("install", args, stderr)
 	if code != 0 {
 		return code
 	}
+	return runInstallSetup(ctx, args, setup, hostOps, piOps, env, stdout, stderr, nil)
+}
+
+func runInstallSetup(ctx context.Context, args []string, setup setupArgs, hostOps hostOps, piOps piRuntimeOps, env []string, stdout, stderr io.Writer, progress *installProgress) int {
+	host, checkOnly, pluginDir := setup.host, setup.check, setup.pluginDir
 	if host != "pi" {
 		if pluginDir != "" {
 			// codex's `--plugin-dir` builds a local marketplace from the checkout and
@@ -447,7 +452,7 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 			// such install path — its --plugin-dir is an ephemeral launch override, not
 			// an install.
 			if host == "codex" {
-				if err := installCodexLocalPluginDir(hostOps, pluginDir, stderr); err != nil {
+				if err := installCodexLocalPluginDirWithProgress(hostOps, pluginDir, stderr, progress); err != nil {
 					fmt.Fprintf(stderr, "spacedock install: %v\n", err)
 					return 1
 				}
@@ -456,17 +461,22 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 			fmt.Fprintln(stderr, "spacedock install: --plugin-dir is not supported for claude; use SPACEDOCK_REPO_ROOT or run from the Spacedock checkout")
 			return 2
 		}
-		return runInit(ctx, args, hostOps, stdout, stderr)
+		return runInitWithProgress(ctx, args, hostOps, stdout, stderr, progress)
 	}
 	cfg := piRuntimeConfigFromEnv(env, cwd(), pluginDir)
 	if !checkOnly {
 		source := piSpacedockPackagePin(devBranch)
 		if pluginDir != "" {
 			source = pluginDir
+			progress.skip("Remove Pi Spacedock package", "local checkout selected")
 		} else {
-			piOps.PiRemove(piSpacedockPackageSource)
+			remove := progress.start("Remove Pi Spacedock package")
+			_, err := piOps.PiRemove(piSpacedockPackageSource)
+			remove.end(err, true)
 		}
+		install := progress.start("Install Pi Spacedock package")
 		out, err := piOps.PiInstall(source)
+		install.end(err, false)
 		if strings.TrimSpace(out) != "" {
 			fmt.Fprint(stdout, out)
 		}
@@ -474,9 +484,20 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 			fmt.Fprintf(stderr, "spacedock install: pi install %q failed: %v\n", source, err)
 			return 1
 		}
-		installPiExtensions(piOps, cfg.agentDir, stdout, extensions)
+		installPiExtensionsWithProgress(piOps, cfg.agentDir, stdout, extensions, progress)
+	} else {
+		progress.skip("Install Pi packages", "check only")
 	}
-	check := checkPiRuntime(piOps, cfg)
+	runtime := progress.start("Check Pi runtime")
+	check := checkPiRuntimeWithProgress(piOps, cfg, progress)
+	switch {
+	case piDoctorHealthy(check):
+		runtime.end(nil, false)
+	case checkOnly:
+		runtime.outcome("Failed", "; runtime setup incomplete")
+	default:
+		runtime.outcome("Warning", "; runtime setup incomplete; continuing")
+	}
 	if checkOnly {
 		printPiDoctorReport(stdout, check)
 		return piDoctorExit(check)
@@ -500,7 +521,8 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 }
 
 func runDoctorWithPi(ctx context.Context, args []string, hostOps hostOps, piOps piRuntimeOps, env []string, stdout, stderr io.Writer) int {
-	host, _, pluginDir, code := parsePiSetupArgs("doctor", args, stderr)
+	setup, code := parsePiSetupArgs("doctor", args, stderr)
+	host, pluginDir := setup.host, setup.pluginDir
 	if code != 0 {
 		return code
 	}
@@ -563,31 +585,40 @@ func parsePiFrontDoorArgs(args []string) (fd frontDoorArgs, pluginDirs []string,
 	return fd, *pluginDir, nil
 }
 
-func parsePiSetupArgs(command string, args []string, stderr io.Writer) (host string, check bool, pluginDir string, code int) {
-	host = "claude"
+type setupArgs struct {
+	host, pluginDir string
+	check, verbose  bool
+}
+
+func parsePiSetupArgs(command string, args []string, stderr io.Writer) (setupArgs, int) {
+	setup := setupArgs{host: "claude"}
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--host":
 			if i+1 >= len(args) {
 				fmt.Fprintf(stderr, "spacedock %s: --host requires a value (claude, codex, or pi)\n", command)
-				return "", false, "", 2
+				return setupArgs{}, 2
 			}
-			host = args[i+1]
+			setup.host = args[i+1]
 			i++
-		case "--check":
+		case "--check", "--verbose":
 			if command != "install" {
 				fmt.Fprintf(stderr, "spacedock %s: unknown argument %q\n", command, args[i])
-				return "", false, "", 2
+				return setupArgs{}, 2
 			}
-			check = true
+			if args[i] == "--check" {
+				setup.check = true
+			} else {
+				setup.verbose = true
+			}
 		case "--plugin-manifest":
 			if command != "doctor" {
 				fmt.Fprintf(stderr, "spacedock %s: unknown argument %q\n", command, args[i])
-				return "", false, "", 2
+				return setupArgs{}, 2
 			}
 			if i+1 >= len(args) {
 				fmt.Fprintln(stderr, "spacedock doctor: --plugin-manifest requires a path")
-				return "", false, "", 2
+				return setupArgs{}, 2
 			}
 			i++
 		case "--plugin-dir":
@@ -596,16 +627,16 @@ func parsePiSetupArgs(command string, args []string, stderr io.Writer) (host str
 			// it via the re-parse in runDoctor.
 			if i+1 >= len(args) {
 				fmt.Fprintf(stderr, "spacedock %s: --plugin-dir requires a path\n", command)
-				return "", false, "", 2
+				return setupArgs{}, 2
 			}
-			pluginDir = args[i+1]
+			setup.pluginDir = args[i+1]
 			i++
 		default:
 			fmt.Fprintf(stderr, "spacedock %s: unknown argument %q\n", command, args[i])
-			return "", false, "", 2
+			return setupArgs{}, 2
 		}
 	}
-	return host, check, pluginDir, 0
+	return setup, 0
 }
 
 // resolvePiSubagentsEntries resolves the pi-subagents extension and intercom
@@ -734,6 +765,10 @@ func piRuntimeConfigFromEnv(env []string, dir, pluginDir string) piRuntimeConfig
 }
 
 func checkPiRuntime(ops piRuntimeOps, cfg piRuntimeConfig) piCheckResult {
+	return checkPiRuntimeWithProgress(ops, cfg, nil)
+}
+
+func checkPiRuntimeWithProgress(ops piRuntimeOps, cfg piRuntimeConfig, progress *installProgress) piCheckResult {
 	bin, err := ops.LookPath("pi")
 	res := piCheckResult{
 		piBinOK:               err == nil,
@@ -794,7 +829,10 @@ func checkPiRuntime(ops piRuntimeOps, cfg piRuntimeConfig) piCheckResult {
 	// pi version floor: read at the BINARY level only (`pi --version`; no
 	// package paths). A sub-floor binary fails the same not-ready path — it
 	// IS the stale old-org install signal.
-	if version, err := ops.PiVersion(); err == nil {
+	versionProbe := progress.start("Read Pi version")
+	version, err := ops.PiVersion()
+	versionProbe.end(err, true)
+	if err == nil {
 		res.piVersion = strings.TrimSpace(version)
 		res.piVersionOK = piVersionAtLeast(res.piVersion, piVersionFloor)
 	}

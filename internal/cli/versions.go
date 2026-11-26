@@ -85,13 +85,14 @@ func (r *versionReport) missingProgram(ext extension) {
 type mixedExtension struct{ name, host, program, plugin string }
 
 type versionInputs struct {
-	env         []string
-	dir         string
-	host        hostOps
-	lookPath    func(string) (string, error)
-	selfPath    string
-	selfVersion string
-	piStatus    func(agentDir, home string) piPackageStatus
+	env             []string
+	dir             string
+	host            hostOps
+	lookPath        func(string) (string, error)
+	selfPath        string
+	selfVersion     string
+	piStatus        func(agentDir, home string) piPackageStatus
+	installProgress *installProgress
 }
 
 // hostStatus is what one plugin host holds: its plugin versions by id, or why it has
@@ -115,11 +116,14 @@ func readHosts(in versionInputs) []hostStatus {
 	for _, h := range []struct{ name, title string }{{"claude", "Claude Code"}, {"codex", "Codex"}} {
 		status := hostStatus{name: h.name, title: h.title}
 		if _, err := in.lookPath(h.name); err != nil {
+			in.installProgress.skip("List "+h.title+" plugin versions", "host is not on PATH")
 			status.skipped = h.name + " is not on PATH, so its plugins were skipped."
 			hosts = append(hosts, status)
 			continue
 		}
+		list := in.installProgress.start("List " + h.title + " plugin versions")
 		status.lookup, status.err = pluginVersionLookup(in.host, h.name)
+		list.end(status.err, true)
 		switch {
 		case status.err != nil:
 			status.skipped = fmt.Sprintf("%s plugin list failed (%v), so its plugins were skipped.", h.name, status.err)
@@ -187,7 +191,16 @@ func collectVersions(in versionInputs) versionReport {
 	}
 
 	for _, ext := range extensions {
+		probe := in.installProgress.start("Check " + ext.name + " program version")
 		programPath, programVersion := extensionProgram(ext, in.env, pathEnv)
+		switch programVersion {
+		case notInstalled:
+			probe.outcome("Warning", "; program unavailable; continuing")
+		case "unknown":
+			probe.outcome("Warning", "; version unavailable; continuing")
+		default:
+			probe.end(nil, false)
+		}
 		add(ext.name+" program", programVersion, programPath)
 		id := extensionPluginID(ext.name)
 		if programVersion == notInstalled {
@@ -315,7 +328,16 @@ func piVersionReport(in versionInputs) (versionReport, bool) {
 		if ext.piTitle == "" {
 			continue
 		}
+		probe := in.installProgress.start("Check " + ext.name + " program version")
 		programPath, programVersion := extensionProgram(ext, in.env, pathEnv)
+		switch programVersion {
+		case notInstalled:
+			probe.outcome("Warning", "; program unavailable; continuing")
+		case "unknown":
+			probe.outcome("Warning", "; version unavailable; continuing")
+		default:
+			probe.end(nil, false)
+		}
 		report.rows = append(report.rows, pieceRow{ext.name + " program", programVersion, programPath})
 		if programVersion == notInstalled {
 			report.missingProgram(ext)
@@ -480,8 +502,12 @@ func reportVersions(args, env []string, dir string, stdout io.Writer) {
 	if !versionsWanted(args) {
 		return
 	}
+	reportInstalledVersions(env, dir, stdout, nil)
+}
+
+func reportInstalledVersions(env []string, dir string, stdout io.Writer, progress *installProgress) {
 	selfPath, _ := resolvedLauncherBin()
-	in := versionInputs{env: env, dir: dir, host: execHost{}, lookPath: exec.LookPath, selfPath: selfPath, selfVersion: displayVersion()}
+	in := versionInputs{env: env, dir: dir, host: execHost{}, lookPath: exec.LookPath, selfPath: selfPath, selfVersion: displayVersion(), installProgress: progress}
 	report := collectVersions(in)
 	addPiPackages(&report, in)
 	printVersionReport(stdout, report)
