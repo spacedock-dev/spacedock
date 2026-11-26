@@ -76,6 +76,11 @@ gates:
                 reason: |-
                     Revise: CL answered 'yes to all' to the first officer's recommendation for briefing:301s961pr7b2cnywnkz88jec:validation:attempt-1:revision-1 (sha256:ba49a8c969508c24678feee886051383b98d0171cac1162e7713e25d22bac73d): reject for three narrow fixes - (1) gate read --current must classify archival relative to the state root, not any ancestor named _archive (internal/gates/current.go:44); (2) the live presentation oracle must compare the review exactly, count copies, check the displayed digest and order against the real command boundary; (3) replace the side branch's prose-grep skill test, which the proof policy bans. The size overage is accepted (net about +1300) and the fo-gate-lifecycle byte cap rises from 7700 to 9100, taking the side-branch skill half (2913ce0b1).
                     Via: MetaFO, relaying CL's answer of 2026-11-25 about 22:50 PT.
+            - id: gate-attempt:301s961pr7b2cnywnkz88jec-validation-2
+              briefing:
+                id: briefing:301s961pr7b2cnywnkz88jec:validation:attempt-2:revision-1
+                digest: sha256:10614224b09f04db3ee0c88122c13f41cf5a5c7738982f3609d0cfd8dc4ad093
+                room-ref: '@review/validation/briefing-2'
 ---
 
 A captain can decide a gate from a pane, a Spacedock Review page or another agent's message. The decision lands only on the Briefing content the captain read, the stored review is the text the captain read, and the record says how the decision arrived.

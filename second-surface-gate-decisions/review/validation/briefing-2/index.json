@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:301s961pr7b2cnywnkz88jec:validation:attempt-2:revision-1",
+  "question": "Validation, correction round 1 (candidate ef74a3059): send back once more for the three Material holes the second detached audit reproduced, as recommended?",
+  "artifacts": [
+    {
+      "id": "artifact:301s961pr7b2cnywnkz88jec:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/d9e386d8ecf61e1eefaa86d05ff154af96a55889/second-surface-gate-decisions.md",
+      "rev": "sha256:886f03f6f4b2799f5d8a675484616709ef3a0ffcc3a48e91ab28fa0b68a8e77b",
+      "mediaType": "text/markdown",
+      "summary": "Fresh validation recommends PASSED: the three round-1 fixes hold (each with falsifying edits), go test ./... and -race exit 0 (22 packages), the earlier Codex race failures were load (20/20 alone). The second detached audit (Codex, /tmp/audit2-second-surface-gate-decisions.md) recommends REJECTED: 19 mutations, 10 caught, 9 holes, and three Material holes reproduced on the unmodified candidate: (1) gate read --current gives different results for two spellings of the same archived file (/var vs /private/var symlink), one exposing the archived review as open; (2) a two-line relay reason (substantive line plus Via: line) makes the shim lose the decision boundary, and the oracle accepts a presentation after consume; (3) the snapshot line can carry a conflicting instruction or a second id and digest and still pass. Live AC-5 to AC-7 blocked (no login); CI lanes not run (no push). Size net +1344 across 23 files, within the accepted tolerance. Deferred: present-gate compact digest prefix vs the oracle's full digest."
+    }
+  ]
+}
