@@ -86,3 +86,79 @@ func TestInstallRunsEveryUninstallWhenTheInventoryIsUnreadable(t *testing.T) {
 		})
 	}
 }
+
+func TestStableClaudeInstallRefreshesOnlyWhenNeeded(t *testing.T) {
+	for _, tc := range []struct {
+		name, plugins, markets, fail                   string
+		refreshMarket, refreshCompass, refreshSubspace bool
+	}{
+		{"empty", "[]", "[]", "", false, false, false},
+		{"bundled plugins in a fresh profile", `[{"id":"cc-plugin-privacy@builtin","scope":"user"}]`, "[]", "", false, false, false},
+		{"installed plugin named builtin", `[{"id":"cc-plugin-privacy@builtin","installPath":"/somewhere"}]`, "[]", "", true, true, true},
+		{"unknown entry", `[{}]`, "[]", "", true, true, true},
+		{"custom plugin cache", "[]", "[]", "", true, true, true},
+		{"custom plugin seed", "[]", "[]", "", true, true, true},
+		{"interrupted install left a cache", "[]", "[]", "", true, true, true},
+		{"existing market without plugins", "[]", `[{"name":"spacedock"}]`, "", true, true, true},
+		{"unreadable markets", "[]", "null", "", true, true, true},
+		{"unreadable plugins", "null", "[]", "", true, true, true},
+		{"installed plugin", `[{"id":"compass@spacedock","scope":"user"}]`, "[]", "", true, true, true},
+		{"project plugin", `[{"id":"compass@spacedock","scope":"project"}]`, "[]", "", true, true, true},
+		{"compass install fails", "[]", "[]", "plugin install compass@spacedock", false, true, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			config := t.TempDir()
+			t.Setenv("CLAUDE_CONFIG_DIR", config)
+			t.Setenv("CLAUDE_CODE_PLUGIN_CACHE_DIR", "")
+			t.Setenv("CLAUDE_CODE_PLUGIN_SEED_DIR", "")
+			switch tc.name {
+			case "custom plugin cache":
+				t.Setenv("CLAUDE_CODE_PLUGIN_CACHE_DIR", t.TempDir())
+			case "custom plugin seed":
+				t.Setenv("CLAUDE_CODE_PLUGIN_SEED_DIR", t.TempDir())
+			case "interrupted install left a cache":
+				if err := os.MkdirAll(filepath.Join(config, "plugins", "cache", "spacedock"), 0755); err != nil {
+					t.Fatal(err)
+				}
+			}
+			log := filepath.Join(dir, "calls")
+			t.Setenv("CALLS", log)
+			t.Setenv("PLUGINS", tc.plugins)
+			t.Setenv("MARKETS", tc.markets)
+			t.Setenv("FAIL", tc.fail)
+			t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+			body := `#!/bin/sh
+echo "$*" >> "$CALLS"
+case "$*" in
+"plugin list --json") echo "$PLUGINS" ;;
+"plugin marketplace list --json") echo "$MARKETS" ;;
+"$FAIL") exit 1 ;;
+esac
+`
+			if err := os.WriteFile(filepath.Join(dir, "claude"), []byte(body), 0755); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := (execHost{}).Install("claude", defaultMarketplaceSource, "main"); err != nil {
+				t.Fatal(err)
+			}
+			calls, err := os.ReadFile(log)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for call, want := range map[string]bool{
+				"plugin marketplace add " + defaultMarketplaceSource: true,
+				"plugin install spacedock@spacedock":                 true,
+				"plugin install compass@spacedock":                   true,
+				"plugin install subspace@spacedock":                  true,
+				"plugin marketplace update spacedock":                tc.refreshMarket,
+				"plugin update compass@spacedock":                    tc.refreshCompass,
+				"plugin update subspace@spacedock":                   tc.refreshSubspace,
+			} {
+				if strings.Contains(string(calls), call+"\n") != want {
+					t.Errorf("call %q, want present=%v; calls:\n%s", call, want, calls)
+				}
+			}
+		})
+	}
+}

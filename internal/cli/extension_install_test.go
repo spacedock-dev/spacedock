@@ -27,7 +27,7 @@ func testInstallSequencesFollowEachExtension(t *testing.T, source, branch string
 	extensions = fakeExtensions()
 	defer func() { extensions = saved }()
 
-	claude := installArgvSequence(source, branch)
+	claude := installArgvSequence(source, branch, false)
 	wantClaude := []installStep{
 		{argv: []string{"plugin", "uninstall", "alpha@spacedock-edge"}, tolerateExit: true, reportExit: true, ifInstalled: "alpha@spacedock-edge"},
 		{argv: []string{"plugin", "install", "alpha@spacedock"}, tolerateExit: true},
@@ -94,7 +94,7 @@ func TestExtensionMarketplaceSourceOverrideReplacesOnlyTheExtensionMarketplace(t
 
 	applyMarketplaceSourceOverride([]string{"SPACEDOCK_EXTENSION_MARKETPLACE_SOURCE=/tmp/staged"})
 	var adds []string
-	for _, step := range installArgvSequence("spacedock-dev/marketplace@edge", "next") {
+	for _, step := range installArgvSequence("spacedock-dev/marketplace@edge", "next", false) {
 		if len(step.argv) == 4 && step.argv[1] == "marketplace" && step.argv[2] == "add" {
 			adds = append(adds, step.argv[3])
 		}

@@ -66,7 +66,7 @@ func TestClaudeChannelInstallArgvSequence(t *testing.T) {
 				{argv: []string{"plugin", "uninstall", tc.wantID}, tolerateExit: true, reportExit: true, ifInstalled: tc.wantID},
 				{argv: []string{"plugin", "install", tc.wantID}},
 			}
-			got := installArgvSequence("spacedock-dev/marketplace", tc.devBranch)
+			got := installArgvSequence("spacedock-dev/marketplace", tc.devBranch, false)
 			if !reflect.DeepEqual(got, want) {
 				t.Errorf("installArgvSequence(%q) =\n%v\nwant\n%v", tc.devBranch, got, want)
 			}
@@ -177,7 +177,7 @@ func TestCodexPluginDirInstallArgvSequence(t *testing.T) {
 // resolve a future marketplace-name collision) fails here before it fails live.
 func TestInstallSequencesNeverSpellMarketplaceRemove(t *testing.T) {
 	for _, devBranch := range []string{"main", "next"} {
-		for _, step := range installArgvSequence("spacedock-dev/marketplace", devBranch) {
+		for _, step := range installArgvSequence("spacedock-dev/marketplace", devBranch, false) {
 			if isMarketplaceRemoveStep(step.argv) {
 				t.Errorf("installArgvSequence(devBranch=%q) spells marketplace remove: %v", devBranch, step.argv)
 			}
@@ -248,7 +248,7 @@ func TestClaudeNoPluginAutoInstallSelectsChannelEntry(t *testing.T) {
 
 			// The observed seam values reconstruct the production install argv: the
 			// channel-correct entry id must be the install target.
-			seq := installArgvSequence(fake.installCmds[1], fake.installCmds[2])
+			seq := installArgvSequence(fake.installCmds[1], fake.installCmds[2], false)
 			if !sequenceInstallsID(seq, tc.wantID) {
 				t.Fatalf("%s channel install sequence does not install %q; steps=%v", tc.channel, tc.wantID, seq)
 			}
