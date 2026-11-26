@@ -349,8 +349,9 @@ reviewed, for this person on this machine, at:
 $XDG_STATE_HOME/subspace/review-mode/HASH.json   (default ~/.local/state/subspace/…)
 ```
 
-`HASH` is the first 16 hex characters of the SHA-256 of the project root, which is
-`git rev-parse --show-toplevel`, or the working directory outside a repository.
+`HASH` is the first 16 hex characters of the SHA-256 of the physical Git common
+directory shared by a clone's worktrees, or the working directory with symlinks
+resolved where possible if Git cannot identify a physical common directory.
 The file holds `project`, `mode` (`local` or `remote`) and `decided_at` (RFC 3339).
 `review-mode get` exits 1 when the file is unreadable or holds another `mode`, and
 `review-mode clear` removes it. The file is never inside the repository.
