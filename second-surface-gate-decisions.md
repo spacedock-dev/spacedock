@@ -81,6 +81,17 @@ gates:
                 id: briefing:301s961pr7b2cnywnkz88jec:validation:attempt-2:revision-1
                 digest: sha256:10614224b09f04db3ee0c88122c13f41cf5a5c7738982f3609d0cfd8dc4ad093
                 room-ref: '@review/validation/briefing-2'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:301s961pr7b2cnywnkz88jec:validation:2
+                briefing: briefing:301s961pr7b2cnywnkz88jec:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-11-26T21:15:57.96648Z"
+                decision: revise
+                reason: 'Revise (MetaFO as first officer for CL) for briefing:301s961pr7b2cnywnkz88jec:validation:attempt-2:revision-1 (sha256:10614224b09f04db3ee0c88122c13f41cf5a5c7738982f3609d0cfd8dc4ad093): send back for the three Material holes the second detached audit reproduced - (1) resolve both paths to their real location before the archive check in gate read --current; (2) record each command''s boundary on one log line in the logging shim; (3) validate the whole snapshot line as exactly one id and one digest. Also take the one-line present-gate change to the full digest in this round.'
+                conn:
+                    quote: You are operating as spacedock fo, you can finalize task and merge with delegation recorded
+                    source: CL to MetaFO, 2026-11-25; applied by MetaFO (agent aec8a43c) to this send-back in its message of 2026-11-26
 ---
 
 A captain can decide a gate from a pane, a Spacedock Review page or another agent's message. The decision lands only on the Briefing content the captain read, the stored review is the text the captain read, and the record says how the decision arrived.
