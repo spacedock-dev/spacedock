@@ -150,6 +150,8 @@ file, say so and stop.
 
 ## Review the file
 
+If you wrote the plan in this conversation, check it against the plan format in this skill’s description before handing it off. Follow any format or length the user requested. If the plan already fits, hand it off as written.
+
 1. Read the choice:
 
    ```bash
