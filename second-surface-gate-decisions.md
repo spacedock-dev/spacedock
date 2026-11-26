@@ -474,3 +474,39 @@ On b7ef2a885 the binary-half tests fail, and on 0482563e1 they pass. A falsifier
 ### Summary
 
 The skill half is fast-forwarded onto the task branch, and the prose-grep test is deleted. `gate read --current` now classifies archival relative to the state root, and a test that fails before the fix covers an `_archive` ancestor. The live oracle compares exactly, counts copies across the turn, checks the displayed id and full digest, and orders against the shim's command log through a stream-line boundary. Phase 2 relays the coordinate phase 1 checked. The full suite passes. The race suite failed in two Codex timing tests that this round did not touch, and they were not re-run because of the disk stop. The net size is +1344 across 23 files, 3% over the stated +1300 and within the 25-file limit.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: The three Material fixes of correction round 1 are verified independently on `ef74a3059`: the `_archive`-ancestor test fails on 0482563e1 and passes on ef74a3059; the tightened oracle rejects each of its 9 new falsifier transcripts and accepts the passing one, and at least one falsifying edit to the new oracle code makes a test fail; the prose-grep skill test is gone and `TestFOInstructionComponentCaps` passes at the approved 9100 cap; AC-1 to AC-4 still pass.
+  All runs were in the implementation worktree, with each edit reverted by `git checkout -- <file>` and `git status --short` empty afterwards.
+  1. `_archive`: with `current.go` and `gate_history.go` at 0482563e1 (both are needed, because the signature changed), the subtest `active task under an _archive ancestor/checkout` FAILS with `{"stage":"validation","attempt":null}`. Restored at ef74a3059, it PASSES. A second falsifier, `archived()` that always returns false, FAILS the `null attempt` archived case. So the classification is tested in both directions.
+  2. Oracle: `TestSecondSurfaceGateOracle` PASSES all 18 cases. The 9 new falsifiers are rejected and `passing` is accepted. Five edits to the oracle each make the test fail. Contiguous containment instead of an exact line match fails `contradiction in the same event`. An id-only snapshot compare fails the wrong, missing and prefix-only digest cases. Removing the command-log order check fails `presented after record`, `helper script records first` and `consume before presentation`. Removing the turn-wide copy counts fails `second full copy` and `second copy without the snapshot`. Using `>` instead of `>=` at the boundary fails the helper-script and consume cases.
+  3. Throwaway probes, deleted afterwards. If the presentation is on stream line 2, the oracle rejects a boundary of 1 and accepts a boundary of 2. It ignores `--help` and `--round` invocations. It rejects a snapshot line that shows a prefix before the full digest. `TestRecordedGateShimLogsTheStreamBoundary` PASSES with the real shim.
+  4. Prose-grep test: there is no `TestGateSkillsRecordTheAnsweredBinding` anywhere, because 42657c236 deleted it. `TestFOInstructionComponentCaps` PASSES, with fo-gate-lifecycle at 8880 bytes under the 9100 cap.
+  5. AC-1 to AC-4 tests and `TestRecordedGateLifecycleAC7ResumeMatrix` (7 cases) PASS.
+- DONE: `go test ./...` and `go test ./... -race` on ef74a3059 are run (the Go cache is empty, so the first run refills it; check `df -h /` before each run and stop under 3 GiB); the two Codex race failures from implementation (`TestCodexProcessRecognizesTerminalTurnBeforeOSExit`, `TestCodexProcessRequiresFinalMessageForTerminalTurn`) are rerun alone under -race and classified as load or defect; `gofmt -l` and contractlint are recorded.
+  All runs used the shared GOCACHE with `GOPROXY=off`, one at a time, and a disk monitor ran during the suites. Free disk was 6.5 GiB at the start and never fell below 5.9 GiB.
+  1. `go test ./... -count=1`: exit 0, 22 packages ok.
+  2. `-race -count=1`: exit 0, 22 packages ok. Both Codex tests passed inside it.
+  3. The two Codex tests alone, with `-race -count=10`: 20 of 20 PASS, at about 0.3 s each. Classification: load, not a defect.
+  4. Contractlint: ok.
+  5. `gofmt -l ./cmd ./internal` lists only `internal/release/runtime_live_evidence_workflow_test.go`. That file is unchanged from b7ef2a885.
+- DONE: PASSED or REJECTED with findings per Review-finding disposition, including a classification of the implementer's new finding (the `present-gate` template allows a compact digest prefix on the `Reviewed snapshot:` line while the oracle requires the full digest), and the live criteria AC-5 to AC-7 named as blocked (no login) and the required CI lanes named as not run (no push).
+  Recommendation: **PASSED** for correction round 1. All three Material fixes are verified, and no new Material finding is open. Delivery is not ready: the live evidence and the required lanes below still have to run.
+  1. The implementer's finding: `skills/present-gate/SKILL.md:31` reads `Reviewed snapshot: {bound Briefing identity and compact digest prefix}`, and line 13 keeps "A short digest prefix can identify the snapshot", while the oracle requires the full digest. Proposal:
+     - Materiality: Deferred risk. Nothing has triggered it, because no live run happened. An in-chat decision still records the full pair from `gate read --current`, and the binary refuses a prefix, so no wrong decision can land.
+     - Harm if triggered: the AC-5 and AC-7 live oracle fails even though the behavior is correct. A relay that copies the displayed prefix is refused on every retry, which harms value-ac[AC-6].
+     - Promote to Material: the first live phase-1 run displays a prefix, or a relayed decision is refused because it carried a prefix.
+     - Ownership: the approved design assigns this conflict to `reliable-exact-digest-in-gate-review` (Related backlog). That task's own live evidence already treats a missing exact digest as a conduct failure.
+     - Disposition: route for decision. The promote trigger is the live run that delivery requires, so CL should decide before that run whether this task takes the one-line template change.
+  2. Polish, no AC affected:
+     - A separate later event that contradicts the review is accepted, because AC-7 counts only events that hold the review.
+     - An introductory line inside the presentation event is rejected. This is the exact match CL asked for, but it can make a live run fail.
+     - The race failures in implementation came from load, as item 3 of the previous checklist item shows.
+  3. Live: AC-5, AC-6 and AC-7 and the AC-2 (c) live run are blocked because there is no login. The old-binary halves of AC-2 (c) and AC-6 were proven in cycle 1, and the binary half has changed since then only in `current.go` and `gate_history.go`.
+  4. CI: the required Claude, Codex and Pi live lanes were not run, because a push is not allowed. These lanes are the no-conn stop, the headless conn continuation and the shared live journeys.
+  5. Size: net +1344 across 23 files against the merge base, which is within what CL accepted.
+
+### Summary
+
+The candidate ef74a3059 fixes the three round-1 Material findings. The `_archive`-ancestor test fails on 0482563e1 and passes on the candidate. Five edits to the oracle make its unit tests fail, and the prose-grep test is gone, with the 9100 cap passing. AC-1 to AC-4 pass. The full suite and the race suite both exit 0. The Codex tests that failed under race in implementation now pass 20 of 20 when run alone under race, so their earlier failures came from load. I recommend PASSED for the correction round. The digest-prefix wording in the template is a Deferred risk to route to CL before the required live run, and AC-5 to AC-7 and the CI lanes remain unrun.
