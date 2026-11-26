@@ -58,7 +58,7 @@ type versionReport struct {
 	needsUpdate, extraCopy bool
 	pluginsBehind          []string
 	mixed                  []mixedExtension
-	brewUpgrade            string
+	brewCask               string
 	programsOptedOut       bool
 	notices                []string
 }
@@ -72,9 +72,9 @@ func (r *versionReport) missingProgram(ext extension) {
 	switch {
 	case r.programsOptedOut:
 		r.notices = append(r.notices, ext.name+" program skipped by opt-out.")
-	case r.brewUpgrade != "" && ext.homebrewFormula != "":
+	case r.brewCask != "" && ext.homebrewFormula != "":
 		r.problems = append(r.problems, fmt.Sprintf("MISSING: the %s program is not on PATH. Install it with: brew install %s", ext.name, ext.homebrewFormula))
-	case r.brewUpgrade != "" && ext.missingOnHomebrew != "":
+	case r.brewCask != "" && ext.missingOnHomebrew != "":
 		r.problems = append(r.problems, fmt.Sprintf("MISSING: the %s program is not on PATH. %s", ext.name, ext.missingOnHomebrew))
 	default:
 		r.problems = append(r.problems, fmt.Sprintf("MISSING: the %s program is not on PATH.", ext.name))
@@ -173,7 +173,7 @@ func collectVersions(in versionInputs) versionReport {
 	}
 	pathEnv := envMap(in.env)["PATH"]
 	brew := in.selfPath != "" && isHomebrewPath(in.selfPath)
-	report.brewUpgrade = brewFormula(in.selfPath, brew)
+	report.brewCask = homebrewCask(in.selfPath, brew)
 
 	add("spacedock", in.selfVersion, in.selfPath)
 	spacedockID := channelPluginID(devBranch)
@@ -285,7 +285,7 @@ func addPiPackages(report *versionReport, in versionInputs) (held, coreMissing b
 	for _, row := range rows[1:] {
 		report.rows = append(report.rows, pieceRow{row.label + " (Pi)", row.version, ""})
 	}
-	brew := report.brewUpgrade != ""
+	brew := report.brewCask != ""
 	for _, m := range mixedPiPackages(rows, *report) {
 		report.mixed = append(report.mixed, m)
 		switch cmp, err := release.ComparePreVersion(m.program, m.plugin); {
@@ -309,7 +309,7 @@ func addPiPackages(report *versionReport, in versionInputs) (held, coreMissing b
 
 func piVersionReport(in versionInputs) (versionReport, bool) {
 	report := versionReport{channel: selectedChannelWord(), hostPlugins: map[string][]pieceRow{}, programsOptedOut: extensionProgramsOptedOut(in.env)}
-	report.brewUpgrade = brewFormula(in.selfPath, in.selfPath != "" && isHomebrewPath(in.selfPath))
+	report.brewCask = homebrewCask(in.selfPath, in.selfPath != "" && isHomebrewPath(in.selfPath))
 	pathEnv := envMap(in.env)["PATH"]
 	for _, ext := range extensions {
 		if ext.piTitle == "" {
@@ -360,8 +360,8 @@ func printVersionReport(w io.Writer, report versionReport) {
 	}
 	fmt.Fprintf(w, "\nProblems found: %d.", len(report.problems))
 	switch {
-	case report.needsUpdate && report.brewUpgrade != "":
-		fmt.Fprintf(w, " Homebrew owns the programs. Run `brew upgrade %s`, then `spacedock update` to bring every plugin to the same release.", report.brewUpgrade)
+	case report.needsUpdate && report.brewCask != "":
+		fmt.Fprint(w, " Run `spacedock update` to repair installed Homebrew extension programs and their companions.")
 	case report.needsUpdate:
 		fmt.Fprint(w, " Run `spacedock update` to bring every program and plugin to the same release.")
 	}

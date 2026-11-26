@@ -16,12 +16,8 @@ import (
 
 type extensionListing struct {
 	Plugins []struct {
-		Name   string `json:"name"`
-		Source struct {
-			Source string `json:"source"`
-			URL    string `json:"url"`
-			Ref    string `json:"ref"`
-		} `json:"source"`
+		Name   string          `json:"name"`
+		Source json.RawMessage `json:"source"`
 	} `json:"plugins"`
 }
 
@@ -36,12 +32,14 @@ func piExtensionSource(listing []byte, name string) (pinned, bare string, err er
 		if p.Name != name {
 			continue
 		}
-		host, repo := parseGitPackagePath(p.Source.URL)
-		if p.Source.Source != "url" || p.Source.Ref == "" || host == "" {
+		var source struct{ Source, URL, Ref string }
+		err := json.Unmarshal(p.Source, &source)
+		host, repo := parseGitPackagePath(source.URL)
+		if err != nil || source.Source != "url" || source.Ref == "" || host == "" {
 			return "", "", fmt.Errorf("the extension listing does not give %s as a git url with a ref", name)
 		}
 		bare = "git:" + host + "/" + repo
-		return bare + "@" + p.Source.Ref, bare, nil
+		return bare + "@" + source.Ref, bare, nil
 	}
 	return "", "", fmt.Errorf("the extension listing has no %s entry", name)
 }
@@ -49,7 +47,7 @@ func piExtensionSource(listing []byte, name string) (pinned, bare string, err er
 // installPiExtensions installs each extension that has a Pi package. A failure prints
 // a `spacedock install:` line and leaves the exit code alone, as for a Claude Code
 // companion, so `update` can show it.
-func installPiExtensions(piOps piRuntimeOps, agentDir string, stdout io.Writer) {
+func installPiExtensions(piOps piRuntimeOps, agentDir string, stdout io.Writer, extensions []extension) {
 	var wanted []extension
 	for _, ext := range extensions {
 		if ext.piTitle != "" {

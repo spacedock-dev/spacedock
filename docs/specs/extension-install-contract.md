@@ -251,10 +251,10 @@ development install, because the channel install would remove it: a Codex holdin
 `--plugin-dir` install (`spacedock@spacedock-local`), or a Pi whose Spacedock package is
 not a published `git:` source. `doctor` skips the same hosts. It prints the
 version of every piece before and after, the plugin rows under a heading for their
-host. It runs the new program's `spacedock install --host NAME` for each, so a
-companion the new release adds reaches every refreshed host in the same run; it tells
-`install.sh` to skip its own plugin step (`SPACEDOCK_PLUGINS=none`). Homebrew has not
-replaced the program yet, so there the running program does it. Codex reads plugins
+host. For an `install.sh` installation, update tells the script to skip its own plugin step
+(`SPACEDOCK_PLUGINS=none`), then runs the new program's `spacedock install --host NAME`
+for each eligible host so new companions reach it in the same run. On Homebrew,
+update uses the scoped repair below. Codex reads plugins
 when a session starts, so the closing line tells the user to start a new Codex
 session.
 
@@ -263,9 +263,9 @@ of Claude Code and Codex that is on PATH and holds any piece from the Spacedock
 marketplace, labelled by host, and each extension's Pi package when Pi is on PATH and
 holds any of them, naming a missing Spacedock plugin or package;
 `doctor --host pi` lists those programs and Pi packages alone. It
-names a program that differs from a host's plugin or its Pi package and says to run `spacedock update`
-(on Homebrew, the `brew upgrade` command for the cask and both formulas), a second `spacedock` on PATH, and a
-missing program or plugin, each per host. An extension may add rows and problems of its
+names a program that differs from a host's plugin or its Pi package and says to run
+`spacedock update`. It also reports a second `spacedock` on PATH and missing programs
+and plugins, labelled by host. An extension may add rows and problems of its
 own to that list. On a Homebrew install that lacks the program of an extension that
 declares a Homebrew remedy, it names that remedy and not `spacedock update`, which
 installs no program there.
@@ -289,10 +289,45 @@ including a Homebrew copy, is read from the program.
 The authoritative formula names are each row's `homebrewFormula` in the
 [`extensions` table](../../internal/cli/versions.go).
 Both casks depend on those formulas.
-`update` builds its `brew upgrade` advice from that table.
-`doctor` names `brew install` with the same formula when its program is missing.
-Compass has supplied its formula since v1.4.0.
-`update` never runs Homebrew itself.
+The user upgrades the Spacedock cask separately with `brew upgrade --cask spacedock`
+or `brew upgrade --cask spacedock@next`. `doctor` names the formula's `brew install`
+command when its program is missing. The intentional program opt-outs still apply.
+
+Both channels select extension releases from the stable `spacedock` marketplace.
+For an installed, linked Compass program with eligible plugins, update checks
+their installed versions and what each manager can select before changing the
+installation. If the catalog is behind the target, update can fast-forward the
+clean tracked default branch of the official Spacedock tap. This refresh
+touches only that tap. Homebrew fetches and verifies the Compass archive.
+After a final version, dependency and link check, update asks Homebrew to
+upgrade only `spacedock-dev/tap/compass` with automatic refreshes disabled.
+When a host's matching Git registration keeps a clean managed catalog that lags
+the published listing, update fast-forwards that catalog to the published commit
+before checking it. Only the catalog moves, so installed plugins keep their
+versions. A host that still cannot select the matching release or safely preserve
+its settings can hold the Compass repair; for a Git registration the hold names
+the host's marketplace refresh command. A Compass plugin already at the target is
+skipped.
+
+On eligible hosts, update refreshes the enabled Spacedock plugin from its
+configured source, including when a Git branch advances under the same
+marketplace entry. It refreshes the plugins of an installed Subspace program
+separately and checks their reported versions against the program. Homebrew
+still owns Subspace program upgrades. When a matching Git registration caches
+an older Subspace release tag, update can fast-forward its clean managed
+catalog to the published listing before updating the named plugin. Other
+installed plugins keep their versions. The Pi package follows its own listing
+ref without gating the Claude Code or Codex updates. A version-tagged Pi
+package is compared with the program and a branch registration is reported
+as described under [Plugins](#plugins). All these host operations select one
+plugin or package at a time.
+
+If a Compass prerequisite is missing during preflight, update keeps a working pair and
+reports what held it, with a nonzero exit. A failure after a write can leave a
+mixed installation. Update reads the installed versions again and names the
+failed step. After correcting that problem, rerun `spacedock update` to repair
+the remaining pieces. Installed-version verification and the usual restart
+advice apply to both channels.
 
 ### Hand-offs
 

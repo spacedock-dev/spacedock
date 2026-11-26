@@ -318,7 +318,6 @@ func TestVersionReportCopiesNamePathVersionAndTheOneThatRuns(t *testing.T) {
 
 func TestVersionReportRemedyDependsOnWhoOwnsTheProgram(t *testing.T) {
 	const update = "Run `spacedock update` to bring every program and plugin to the same release."
-	const formulas = "fixture/tap/alpha fixture/tap/beta"
 	cask := "/opt/homebrew/Caskroom/spacedock@next/0.28.0/spacedock"
 	cases := map[string]struct {
 		alphaVersion, selfPath string
@@ -331,8 +330,8 @@ func TestVersionReportRemedyDependsOnWhoOwnsTheProgram(t *testing.T) {
 		"Homebrew, program newer: the plugin waits on the marketplace": {"0.16.0-beta.3", cask,
 			[]string{"The alpha plugin waits on its listing in the spacedock marketplace, which each extension's release keeps current. Run `spacedock update` after the listing shows the new version."},
 			[]string{"to bring every program and plugin", "brew upgrade"}},
-		"Homebrew, program older: names the cask and both formulas": {"0.16.0-beta.1", cask,
-			[]string{"Run `brew upgrade spacedock@next " + formulas + "`, then `spacedock update`"}, []string{"waits on"}},
+		"Homebrew, program older: update repairs the extension": {"0.16.0-beta.1", cask,
+			[]string{"Run `spacedock update` to repair installed Homebrew extension programs and their companions."}, []string{"waits on", "brew upgrade"}},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {

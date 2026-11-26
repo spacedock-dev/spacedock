@@ -31,6 +31,7 @@ type updateDeps struct {
 	fetchScript func(dst string) error
 	runSelf     func(args ...string) (string, error)
 	piOps       piRuntimeOps
+	ctx         context.Context
 }
 
 func newUpdateCommand(ctx context.Context, env []string, dir string, stdout, stderr io.Writer) *cobra.Command {
@@ -54,7 +55,7 @@ func newUpdateCommand(ctx context.Context, env []string, dir string, stdout, std
 			applyDevBranchOverride(env)
 			applyMarketplaceSourceOverride(env)
 			selfPath, _ := resolvedLauncherBin()
-			deps := updateDeps{verbose: verbose, env: env, dir: dir, host: execHost{}, selfPath: selfPath, lookPath: exec.LookPath, piOps: execPiRuntimeOps{},
+			deps := updateDeps{verbose: verbose, env: env, dir: dir, host: execHost{}, selfPath: selfPath, lookPath: exec.LookPath, piOps: execPiRuntimeOps{}, ctx: ctx,
 				fetchScript: func(dst string) error {
 					return exec.CommandContext(ctx, "curl", "-fsSL", "-o", dst, installScriptURL).Run()
 				}}
@@ -77,8 +78,9 @@ func newUpdateCommand(ctx context.Context, env []string, dir string, stdout, std
 Update every program and plugin on the channel of this binary, for each of Claude
 Code and Codex that is on PATH and has the Spacedock plugin installed, and the Pi
 packages when Pi holds the Spacedock package. A host holding other Spacedock pieces
-without that plugin or package is named and fails the update. Homebrew
-owns its own programs: update prints the brew command and updates only the plugins.
+without that plugin or package is named and fails the update. On Homebrew, update
+can repair installed extension programs and their companions. Upgrade the Spacedock
+cask separately.
 SPACEDOCK_INSTALL_SCRIPT=PATH runs that script in place of the downloaded one.
 `)
 	return cmd
@@ -117,6 +119,37 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 	fmt.Fprintf(stdout, "Updating Spacedock on the %s channel (%s)\n", before.channel, owner)
 
 	hosts := planHostUpdates(before)
+	ctx := d.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	repair := brewRepair{ctx, d.env, d.dir}
+	var pi *piUpdate
+	handled := map[string]bool{}
+	var brewPlans []brewExtensionPlan
+	var brewErrors []error
+	code := 0
+	if brew {
+		endPi := progress.step("Checking which Pi packages are installed")
+		pi = planPiUpdate(inputs)
+		endPi()
+		endPlan := progress.step("Checking release sources for Homebrew extension repairs")
+		source, plans := repair.planExtensions(before)
+		endPlan()
+		brewPlans = plans
+		for _, plan := range brewPlans {
+			handled[plan.ext.name] = true
+			brewErrors = append(brewErrors, repair.applyExtension(plan, source, progress))
+		}
+	}
+	var independentExtensions []extension
+	if brew {
+		for _, ext := range extensions {
+			if ext.homebrewFormula != "" && ext.homebrewFormula != compassFormula && before.version(ext.name+" program") != notInstalled {
+				independentExtensions = append(independentExtensions, ext)
+			}
+		}
+	}
 	addRefused := map[string]bool{}
 	if !brew {
 		if err := runInstallScript(d, stdout, stderr, progress); err != nil {
@@ -128,11 +161,16 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 		if !h.refresh {
 			continue
 		}
-		// The new program owns the install sequence, so a companion it adds reaches
-		// the host in the same run; Homebrew has not replaced the program yet.
+		// The new install.sh program owns its install sequence, including
+		// companions introduced in that release.
 		var out string
 		endRefresh := progress.step("Refreshing " + h.title + " plugins")
-		if brew || d.runSelf == nil {
+		if brew {
+			h.err = repair.refreshCorePlugin(h.name)
+			for _, ext := range independentExtensions {
+				h.err = errors.Join(h.err, repair.refreshExtensionPlugin(h.name, ext.name))
+			}
+		} else if d.runSelf == nil {
 			out, h.err = d.host.Install(h.name, channelMarketplaceSource(devBranch), devBranch)
 		} else {
 			out, h.err = d.runSelf("install", "--host", h.name)
@@ -145,13 +183,21 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 		}
 	}
 
-	endPiCheck := progress.step("Checking which Pi packages are installed")
-	pi := planPiUpdate(inputs)
-	endPiCheck()
+	if pi == nil {
+		endPiCheck := progress.step("Checking which Pi packages are installed")
+		pi = planPiUpdate(inputs)
+		endPiCheck()
+	}
 	if pi.refresh {
 		endRefresh := progress.step("Refreshing Pi packages")
 		var out string
-		if brew || d.runSelf == nil {
+		if brew {
+			d.piOps.PiRemove(piSpacedockPackageSource)
+			out, pi.err = d.piOps.PiInstall(piSpacedockPackagePin(devBranch))
+			if pi.err == nil {
+				installPiExtensions(d.piOps, pi.agentDir, stdout, independentExtensions)
+			}
+		} else if d.runSelf == nil {
 			var buf bytes.Buffer
 			if code := runInitWithPi(context.Background(), []string{"--host", "pi"}, d.host, d.piOps, d.env, &buf, &buf); code != 0 {
 				pi.err = fmt.Errorf("spacedock install --host pi exited %d", code)
@@ -174,13 +220,23 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 	}
 	after := collectVersions(inputs)
 	_, piMissing := addPiPackages(&after, inputs)
+	for i, plan := range brewPlans {
+		if !repair.reportExtension(plan, brewErrors[i], stdout, stderr) {
+			code = 1
+		}
+	}
 	endFinal()
 	for _, h := range hosts {
 		h.after = after.hostPlugins[h.name]
 	}
-	printUpdateChanges(stdout, before, after, before.brewUpgrade, hosts, pi)
-	code := 0
-	for _, line := range mixedAfterUpdate(after.mixed, before.brewUpgrade, addRefused) {
+	printUpdateChanges(stdout, before, after, before.brewCask, hosts, pi)
+	var unresolved []mixedExtension
+	for _, m := range after.mixed {
+		if !handled[m.name] {
+			unresolved = append(unresolved, m)
+		}
+	}
+	for _, line := range mixedAfterUpdate(unresolved, brew, addRefused) {
 		fmt.Fprintln(stderr, line)
 		code = 1
 	}
@@ -355,27 +411,17 @@ func mixedPiPackages(rows []pieceRow, after versionReport) []mixedExtension {
 	return mixed
 }
 
-// brewFormula names the cask and extension formulas: a cask upgrade
-// leaves an installed formula where it is, so naming the cask alone leaves a
-// program behind its plugin.
-func brewFormula(selfPath string, brew bool) string {
+func homebrewCask(selfPath string, brew bool) string {
 	if !brew {
 		return ""
 	}
-	args := []string{"spacedock"}
 	if isEdgeCaskPath(selfPath) {
-		args[0] = "spacedock@next"
+		return "spacedock@next"
 	}
-	for _, ext := range extensions {
-		if ext.homebrewFormula != "" {
-			args = append(args, ext.homebrewFormula)
-		}
-	}
-	return strings.Join(args, " ")
+	return "spacedock"
 }
 
-func mixedAfterUpdate(mixed []mixedExtension, brewArgs string, addRefused map[string]bool) []string {
-	brew := brewArgs != ""
+func mixedAfterUpdate(mixed []mixedExtension, brew bool, addRefused map[string]bool) []string {
 	var lines []string
 	for _, m := range mixed {
 		kind := "plugin"
@@ -395,7 +441,8 @@ func mixedAfterUpdate(mixed []mixedExtension, brewArgs string, addRefused map[st
 		case err != nil:
 			behind, step = "the program or the "+kind, "a step of this update"
 		case brew:
-			step = "Homebrew has not upgraded it; run `brew upgrade " + brewArgs + "`"
+			step = "the Homebrew program is behind the plugin"
+			next = "Check the installed formula and the plugin's release."
 		}
 		lines = append(lines, fmt.Sprintf("spacedock update: %s is still MIXED on %s: program %s, %s %s. Left behind: %s (failed: %s). %s",
 			m.name, m.host, m.program, kind, m.plugin, behind, step, next))
@@ -409,7 +456,7 @@ var restartAdvice = map[string]string{
 	"pi":     "Open Pi sessions keep the old skills until you run /reload.",
 }
 
-func printUpdateChanges(w io.Writer, before, after versionReport, formula string, hosts []*hostUpdate, pi *piUpdate) {
+func printUpdateChanges(w io.Writer, before, after versionReport, cask string, hosts []*hostUpdate, pi *piUpdate) {
 	printRow := func(label, b, a string) {
 		if b == a {
 			fmt.Fprintf(w, "  %-18s %-15s unchanged\n", label, a)
@@ -419,13 +466,12 @@ func printUpdateChanges(w io.Writer, before, after versionReport, formula string
 	}
 	row := func(label string) { printRow(label, before.version(label), after.version(label)) }
 	fmt.Fprintln(w, "\nPrograms")
-	if formula != "" {
-		fmt.Fprintf(w, "  Homebrew owns spacedock and its extensions. Run: brew upgrade %s\n", formula)
-	} else {
-		row("spacedock")
-		for _, ext := range extensions {
-			row(ext.name + " program")
-		}
+	if cask != "" {
+		fmt.Fprintf(w, "  To upgrade Spacedock itself, run: brew upgrade --cask %s\n", cask)
+	}
+	row("spacedock")
+	for _, ext := range extensions {
+		row(ext.name + " program")
 	}
 	for _, h := range hosts {
 		fmt.Fprintf(w, "%s plugins\n", h.title)
@@ -474,8 +520,5 @@ func printUpdateChanges(w io.Writer, before, after versionReport, formula string
 				fmt.Fprintln(w, line)
 			}
 		}
-	}
-	if formula != "" {
-		fmt.Fprintln(w, "Run `spacedock doctor` after `brew upgrade` to check that every piece matches.")
 	}
 }

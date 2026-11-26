@@ -474,7 +474,7 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 			fmt.Fprintf(stderr, "spacedock install: pi install %q failed: %v\n", source, err)
 			return 1
 		}
-		installPiExtensions(piOps, cfg.agentDir, stdout)
+		installPiExtensions(piOps, cfg.agentDir, stdout, extensions)
 	}
 	check := checkPiRuntime(piOps, cfg)
 	if checkOnly {
