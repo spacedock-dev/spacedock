@@ -18,14 +18,9 @@ func (ops verboseInventory) PluginInventory(host string) ([]pluginInventoryEntry
 	return ops.hostOps.PluginInventory(host)
 }
 
-func updateSeconds(d time.Duration) string {
-	ms := d.Milliseconds()
-	return fmt.Sprintf("%d.%03ds", ms/1000, ms%1000)
-}
-
 type updateLineWriter struct {
 	out     io.Writer
-	zero    time.Time
+	clock   elapsedTrace
 	midLine bool
 	peer    *updateLineWriter
 }
@@ -38,7 +33,7 @@ func (w *updateLineWriter) Write(data []byte) (int, error) {
 	written := 0
 	for len(data) > 0 {
 		if !w.midLine {
-			if _, err := fmt.Fprintf(w.out, "[+%s] ", updateSeconds(time.Since(w.zero))); err != nil {
+			if _, err := fmt.Fprintf(w.out, "%s ", w.clock.prefix(w.clock.now())); err != nil {
 				return written, err
 			}
 			w.midLine = true
@@ -79,7 +74,7 @@ type updateProgress struct {
 func (p *updateProgress) at(now time.Time, line string) {
 	p.trace.peer.boundary()
 	p.trace.boundary()
-	fmt.Fprintf(p.trace.out, "[+%s] %s\n", updateSeconds(now.Sub(p.trace.zero)), line)
+	p.trace.clock.at(now, line)
 }
 
 func (p *updateProgress) step(label string) func() {
@@ -89,26 +84,26 @@ func (p *updateProgress) step(label string) func() {
 	}
 
 	// Each open step tracks its own last child boundary.
-	now := time.Now()
+	now := p.trace.clock.now()
 	previous := p.last[len(p.last)-1]
 	if previous.IsZero() {
-		now, previous = p.trace.zero, p.trace.zero
+		now, previous = p.trace.clock.zero, p.trace.clock.zero
 	}
 	scope := "gap"
 	if len(p.last) > 1 {
 		scope = "parent work"
 	}
-	p.at(now, fmt.Sprintf("%s... (%s %s)", label, scope, updateSeconds(now.Sub(previous))))
+	p.at(now, fmt.Sprintf("%s... (%s %s)", label, scope, durationSeconds(now.Sub(previous))))
 	p.last = append(p.last, now)
 	return func() {
-		end := time.Now()
+		end := p.trace.clock.now()
 		p.last = p.last[:len(p.last)-1]
 		p.last[len(p.last)-1] = end
-		p.at(end, fmt.Sprintf("Elapsed: %s: %s", label, updateSeconds(end.Sub(now))))
+		p.at(end, fmt.Sprintf("Elapsed: %s: %s", label, durationSeconds(end.Sub(now))))
 	}
 }
 
 func (p *updateProgress) finish() {
-	now := time.Now()
-	p.at(now, fmt.Sprintf("Total: %s (gap %s)", updateSeconds(now.Sub(p.trace.zero)), updateSeconds(now.Sub(p.last[0]))))
+	now := p.trace.clock.now()
+	p.at(now, fmt.Sprintf("Total: %s (gap %s)", durationSeconds(now.Sub(p.trace.clock.zero)), durationSeconds(now.Sub(p.last[0]))))
 }

@@ -85,13 +85,14 @@ func (r *versionReport) missingProgram(ext extension) {
 type mixedExtension struct{ name, host, program, plugin string }
 
 type versionInputs struct {
-	env         []string
-	dir         string
-	host        hostOps
-	lookPath    func(string) (string, error)
-	selfPath    string
-	selfVersion string
-	piStatus    func(agentDir, home string) piPackageStatus
+	env             []string
+	dir             string
+	host            hostOps
+	lookPath        func(string) (string, error)
+	selfPath        string
+	selfVersion     string
+	piStatus        func(agentDir, home string) piPackageStatus
+	installProgress *installProgress
 }
 
 // hostStatus is what one plugin host holds: its plugin versions by id, or why it has
@@ -115,11 +116,14 @@ func readHosts(in versionInputs) []hostStatus {
 	for _, h := range []struct{ name, title string }{{"claude", "Claude Code"}, {"codex", "Codex"}} {
 		status := hostStatus{name: h.name, title: h.title}
 		if _, err := in.lookPath(h.name); err != nil {
+			in.installProgress.skip("List "+h.title+" plugin versions", "host is not on PATH")
 			status.skipped = h.name + " is not on PATH, so its plugins were skipped."
 			hosts = append(hosts, status)
 			continue
 		}
+		list := in.installProgress.start("List " + h.title + " plugin versions")
 		status.lookup, status.err = pluginVersionLookup(in.host, h.name)
+		list.end(status.err, true)
 		switch {
 		case status.err != nil:
 			status.skipped = fmt.Sprintf("%s plugin list failed (%v), so its plugins were skipped.", h.name, status.err)
@@ -187,7 +191,7 @@ func collectVersions(in versionInputs) versionReport {
 	}
 
 	for _, ext := range extensions {
-		programPath, programVersion := extensionProgram(ext, in.env, pathEnv)
+		programPath, programVersion := extensionProgram(ext, in.env, pathEnv, in.installProgress)
 		add(ext.name+" program", programVersion, programPath)
 		id := extensionPluginID(ext.name)
 		if programVersion == notInstalled {
@@ -315,7 +319,7 @@ func piVersionReport(in versionInputs) (versionReport, bool) {
 		if ext.piTitle == "" {
 			continue
 		}
-		programPath, programVersion := extensionProgram(ext, in.env, pathEnv)
+		programPath, programVersion := extensionProgram(ext, in.env, pathEnv, in.installProgress)
 		report.rows = append(report.rows, pieceRow{ext.name + " program", programVersion, programPath})
 		if programVersion == notInstalled {
 			report.missingProgram(ext)
@@ -375,14 +379,26 @@ func printVersionReport(w io.Writer, report versionReport) {
 	fmt.Fprintln(w)
 }
 
-func extensionProgram(ext extension, env []string, pathEnv string) (path, version string) {
+func extensionProgram(ext extension, env []string, pathEnv string, progress *installProgress) (path, version string) {
+	probe := progress.start("Check " + ext.name + " program version")
 	found := pathCopies(pathEnv, ext.program)
 	if len(found) == 0 {
+		probe.outcome("Warning", "; program unavailable; continuing")
 		return "", notInstalled
 	}
-	version = programReportedVersion(found[0], env, "")
+	version, err := readProgramVersion(found[0], env, "")
 	if ext.tree && version == "unknown" {
 		version = treeVersion(found[0], ext.name, env)
+	}
+	switch {
+	case err != nil:
+		probe.end(err, true)
+	case version == notInstalled:
+		probe.outcome("Warning", "; program unavailable; continuing")
+	case version == "unknown":
+		probe.outcome("Warning", "; version unavailable; continuing")
+	default:
+		probe.end(nil, false)
 	}
 	return found[0], version
 }
@@ -409,20 +425,25 @@ func treeVersion(link, name string, env []string) string {
 }
 
 func programReportedVersion(path string, env []string, prefix string) string {
+	version, _ := readProgramVersion(path, env, prefix)
+	return version
+}
+
+func readProgramVersion(path string, env []string, prefix string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, path, "--version")
 	cmd.Env = env
 	out, err := cmd.Output()
 	if err != nil {
-		return "unknown"
+		return "unknown", err
 	}
 	line, _, _ := strings.Cut(strings.TrimSpace(string(out)), "\n")
 	line = strings.TrimSpace(strings.TrimPrefix(line, prefix))
 	if line == "" {
-		return "unknown"
+		return "unknown", nil
 	}
-	return line
+	return line, nil
 }
 
 func pathCopies(pathEnv, name string) []string {
@@ -480,8 +501,12 @@ func reportVersions(args, env []string, dir string, stdout io.Writer) {
 	if !versionsWanted(args) {
 		return
 	}
+	reportInstalledVersions(env, dir, stdout, nil)
+}
+
+func reportInstalledVersions(env []string, dir string, stdout io.Writer, progress *installProgress) {
 	selfPath, _ := resolvedLauncherBin()
-	in := versionInputs{env: env, dir: dir, host: execHost{}, lookPath: exec.LookPath, selfPath: selfPath, selfVersion: displayVersion()}
+	in := versionInputs{env: env, dir: dir, host: execHost{}, lookPath: exec.LookPath, selfPath: selfPath, selfVersion: displayVersion(), installProgress: progress}
 	report := collectVersions(in)
 	addPiPackages(&report, in)
 	printVersionReport(stdout, report)

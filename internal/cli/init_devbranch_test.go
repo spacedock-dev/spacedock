@@ -5,7 +5,6 @@ package cli
 import (
 	"bytes"
 	"context"
-	"reflect"
 	"testing"
 )
 
@@ -49,7 +48,7 @@ func TestInstallArgvSequence(t *testing.T) {
 		{argv: []string{"plugin", "uninstall", "spacedock@spacedock-edge"}, tolerateExit: true, reportExit: true, ifInstalled: "spacedock@spacedock-edge"},
 		{argv: []string{"plugin", "install", "spacedock@spacedock-edge"}},
 	}
-	if got := installArgvSequence("spacedock-dev/marketplace", "next"); !reflect.DeepEqual(got, wantEdge) {
+	if got := installArgvSequence("spacedock-dev/marketplace", "next"); !sameInstallSteps(got, wantEdge) {
 		t.Errorf("installArgvSequence(devBranch=next) = %v, want %v", got, wantEdge)
 	}
 
@@ -61,7 +60,7 @@ func TestInstallArgvSequence(t *testing.T) {
 		{argv: []string{"plugin", "uninstall", "spacedock@spacedock"}, tolerateExit: true, reportExit: true, ifInstalled: "spacedock@spacedock"},
 		{argv: []string{"plugin", "install", "spacedock@spacedock"}},
 	}
-	if got := installArgvSequence("spacedock-dev/marketplace", "main"); !reflect.DeepEqual(got, wantStable) {
+	if got := installArgvSequence("spacedock-dev/marketplace", "main"); !sameInstallSteps(got, wantStable) {
 		t.Errorf("installArgvSequence(devBranch=main) = %v, want %v", got, wantStable)
 	}
 

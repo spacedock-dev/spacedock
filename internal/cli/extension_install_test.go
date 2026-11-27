@@ -45,7 +45,7 @@ func testInstallSequencesFollowEachExtension(t *testing.T, source, branch string
 	if len(claude) < len(wantClaude) {
 		t.Fatalf("claude sequence = %v, want the companion steps at its end", claude)
 	}
-	if got := claude[len(claude)-len(wantClaude):]; !reflect.DeepEqual(got, wantClaude) {
+	if got := claude[len(claude)-len(wantClaude):]; !sameInstallSteps(got, wantClaude) {
 		t.Errorf("claude companion steps = %v, want %v", got, wantClaude)
 	}
 
@@ -65,7 +65,7 @@ func testInstallSequencesFollowEachExtension(t *testing.T, source, branch string
 	if len(codex) < len(wantCodex) {
 		t.Fatalf("codex sequence = %v, want the companion steps at its end", codex)
 	}
-	if got := codex[len(codex)-len(wantCodex):]; !reflect.DeepEqual(got, wantCodex) {
+	if got := codex[len(codex)-len(wantCodex):]; !sameInstallSteps(got, wantCodex) {
 		t.Errorf("codex companion steps = %v, want %v", got, wantCodex)
 	}
 

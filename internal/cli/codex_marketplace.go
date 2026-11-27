@@ -233,19 +233,15 @@ func copyFile(destPath, srcPath string, perm os.FileMode) error {
 // reports the checkout's checked-in .codex-plugin/plugin.json version, not
 // necessarily its current HEAD (the full stamping fix is deferred).
 func installCodexLocalPluginDir(ops hostOps, checkout string, stderr io.Writer) error {
-	// Preflight the checkout before creating the persistent marketplace directory,
-	// re-staging its plugin dir, or asking Codex to remove/install any channel.
-	if err := validateLocalSpacedockPlugin(checkout, "codex"); err != nil {
-		return err
-	}
-	marketplaceRoot := filepath.Join(codexHome(), "spacedock-plugin-dir")
-	if err := os.MkdirAll(marketplaceRoot, 0o755); err != nil {
-		return fmt.Errorf("create local marketplace dir: %w", err)
-	}
+	return installCodexLocalPluginDirWithProgress(ops, checkout, stderr, nil)
+}
 
-	install, err := WriteCodexLocalMarketplace(marketplaceRoot, checkout, codexLocalMarketplaceName)
+func installCodexLocalPluginDirWithProgress(ops hostOps, checkout string, stderr io.Writer, progress *installProgress) error {
+	prepare := progress.start("Prepare Codex local marketplace")
+	install, err := prepareCodexLocalMarketplace(checkout)
+	prepare.end(err, false)
 	if err != nil {
-		return fmt.Errorf("build local marketplace: %w", err)
+		return err
 	}
 	if _, err := ops.InstallCodexLocalPluginDir(install.MarketplaceRoot); err != nil {
 		return fmt.Errorf("install from local marketplace: %w", err)
@@ -257,4 +253,22 @@ func installCodexLocalPluginDir(ops hostOps, checkout string, stderr io.Writer) 
 			"checked-in .codex-plugin/plugin.json, not necessarily its current HEAD.\n",
 		checkout, codexLocalPluginID)
 	return nil
+}
+
+func prepareCodexLocalMarketplace(checkout string) (CodexMarketplaceInstall, error) {
+	// Preflight the checkout before creating the persistent marketplace directory,
+	// re-staging its plugin dir, or asking Codex to remove/install any channel.
+	if err := validateLocalSpacedockPlugin(checkout, "codex"); err != nil {
+		return CodexMarketplaceInstall{}, err
+	}
+	marketplaceRoot := filepath.Join(codexHome(), "spacedock-plugin-dir")
+	if err := os.MkdirAll(marketplaceRoot, 0o755); err != nil {
+		return CodexMarketplaceInstall{}, fmt.Errorf("create local marketplace dir: %w", err)
+	}
+
+	install, err := WriteCodexLocalMarketplace(marketplaceRoot, checkout, codexLocalMarketplaceName)
+	if err != nil {
+		return CodexMarketplaceInstall{}, fmt.Errorf("build local marketplace: %w", err)
+	}
+	return install, nil
 }

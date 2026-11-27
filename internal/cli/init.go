@@ -42,6 +42,10 @@ func extensionMarketplaceSource() string {
 // through the host plugin mechanism (claude `install` / codex `add`) — no skill-file
 // copies — which is what makes Skill()/--agent spacedock:first-officer resolve.
 func runInit(ctx context.Context, args []string, ops hostOps, stdout, stderr io.Writer) int {
+	return runInitWithProgress(ctx, args, ops, stdout, stderr, nil)
+}
+
+func runInitWithProgress(ctx context.Context, args []string, ops hostOps, stdout, stderr io.Writer, progress *installProgress) int {
 	host, check, code := parseInitArgs(args, stderr)
 	if code != 0 {
 		return code
@@ -58,11 +62,14 @@ func runInit(ctx context.Context, args []string, ops hostOps, stdout, stderr io.
 				fmt.Fprintf(stderr, "spacedock install: host install failed: %v\n", err)
 				return 1
 			}
+		} else {
+			progress.skip("Install Claude Code plugins", "check only")
 		}
-		return runDoctor(ctx, []string{"--host", "claude"}, ops, stdout, stderr)
+		return runDoctorWithProgress(ctx, []string{"--host", "claude"}, ops, stdout, stderr, progress)
 	case "codex":
 		if check {
-			return runDoctor(ctx, []string{"--host", "codex"}, ops, stdout, stderr)
+			progress.skip("Install Codex plugins", "check only")
+			return runDoctorWithProgress(ctx, []string{"--host", "codex"}, ops, stdout, stderr, progress)
 		}
 		// `install --host codex` drives the install seam (marketplace add + plugin
 		// add, re-pinning the source) and runs doctor — the same programmatic path
@@ -78,7 +85,7 @@ func runInit(ctx context.Context, args []string, ops hostOps, stdout, stderr io.
 		if out != "" {
 			fmt.Fprintln(stdout, out)
 		}
-		return runDoctor(ctx, []string{"--host", "codex"}, ops, stdout, stderr)
+		return runDoctorWithProgress(ctx, []string{"--host", "codex"}, ops, stdout, stderr, progress)
 	default:
 		fmt.Fprintf(stderr, "spacedock install: unknown host %q (want claude or codex)\n", host)
 		return 2
@@ -91,6 +98,10 @@ func runInit(ctx context.Context, args []string, ops hostOps, stdout, stderr io.
 // manifest exits 0; a mismatch exits 1; no installed plugin is a non-fatal
 // report (exit 0).
 func runDoctor(ctx context.Context, args []string, ops hostOps, stdout, stderr io.Writer) int {
+	return runDoctorWithProgress(ctx, args, ops, stdout, stderr, nil)
+}
+
+func runDoctorWithProgress(ctx context.Context, args []string, ops hostOps, stdout, stderr io.Writer, progress *installProgress) int {
 	manifestPath, host, code := parseDoctorArgs(args, stderr)
 	if code != 0 {
 		return code
@@ -100,7 +111,9 @@ func runDoctor(ctx context.Context, args []string, ops hostOps, stdout, stderr i
 		return contract.RunDoctor(manifestPath, host, displayVersion(), runningEdgeCask(), stdout, stderr)
 	}
 
+	resolve := progress.start("Resolve " + hostTitle(host) + " plugin manifest")
 	resolved, err := ops.ResolveManifest(host)
+	resolve.end(err, false)
 	if err != nil {
 		fmt.Fprintf(stderr, "spacedock doctor: could not resolve the installed %s plugin: %v\n", host, err)
 		return 1
@@ -108,8 +121,19 @@ func runDoctor(ctx context.Context, args []string, ops hostOps, stdout, stderr i
 	// An empty resolved path is the no-plugin-found report; RunDoctor renders it
 	// from a non-existent path as a non-fatal report. Inventory is deliberately
 	// queried afterward, and its report never changes the compatibility exit code.
+	compat := progress.start("Check " + hostTitle(host) + " plugin compatibility")
 	compatCode := contract.RunDoctor(resolved, host, displayVersion(), runningEdgeCask(), stdout, stderr)
+	switch {
+	case compatCode != 0:
+		compat.outcome("Failed", "; compatibility check failed")
+	case resolved == "":
+		compat.outcome("Warning", "; no installed plugin found; continuing")
+	default:
+		compat.end(nil, false)
+	}
+	list := progress.start("Check " + hostTitle(host) + " plugin enablement")
 	inventory, err := ops.PluginInventory(host)
+	list.end(err, true)
 	if err != nil {
 		fmt.Fprintf(stdout, "INCOMPLETE: doctor checked compatibility but did not read the %s plugin enablement state: %v\n", host, err)
 		return compatCode
@@ -181,6 +205,7 @@ func parseInitArgs(args []string, stderr io.Writer) (host string, check bool, co
 			i++
 		case "--check":
 			check = true
+		case "--verbose":
 		default:
 			fmt.Fprintf(stderr, "spacedock install: unknown argument %q\n", args[i])
 			return "", false, 2
