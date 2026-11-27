@@ -491,7 +491,9 @@ func runInstallSetup(ctx context.Context, args []string, setup setupArgs, hostOp
 	runtime := progress.start("Check Pi runtime")
 	check := checkPiRuntimeWithProgress(piOps, cfg, progress)
 	switch {
-	case piDoctorHealthy(check):
+	case piDoctorHealthy(check), !checkOnly && piRuntimeLaunchReady(check):
+		// install declares readiness with piRuntimeLaunchReady (auth is not
+		// required to install); only --check holds the run to doctor health.
 		runtime.end(nil, false)
 	case checkOnly:
 		runtime.outcome("Failed", "; runtime setup incomplete")
